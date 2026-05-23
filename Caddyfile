@@ -2,7 +2,7 @@
 # Reverse-proxy tututordeingles.local to local Next.js server (port 3000)
 
 tututordeingles.local {
-    reverse_proxy localhost:3000
+    reverse_proxy localhost:7777
     tls internal
 
     # Optional security headers
