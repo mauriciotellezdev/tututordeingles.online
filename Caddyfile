@@ -1,0 +1,12 @@
+# Caddyfile for local HTTPS development
+# Reverse-proxy tututordeingles.local to local Next.js server (port 3000)
+
+tututordeingles.local {
+    reverse_proxy localhost:3000
+    tls internal
+
+    # Optional security headers
+    header {
+        Strict-Transport-Security "max-age=31536000; includeSubDomains; preload"
+    }
+}
