@@ -131,16 +131,18 @@ export default function Pricing() {
                 ))}
               </ul>
 
-              <Button
-                className={
-                  plan.highlight
-                    ? "bg-blue-500 hover:bg-blue-400 text-white rounded-full py-6 text-sm font-semibold tracking-wide transition-all duration-300 hover:scale-[1.01] shadow-lg shadow-blue-500/25"
-                    : "bg-white/5 hover:bg-white/10 text-white border border-white/10 rounded-full py-6 text-sm font-medium tracking-wide transition-all duration-300"
-                }
-                style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}
-              >
-                {plan.cta}
-              </Button>
+              <a href={`mailto:mauriciotellezdev@gmail.com?subject=${encodeURIComponent(plan.name)}`}>
+                <Button
+                  className={
+                    plan.highlight
+                      ? "bg-blue-500 hover:bg-blue-400 text-white rounded-full py-6 text-sm font-semibold tracking-wide transition-all duration-300 hover:scale-[1.01] shadow-lg shadow-blue-500/25"
+                      : "bg-white/5 hover:bg-white/10 text-white border border-white/10 rounded-full py-6 text-sm font-medium tracking-wide transition-all duration-300"
+                  }
+                  style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}
+                >
+                  {plan.cta}
+                </Button>
+              </a>
             </div>
           ))}
         </div>

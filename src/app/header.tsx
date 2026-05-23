@@ -67,12 +67,14 @@ export default function Header() {
           >
             Entrar
           </a>
-          <Button
-            size="sm"
-            className="bg-blue-500 hover:bg-blue-400 text-white rounded-full px-5 py-2 text-sm font-semibold transition-all duration-300 hover:scale-[1.02] shadow-lg shadow-blue-500/20"
-          >
-            Regístrate
-          </Button>
+          <a href="/signup">
+            <Button
+              size="sm"
+              className="bg-blue-500 hover:bg-blue-400 text-white rounded-full px-5 py-2 text-sm font-semibold transition-all duration-300 hover:scale-[1.02] shadow-lg shadow-blue-500/20"
+            >
+              Regístrate
+            </Button>
+          </a>
         </div>
 
         {/* Mobile hamburger */}
@@ -111,12 +113,14 @@ export default function Header() {
             <a href="/login" className="text-white/40 text-sm font-medium">
               Entrar
             </a>
-            <Button
-              size="sm"
-              className="bg-blue-500 hover:bg-blue-400 text-white rounded-full px-5 py-2 text-sm font-semibold w-fit shadow-lg shadow-blue-500/20"
-            >
-              Regístrate
-            </Button>
+            <a href="/signup">
+              <Button
+                size="sm"
+                className="bg-blue-500 hover:bg-blue-400 text-white rounded-full px-5 py-2 text-sm font-semibold w-fit shadow-lg shadow-blue-500/20"
+              >
+                Regístrate
+              </Button>
+            </a>
           </div>
         </nav>
       </div>

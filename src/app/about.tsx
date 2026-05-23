@@ -71,13 +71,15 @@ export default function AboutTutor() {
             ))}
           </ul>
 
-          <Button
-            size="lg"
-            className="bg-blue-500 hover:bg-blue-400 text-white rounded-full px-7 py-6 text-sm font-semibold tracking-wide transition-all duration-300 hover:scale-[1.02] shadow-lg shadow-blue-500/25"
-            style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}
-          >
-            Agenda una llamada gratis
-          </Button>
+          <a href="mailto:mauriciotellezdev@gmail.com">
+            <Button
+              size="lg"
+              className="bg-blue-500 hover:bg-blue-400 text-white rounded-full px-7 py-6 text-sm font-semibold tracking-wide transition-all duration-300 hover:scale-[1.02] shadow-lg shadow-blue-500/25"
+              style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}
+            >
+              Agenda una llamada gratis
+            </Button>
+          </a>
         </div>
       </div>
     </section>

@@ -41,13 +41,15 @@ export default function Hero() {
           </p>
 
           <div className="flex flex-wrap gap-3 mb-10">
-            <Button
-              size="lg"
-              className="bg-blue-500 hover:bg-blue-400 text-white rounded-full px-7 py-6 text-sm font-semibold tracking-wide transition-all duration-300 hover:scale-[1.02] shadow-lg shadow-blue-500/25"
-              style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}
-            >
-              Agenda tu clase gratis
-            </Button>
+            <a href="mailto:mauriciotellezdev@gmail.com">
+              <Button
+                size="lg"
+                className="bg-blue-500 hover:bg-blue-400 text-white rounded-full px-7 py-6 text-sm font-semibold tracking-wide transition-all duration-300 hover:scale-[1.02] shadow-lg shadow-blue-500/25"
+                style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}
+              >
+                Agenda tu clase gratis
+              </Button>
+            </a>
             <Button
               variant="ghost"
               size="lg"
@@ -70,7 +72,6 @@ export default function Hero() {
             style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}
           >
             {[
-              { value: "+120", label: "Estudiantes" },
               { value: "EE.UU.", label: "Tutor nativo" },
               { value: "MXN", label: "Pago en pesos" },
             ].map((stat) => (
