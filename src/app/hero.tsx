@@ -41,7 +41,7 @@ export default function Hero() {
           </p>
 
           <div className="flex flex-wrap gap-3 mb-10">
-            <a href="mailto:mauriciotellezdev@gmail.com">
+            <a href="/signup">
               <Button
                 size="lg"
                 className="bg-blue-500 hover:bg-blue-400 text-white rounded-full px-7 py-6 text-sm font-semibold tracking-wide transition-all duration-300 hover:scale-[1.02] shadow-lg shadow-blue-500/25"

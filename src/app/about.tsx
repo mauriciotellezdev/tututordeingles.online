@@ -6,7 +6,7 @@ import Image from "next/image";
 
 const credentials = [
   { icon: "🇺🇸", text: "Hablante nativo de inglés americano" },
-  { icon: "💼", text: "40 años enseñando inglés de negocios" },
+  { icon: "💼", text: "30 años enseñando inglés de negocios" },
   { icon: "🧑‍💻", text: "Especialista en inglés para tecnología y trabajo remoto" },
 ];
 

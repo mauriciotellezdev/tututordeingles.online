@@ -18,7 +18,7 @@ const plans = [
     ],
     cta: "Comprar clase",
     highlight: false,
-    badge: null,
+    badge: "Introducción · Sin compromiso",
   },
   {
     name: "Paquete 10 Clases",
@@ -119,16 +119,31 @@ export default function Pricing() {
               </p>
 
               <ul className="space-y-2.5 mb-8 flex-1">
-                {plan.features.map((f) => (
-                  <li
-                    key={f}
-                    className="flex items-center gap-2.5 text-white/50 text-xs"
-                    style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}
-                  >
-                    <span className="text-blue-400 text-base leading-none">✓</span>
-                    {f}
-                  </li>
-                ))}
+                {plan.features.map((f) => {
+                  const hasCorreo = /correo/i.test(f);
+                  return (
+                    <li
+                      key={f}
+                      className="flex items-center gap-2.5 text-white/50 text-xs"
+                      style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}
+                    >
+                      <span className="text-blue-400 text-base leading-none">✓</span>
+                      {hasCorreo ? (
+                        <>
+                          {f.replace(/correo/i, "")}
+                          <a
+                            href={`mailto:mauriciotellezdev@gmail.com`}
+                            className="text-white/60 underline"
+                          >
+                            {f.match(/correo/i)?.[0] ?? "correo"}
+                          </a>
+                        </>
+                      ) : (
+                        f
+                      )}
+                    </li>
+                  );
+                })}
               </ul>
 
               <a href={`mailto:mauriciotellezdev@gmail.com?subject=${encodeURIComponent(plan.name)}`}>
@@ -151,7 +166,9 @@ export default function Pricing() {
           className="text-center text-white/20 text-xs mt-8"
           style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}
         >
-          ¿Tienes preguntas? Escríbeme por WhatsApp antes de comprar.
+          <a href="mailto:mauriciotellezdev@gmail.com" className="underline text-white/20 hover:text-white/40">
+            ¿Tienes preguntas? Escríbeme por correo antes de comprar.
+          </a>
         </p>
       </div>
     </section>
