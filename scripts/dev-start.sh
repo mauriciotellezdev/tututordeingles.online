@@ -31,8 +31,8 @@ fi
 
 # Start Next dev on the chosen port (background)
 echo "Starting Next dev on port ${PORT} (logs -> /tmp/next-dev.log)"
-# Use npx to ensure local next binary is used
-npx next dev -p ${PORT} > /tmp/next-dev.log 2>&1 &
+# Use Node's native env file support to load your dev environment variables
+node --env-file=.env.dev node_modules/next/dist/bin/next dev -p ${PORT} > /tmp/next-dev.log 2>&1 &
 NEXT_PID=$!
 sleep 1
 
