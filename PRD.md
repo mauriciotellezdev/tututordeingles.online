@@ -14,6 +14,13 @@
     - [ ] See results
     - [ ] Book intro call (google meet)
     - [ ] See Dashboard
+- [ ] Booking
+    - [ ] Pick a date at least 24 hours in the future
+    - [ ] Pick an available hour time slot
+    - [ ] Intro call is free
+    - [ ] Tutoring session is paid (stripe)
+    - [ ] Stripe integration
+    - [ ] Email booked session with .ics to student and teacher
 - [ ] Students can log in (email code)
 - [ ] Teacher can log in (email code)
 - [ ] Student Dashboard
