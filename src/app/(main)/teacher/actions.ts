@@ -112,9 +112,9 @@ export async function getTeacherDashboardDataAction() {
         quizResult: st.quizResult
       }))
     };
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("Error in getTeacherDashboardDataAction:", error);
-    return { success: false, error: error.message || "Error al cargar datos del profesor." };
+    return { success: false, error: (error instanceof Error ? error.message : "Error al cargar datos del profesor.") };
   }
 }
 

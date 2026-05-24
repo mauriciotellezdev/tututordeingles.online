@@ -2,6 +2,22 @@ import nodemailer from "nodemailer";
 
 const BREVO_API = "https://api.brevo.com/v3/smtp/email";
 
+interface TransportConfig {
+  host: string;
+  port: number;
+  ignoreTLS?: boolean;
+  auth?: { user: string; pass: string };
+}
+
+interface MailOptions {
+  from: string;
+  to: string;
+  subject: string;
+  text: string;
+  html?: string;
+  alternatives?: { contentType: string; content: string | Buffer }[];
+}
+
 async function sendViaBrevoApi(options: {
   to: string;
   subject: string;
@@ -55,16 +71,12 @@ function getTransporter() {
   const port = parseInt(process.env.MAIL_PORT || "1026");
   const user = process.env.MAIL_USER;
   const pass = process.env.MAIL_PASS;
-
-  const transportConfig: any = { host, port };
-
+  const transportConfig: TransportConfig = { host, port };
   const isLocal = host === "127.0.0.1" || host === "localhost";
   if (isLocal) transportConfig.ignoreTLS = true;
-
   if (user && pass) {
     transportConfig.auth = { user, pass };
   }
-
   return nodemailer.createTransport(transportConfig);
 }
 
@@ -79,7 +91,7 @@ async function sendViaSmtp(options: {
 
   const transporter = getTransporter();
 
-  const mailOptions: any = {
+  const mailOptions: MailOptions = {
     from,
     to: options.to,
     subject: options.subject,

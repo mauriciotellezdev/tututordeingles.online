@@ -107,8 +107,8 @@ export async function GET(request: Request) {
             meta.planType as "single" | "package",
           );
           results.push({ sessionId: session.id, status: "fixed", message: result.message });
-        } catch (err: any) {
-          results.push({ sessionId: session.id, status: "error", message: err.message });
+        } catch (err: Error | unknown) {
+          results.push({ sessionId: session.id, status: "error", message: (err as Error).message });
         }
       }
     }
@@ -117,7 +117,7 @@ export async function GET(request: Request) {
       total: results.length,
       results,
     });
-  } catch (err: any) {
-    return NextResponse.json({ error: err.message }, { status: 500 });
+  } catch (err: Error | unknown) {
+    return NextResponse.json({ error: (err as Error).message }, { status: 500 });
   }
 }

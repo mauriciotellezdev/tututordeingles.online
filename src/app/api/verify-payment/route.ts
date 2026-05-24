@@ -2,7 +2,6 @@ import { NextResponse } from 'next/server';
 import Stripe from 'stripe';
 import { getCollection } from '@/lib/db';
 import { createCredit, CREDIT_COLLECTION } from '@/lib/models/credit';
-import { ObjectId } from 'mongodb';
 
 export async function POST(request: Request) {
   try {
@@ -42,8 +41,8 @@ export async function POST(request: Request) {
     );
 
     return NextResponse.json({ status: 'success', message: 'Créditos añadidos', creditsAdded: creditsToAdd }, { status: 200 });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Error in verify-payment API:', error);
-    return NextResponse.json({ error: error.message || 'Server error' }, { status: 500 });
+    return NextResponse.json({ error: (error instanceof Error ? error.message : 'Server error') }, { status: 500 });
   }
 }

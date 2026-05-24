@@ -18,7 +18,7 @@ export async function requestLoginCodeAction(email: string) {
     const teacher = await getTeacherData();
     const teacherEmail = teacher.email.toLowerCase().trim();
 
-    let isTeacher = normalizedEmail === teacherEmail;
+    const isTeacher = normalizedEmail === teacherEmail;
     let studentId: ObjectId | undefined = undefined;
     let name = "Profesor";
 
@@ -85,9 +85,9 @@ export async function requestLoginCodeAction(email: string) {
       success: true,
       email: normalizedEmail
     };
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("Error in requestLoginCodeAction:", error);
-    return { success: false, error: error.message || "Error al solicitar el código de acceso." };
+    return { success: false, error: (error instanceof Error ? error.message : "Error al solicitar el código de acceso.") };
   }
 }
 
@@ -174,8 +174,8 @@ export async function verifyLoginCodeAction(payload: { email: string; code: stri
         quizCompleted: !!student.quizResult
       };
     }
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("Error in verifyLoginCodeAction:", error);
-    return { success: false, error: error.message || "Error al verificar el código de acceso." };
+    return { success: false, error: (error instanceof Error ? error.message : "Error al verificar el código de acceso.") };
   }
 }

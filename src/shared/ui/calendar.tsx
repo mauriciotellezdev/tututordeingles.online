@@ -134,6 +134,7 @@ function Calendar({
         ),
         hidden: cn("invisible", defaultClassNames.hidden),
         ...classNames,
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
       } as any}
       components={{
         Root: ({ className, rootRef, ...props }) => {

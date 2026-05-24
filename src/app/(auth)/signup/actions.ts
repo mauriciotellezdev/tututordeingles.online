@@ -51,9 +51,9 @@ export async function signupStudentAction(input: { name: string; email: string; 
       success: true,
       email: normalizedEmail
     };
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("Error in signupStudentAction:", error);
-    return { success: false, error: error.message || "Ocurrió un error al registrar tus datos." };
+    return { success: false, error: (error instanceof Error ? error.message : "Ocurrió un error al registrar tus datos.") };
   }
 }
 
@@ -109,8 +109,8 @@ export async function verifyCodeAndLoginAction(payload: { email: string; code: s
       success: true,
       studentId: student._id.toString()
     };
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("Error in verifyCodeAndLoginAction:", error);
-    return { success: false, error: error.message || "Error al verificar el código." };
+    return { success: false, error: (error instanceof Error ? error.message : "Error al verificar el código.") };
   }
 }

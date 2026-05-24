@@ -1,4 +1,5 @@
 "use client";
+import Link from "next/link"; 
 
 const currentYear = new Date().getFullYear();
 
@@ -21,14 +22,14 @@ export default function Footer() {
         <div className="grid grid-cols-2 md:grid-cols-4 gap-10 mb-14">
           {/* Brand */}
           <div className="col-span-2 md:col-span-1">
-            <a
+            <Link
               href="/"
               style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}
               className="text-white font-bold text-lg tracking-tight"
             >
               Tu Tutor{" "}
               <span className="text-blue-400 font-light">de Inglés</span>
-            </a>
+            </Link>
             <p
               className="text-white/25 text-xs leading-relaxed mt-4 max-w-[180px]"
               style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}
@@ -48,7 +49,7 @@ export default function Footer() {
               <ul className="space-y-3">
                 {items.map((l) => (
                   <li key={l.href}>
-                    <a
+                    <Link
                       href={l.href}
                       target={l.href.startsWith("http") ? "_blank" : undefined}
                       rel="noopener noreferrer"
@@ -56,7 +57,7 @@ export default function Footer() {
                       style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}
                     >
                       {l.label}
-                    </a>
+                    </Link>
                   </li>
                 ))}
               </ul>

@@ -2,31 +2,12 @@
 
 import React, { useState, useEffect, Suspense, useRef } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { Button } from "@/shared/ui/button";
-import { Badge } from "@/shared/ui/badge";
-import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from "@/shared/ui/card";
-import { 
-  getStudentDashboardDataAction, 
-  bookSessionAction, 
-  logoutAction, 
-  createCheckoutSessionAction,
+import { Card, CardContent } from "@/shared/ui/card";
+import {
+  getStudentDashboardDataAction,
   verifyPaymentAction,
-  getBookedSlotsAction,
 } from "./actions";
-import { 
-  Calendar as CalendarIcon, 
-  Clock, 
-  BookOpen, 
-  MessageSquare, 
-  Mail, 
-  LogOut, 
-  PlusCircle, 
-  CheckCircle2, 
-  AlertCircle,
-  Video,
-  Award,
-  CreditCard
-} from "lucide-react";
+import { Mail } from "lucide-react";
 
 interface StudentData {
   _id: string;
@@ -41,63 +22,34 @@ interface StudentData {
   };
 }
 
-interface TeacherData {
-  email: string;
-  phone?: string;
-}
-
-interface SessionData {
-  _id: string;
-  type: "intro" | "tutoring";
-  dateTime: string;
-  duration: number;
-  meetingLink?: string;
-  status: string;
-  paid?: boolean;
-}
 
 function StudentDashboard() {
   const router = useRouter();
   const searchParams = useSearchParams();
 
-  // Data State
   const [student, setStudent] = useState<StudentData | null>(null);
-  const [teacher, setTeacher] = useState<TeacherData | null>(null);
-  const [upcomingSessions, setUpcomingSessions] = useState<SessionData[]>([]);
   const [loading, setLoading] = useState(true);
-
-  // Booking Form State
-  const [bookingType, setBookingType] = useState<"tutoring">("tutoring");
-  const [selectedDate, setSelectedDate] = useState<Date | null>(null);
-  const [selectedTimeSlot, setSelectedTimeSlot] = useState<string | null>(null);
-  const [bookedSlots, setBookedSlots] = useState<string[]>([]);
-  const [bookingLoading, setBookingLoading] = useState(false);
-  const [bookingError, setBookingError] = useState<string | null>(null);
-  const [bookingSuccess, setBookingSuccess] = useState<string | null>(null);
-
-  // Fetch booked slots whenever selectedDate changes
-  useEffect(() => {
-    if (!selectedDate) { setBookedSlots([]); return; }
-    (async () => {
-      const res = await getBookedSlotsAction({ dateIso: selectedDate.toISOString() });
-      if (res.success) setBookedSlots(res.bookedSlots);
-    })();
-  }, [selectedDate]);
-
-  // Purchase State
-  const [purchaseLoading, setPurchaseLoading] = useState<string | null>(null); // "single" or "package" or null
-
-  // Notifications
   const [statusMessage, setStatusMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
 
   const verifiedSession = useRef<string | null>(null);
 
-  // Load initial dashboard data
+  const loadDashboardData = async () => {
+    setLoading(true);
+    const res = await getStudentDashboardDataAction();
+    setLoading(false);
+    if (res.success && res.student) {
+      setStudent(res.student);
+    } else {
+      router.push("/login");
+    }
+  };
+
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     loadDashboardData();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Verify payment after Stripe redirect (once student data has loaded)
   useEffect(() => {
     const success = searchParams.get("checkout_success");
     const cancel = searchParams.get("checkout_cancel");
@@ -105,148 +57,42 @@ function StudentDashboard() {
     const sessionId = searchParams.get("session_id");
 
     if (cancel === "true") {
-      setStatusMessage({
-        type: "error",
-        text: "La compra fue cancelada. No se realizó ningún cargo."
-      });
+      setTimeout(() => {
+        setStatusMessage({
+          type: "error",
+          text: "La compra fue cancelada. No se realizó ningún cargo.",
+        });
+      }, 0);
       router.replace("/student");
       return;
     }
 
     if (success === "true" && sessionId && plan && student) {
-      if (verifiedSession.current === sessionId) return; // already verified
+      if (verifiedSession.current === sessionId) return;
       verifiedSession.current = sessionId;
-
       (async () => {
         const verifyRes = await verifyPaymentAction({
           sessionId,
           studentId: student._id,
-          planType: plan as "single" | "package"
+          planType: plan as "single" | "package",
         });
-
         if (verifyRes.success) {
           setStatusMessage({
             type: "success",
-            text: `¡Compra de ${plan === "single" ? "1 clase" : "12 clases"} procesada con éxito! Tus créditos han sido actualizados.`
+            text: `¡Compra de ${plan === "single" ? "1 clase" : "12 clases"} procesada con éxito! Tus créditos han sido actualizados.`,
           });
           loadDashboardData();
         } else {
           setStatusMessage({
             type: "error",
-            text: verifyRes.error || "Error al verificar el pago."
+            text: verifyRes.error || "Error al verificar el pago.",
           });
         }
-
         router.replace("/student");
       })();
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [searchParams, student]);
-
-  const loadDashboardData = async () => {
-    setLoading(true);
-    const res = await getStudentDashboardDataAction();
-    setLoading(false);
-
-    if (res.success && res.student) {
-      setStudent(res.student);
-      setTeacher(res.teacher || null);
-      setUpcomingSessions(res.upcomingSessions || []);
-    } else {
-      router.push("/login");
-    }
-  };
-
-  // Handle Logout
-  const handleLogout = async () => {
-    await logoutAction();
-    router.push("/login");
-  };
-
-  // Calendar dates setup (Mon-Sat, skipping Sunday, starting tomorrow)
-  const getAvailableDates = () => {
-    const dates = [];
-    const start = new Date();
-    start.setDate(start.getDate() + 1);
-
-    for (let i = 0; i < 10; i++) {
-      const d = new Date(start);
-      d.setDate(start.getDate() + i);
-      if (d.getDay() !== 0) { // Skip Sunday
-        dates.push(d);
-      }
-    }
-    return dates;
-  };
-
-  const timeSlots = ["09:00", "10:00", "11:00", "13:00", "14:00", "15:00", "16:00", "17:00"];
-
-  // Returns available time slots for a given date, excluding slots already booked by the student
-  const getAvailableTimeSlots = (date: Date) => {
-    // Find times already booked on this date
-    const bookedSlots = upcomingSessions
-      .filter((session) => {
-        const sessionDate = new Date(session.dateTime);
-        return sessionDate.toDateString() === date.toDateString();
-      })
-      .map((session) => {
-        const d = new Date(session.dateTime);
-        const hours = String(d.getHours()).padStart(2, "0");
-        const minutes = String(d.getMinutes()).padStart(2, "0");
-        return `${hours}:${minutes}`;
-      });
-
-    // Filter out booked slots
-    return timeSlots.filter((slot) => !bookedSlots.includes(slot));
-  };
-
-  // Handle Booking
-  const handleBookSession = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!selectedDate || !selectedTimeSlot) {
-      setBookingError("Por favor selecciona una fecha y una hora.");
-      return;
-    }
-
-    setBookingLoading(true);
-    setBookingError(null);
-    setBookingSuccess(null);
-
-    const bookingDateTime = new Date(selectedDate);
-    const [hours, minutes] = selectedTimeSlot.split(":").map(Number);
-    bookingDateTime.setHours(hours, minutes, 0, 0);
-
-    const res = await bookSessionAction({
-      type: bookingType,
-      dateTimeIso: bookingDateTime.toISOString()
-    });
-
-    setBookingLoading(false);
-
-    if (res.success) {
-      setBookingSuccess(`¡Clase agendada con éxito! Recibirás un correo con la invitación (.ics).`);
-      setSelectedDate(null);
-      setSelectedTimeSlot(null);
-      // Reload credits & sessions
-      loadDashboardData();
-    } else {
-      setBookingError(res.error || "Ocurrió un error al agendar.");
-    }
-  };
-
-  // Handle Buy Credits
-  const handleBuyCredits = async (planType: "single" | "package") => {
-    setPurchaseLoading(planType);
-    const res = await createCheckoutSessionAction({ planType });
-    setPurchaseLoading(null);
-    if (res.success && res.url) {
-      // Redirect to Stripe Checkout
-      window.location.href = res.url;
-    } else {
-      // Show error banner
-      setStatusMessage({ type: "error", text: res.error || "Error al iniciar compra" });
-    }
-  };
-
 
   const getProficiencyLevel = (correct: number) => {
     if (correct <= 5) return { name: "Principiante (A1-A2)", desc: "Estás comenzando. Trabajaremos en bases sólidas." };
@@ -267,13 +113,20 @@ function StudentDashboard() {
 
   return (
     <main className="min-h-screen bg-[#0a0a0a] pt-24 pb-16 px-4 md:px-8 relative overflow-hidden text-white">
-      {/* Background glow */}
       <div className="absolute left-[-10%] top-[-10%] w-[500px] h-[500px] bg-blue-600/5 rounded-full blur-[100px] pointer-events-none" />
       <div className="absolute right-[-10%] bottom-[-10%] w-[500px] h-[500px] bg-blue-500/5 rounded-full blur-[100px] pointer-events-none" />
 
       <div className="max-w-3xl mx-auto z-10 relative">
-        
-        {/* Header */}
+
+        {statusMessage && (
+          <div className={`mb-6 p-4 rounded-xl text-sm border ${statusMessage.type === "success"
+            ? "bg-green-500/10 border-green-500/20 text-green-400"
+            : "bg-red-500/10 border-red-500/20 text-red-400"
+            }`}>
+            {statusMessage.text}
+          </div>
+        )}
+
         <div className="flex flex-col items-center text-center mb-10">
           <div className="size-16 rounded-full bg-blue-500/10 border border-blue-500/20 flex items-center justify-center mb-4">
             <span className="text-2xl">🎉</span>
@@ -286,7 +139,6 @@ function StudentDashboard() {
           </p>
         </div>
 
-        {/* Launch Announcement */}
         <Card className="bg-gradient-to-br from-blue-500/5 to-purple-500/5 border-blue-500/20 backdrop-blur-xl rounded-2xl mb-6">
           <CardContent className="p-6 md:p-8 space-y-4">
             <div className="size-12 rounded-full bg-blue-500/10 border border-blue-500/30 flex items-center justify-center">
@@ -301,7 +153,6 @@ function StudentDashboard() {
           </CardContent>
         </Card>
 
-        {/* In-person Meetup */}
         <Card className="bg-gradient-to-br from-emerald-500/5 to-teal-500/5 border-emerald-500/20 backdrop-blur-xl rounded-2xl mb-6">
           <CardContent className="p-6 md:p-8 space-y-4">
             <div className="size-12 rounded-full bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-center">
@@ -310,7 +161,7 @@ function StudentDashboard() {
             <h2 className="text-xl font-bold text-white">Reunión grupal en Tehuacán — ¡Próximamente!</h2>
             <p className="text-sm text-white/60 leading-relaxed">
               La próxima semana estaremos organizando encuentros públicos en Tehuacán para que
-              conozcas a tu instructor en persona, así como a otros estudiantes. 
+              conozcas a tu instructor en persona, así como a otros estudiantes.
               Es una excelente oportunidad para practicar y crear comunidad.
             </p>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2">
@@ -330,7 +181,6 @@ function StudentDashboard() {
           </CardContent>
         </Card>
 
-        {/* Quiz result summary if available */}
         {student.quizResult && (
           <Card className="bg-[#0f1729]/40 border-white/[0.08] backdrop-blur-xl rounded-2xl mb-6">
             <CardContent className="p-6 md:p-8 flex items-center gap-4">
@@ -351,7 +201,6 @@ function StudentDashboard() {
           </Card>
         )}
 
-        {/* Contact */}
         <div className="text-center pt-4">
           <p className="text-xs text-white/30">
             ¿Tienes preguntas? Escríbenos a{" "}

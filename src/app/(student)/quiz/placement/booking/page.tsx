@@ -21,11 +21,9 @@ interface StudentData {
 export default function BookingPage() {
   const router = useRouter();
 
-  // Student Details
   const [student, setStudent] = useState<StudentData | null>(null);
   const [sessionLoading, setSessionLoading] = useState(true);
 
-  // Booking State
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [selectedTimeSlot, setSelectedTimeSlot] = useState<string | null>(null);
   const [bookedSlots, setBookedSlots] = useState<string[]>([]);
@@ -34,7 +32,7 @@ export default function BookingPage() {
 
   // Fetch booked slots whenever selectedDate changes
   useEffect(() => {
-    if (!selectedDate) { setBookedSlots([]); return; }
+    if (!selectedDate) return;
     (async () => {
       const res = await getBookedSlotsAction({ dateIso: selectedDate.toISOString() });
       if (res.success) setBookedSlots(res.bookedSlots);
@@ -50,13 +48,18 @@ export default function BookingPage() {
         return;
       }
 
-      // If student hasn't completed the quiz yet, redirect to question 1
       if (!res.student.quizResult) {
         router.push("/quiz/placement/question/1");
         return;
       }
 
-      setStudent(res.student as any);
+      setStudent({
+        _id: res.student._id,
+        name: res.student.name,
+        email: res.student.email,
+        phone: res.student.phone,
+        quizResult: res.student.quizResult,
+      });
       setSessionLoading(false);
     }
     verifySession();
@@ -70,7 +73,6 @@ export default function BookingPage() {
     );
   }
 
-  // Calendar dates setup (Mon-Sat, skipping Sunday, starting tomorrow)
   const getAvailableDates = () => {
     const dates = [];
     const start = new Date();
@@ -79,7 +81,7 @@ export default function BookingPage() {
     for (let i = 0; i < 10; i++) {
       const d = new Date(start);
       d.setDate(start.getDate() + i);
-      if (d.getDay() !== 0) { // Skip Sunday
+      if (d.getDay() !== 0) {
         dates.push(d);
       }
     }
@@ -88,7 +90,6 @@ export default function BookingPage() {
 
   const timeSlots = ["09:00", "10:00", "11:00", "13:00", "14:00", "15:00", "16:00", "17:00"];
 
-  // Booking confirm handler
   const handleBookingConfirm = async () => {
     if (!selectedDate || !selectedTimeSlot) {
       setError("Por favor selecciona una fecha y una hora.");
@@ -109,7 +110,6 @@ export default function BookingPage() {
     setLoading(false);
 
     if (res.success) {
-      // Navigate to confirmation page passing selected values
       const dateStr = encodeURIComponent(selectedDate.toDateString());
       const timeStr = encodeURIComponent(selectedTimeSlot);
       router.push(`/quiz/placement/confirmed?date=${dateStr}&time=${timeStr}`);
@@ -130,20 +130,16 @@ export default function BookingPage() {
 
   return (
     <main className="min-h-screen bg-[#0a0a0a] pt-24 pb-16 flex flex-col items-center justify-center px-4 relative overflow-hidden text-white">
-      {/* Glow shapes */}
       <div className="absolute left-[-10%] top-[-10%] w-[500px] h-[500px] bg-blue-600/5 rounded-full blur-[100px] pointer-events-none" />
       <div className="absolute right-[-10%] bottom-[-10%] w-[500px] h-[500px] bg-blue-500/5 rounded-full blur-[100px] pointer-events-none" />
 
-      {/* Content wrapper */}
       <div className="w-full max-w-xl bg-[#0f1729]/40 border border-white/[0.08] backdrop-blur-xl rounded-2xl p-6 md:p-8 shadow-2xl relative z-10 animate-fadeIn">
-        
-        {/* Step tracker */}
+
         <div className="mb-6 flex justify-between items-center text-xs text-white/40 font-medium uppercase tracking-wider">
           <span>Paso 2 de 2</span>
           <span>Agenda tu Llamada Demo</span>
         </div>
 
-        {/* Errors */}
         {error && (
           <div className="mb-6 p-4 rounded-xl bg-destructive/10 border border-destructive/20 text-destructive text-sm flex items-center gap-3 animate-slideDown">
             <AlertCircle className="size-5 shrink-0" />
@@ -151,7 +147,6 @@ export default function BookingPage() {
           </div>
         )}
 
-        {/* Score analysis card */}
         <div className="p-5 rounded-2xl bg-blue-500/5 border border-blue-500/10 mb-8 flex flex-col md:flex-row items-center gap-5 animate-scaleUp">
           <div className="size-20 shrink-0 rounded-full bg-blue-500/10 border-2 border-blue-500 flex flex-col items-center justify-center">
             <span className="text-2xl font-bold text-white">{score}</span>
@@ -168,7 +163,6 @@ export default function BookingPage() {
           </div>
         </div>
 
-        {/* Scheduler */}
         <h3 className="text-xl md:text-2xl font-bold text-white mb-2 leading-tight flex items-center gap-2">
           <CalendarIcon className="size-5 text-blue-400" /> Agenda tu Clase Demo Gratis
         </h3>
@@ -176,7 +170,6 @@ export default function BookingPage() {
           Hola <strong className="text-white">{student.name}</strong>, elige el día y la hora para tu sesión introductoria de 30 minutos por WhatsApp. Conversarás directamente con Mauricio para planificar tu curso.
         </p>
 
-        {/* Days list */}
         <div className="mb-6">
           <label className="block text-[10px] font-semibold text-white/50 uppercase tracking-wider mb-2 flex items-center gap-1.5">
             <CalendarIcon className="size-3.5" /> 1. Elige el Día
@@ -188,11 +181,10 @@ export default function BookingPage() {
                 <button
                   key={idx}
                   onClick={() => { setSelectedDate(date); setSelectedTimeSlot(null); }}
-                  className={`p-3 rounded-xl border text-[11px] font-semibold text-center transition-all ${
-                    isSelected
+                  className={`p-3 rounded-xl border text-[11px] font-semibold text-center transition-all ${isSelected
                       ? "border-blue-500 bg-blue-500/10 text-white"
                       : "border-white/[0.06] bg-[#111827]/25 text-white/50 hover:border-white/15 hover:text-white"
-                  }`}
+                    }`}
                 >
                   <span className="block text-white capitalize">
                     {date.toLocaleDateString("es-ES", { weekday: "short" })}
@@ -206,7 +198,6 @@ export default function BookingPage() {
           </div>
         </div>
 
-        {/* Hours list */}
         {selectedDate && (
           <div className="mb-8 animate-slideDown">
             <label className="block text-[10px] font-semibold text-white/50 uppercase tracking-wider mb-2 flex items-center gap-1.5">
@@ -221,13 +212,12 @@ export default function BookingPage() {
                     key={slot}
                     disabled={isBooked}
                     onClick={() => setSelectedTimeSlot(slot)}
-                    className={`p-2.5 rounded-xl border text-xs font-bold text-center transition-all ${
-                      isBooked
+                    className={`p-2.5 rounded-xl border text-xs font-bold text-center transition-all ${isBooked
                         ? "border-white/[0.03] bg-white/[0.02] text-white/20 cursor-not-allowed line-through"
                         : isSelected
                           ? "border-blue-500 bg-blue-500/10 text-white"
                           : "border-white/[0.06] bg-[#111827]/25 text-white/60 hover:border-white/15 hover:text-white"
-                    }`}
+                      }`}
                   >
                     {slot}
                   </button>
@@ -237,7 +227,6 @@ export default function BookingPage() {
           </div>
         )}
 
-        {/* Submit */}
         <Button
           onClick={handleBookingConfirm}
           className="w-full bg-blue-500 hover:bg-blue-400 text-white rounded-full py-6 mt-4 text-sm font-semibold tracking-wide transition-all shadow-lg shadow-blue-500/20 flex items-center justify-center gap-2"

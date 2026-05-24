@@ -35,12 +35,13 @@ export async function getCurrentStudentAction() {
         name: student.name,
         email: student.email,
         phone: student.phone,
-        quizResult: student.quizResult
+        quizResult: student.quizResult,
+        quizProgress: student.quizProgress
       }
     };
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("Error in getCurrentStudentAction:", error);
-    return { success: false, error: error.message || "Error de autenticación." };
+    return { success: false, error: (error instanceof Error ? error.message : "Error de autenticación.") };
   }
 }
 
@@ -67,7 +68,7 @@ export async function getBookedSlotsAction(payload: { dateIso: string }) {
     });
 
     return { success: true, bookedSlots };
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("Error in getBookedSlotsAction:", error);
     return { success: false, bookedSlots: [] };
   }
@@ -103,9 +104,9 @@ export async function getQuizAction() {
         questions: sanitizedQuestions
       }
     };
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("Error in getQuizAction:", error);
-    return { success: false, error: error.message || "Error al cargar el examen." };
+    return { success: false, error: (error instanceof Error ? error.message : "Error al cargar el examen.") };
   }
 }
 
@@ -173,9 +174,9 @@ export async function submitQuizAction(payload: {
       score,
       totalQuestions
     };
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("Error in submitQuizAction:", error);
-    return { success: false, error: error.message || "Error al calificar el examen." };
+    return { success: false, error: (error instanceof Error ? error.message : "Error al calificar el examen.") };
   }
 }
 
@@ -222,7 +223,6 @@ export async function bookIntroCallAction(payload: {
     }
 
     const teacher = await getTeacherData();
-    const teacherPhoneDigits = teacher.phone.replace(/\D/g, "");
 
     const sessionData = await createSession({
       studentId: studentOid,
@@ -282,8 +282,38 @@ export async function bookIntroCallAction(payload: {
       meetingLink: sessionData.meetingLink,
       dateTime: sessionData.dateTime.toISOString()
     };
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("Error in bookIntroCallAction:", error);
-    return { success: false, error: error.message || "Error al agendar la llamada." };
+    return { success: false, error: (error instanceof Error ? error.message : "Error al agendar la llamada.") };
+  }
+}
+
+export async function saveQuizProgressAction(payload: {
+  questionId: string;
+  answers: Record<string, string>;
+}) {
+  try {
+    const cookieStore = await cookies();
+    const studentIdStr = cookieStore.get("student_id")?.value;
+    if (!studentIdStr) return { success: false };
+
+    const studentsCol = await getCollection<Student>(STUDENT_COLLECTION);
+    await studentsCol.updateOne(
+      { _id: new ObjectId(studentIdStr) },
+      {
+        $set: {
+          quizProgress: {
+            lastQuestionId: payload.questionId,
+            answeredQuestions: Object.keys(payload.answers),
+            updatedAt: new Date()
+          },
+          updatedAt: new Date()
+        }
+      }
+    );
+    return { success: true };
+  } catch (error) {
+    console.error("Error saving quiz progress:", error);
+    return { success: false };
   }
 }

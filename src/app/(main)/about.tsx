@@ -1,6 +1,5 @@
 "use client";
 
-import { Badge } from "@/shared/ui/badge";
 import { Button } from "@/shared/ui/button";
 import Image from "next/image";
 
@@ -20,7 +19,7 @@ export default function AboutTutor() {
             <div className="absolute inset-0 rounded-2xl bg-blue-500/10 blur-3xl scale-110" />
             <div className="relative rounded-2xl overflow-hidden bg-[#1a2a50] border border-white/[0.08] aspect-square flex items-center justify-center">
               {/* Replace with <Image src="/tutor.jpg" alt="Tutor" fill className="object-cover" /> */}
-                <Image src="/tutor-avatar.png" alt="Tu tutor" fill className="object-cover" />
+              <Image src="/tutor-avatar.png" alt="Tu tutor" fill className="object-cover" />
             </div>
           </div>
         </div>

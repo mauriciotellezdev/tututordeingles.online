@@ -24,9 +24,9 @@ export async function POST(req: Request) {
       // Fallback for local dev without webhook secret — parse raw body
       event = JSON.parse(body);
     }
-  } catch (err: any) {
-    console.error("Stripe webhook signature verification failed:", err.message);
-    return NextResponse.json({ error: `Webhook Error: ${err.message}` }, { status: 400 });
+  } catch (err: Error | unknown) {
+    console.error("Stripe webhook signature verification failed:", (err as Error).message);
+    return NextResponse.json({ error: `Webhook Error: ${(err as Error).message}` }, { status: 400 });
   }
 
   if (event.type === "checkout.session.completed") {
@@ -56,9 +56,9 @@ export async function POST(req: Request) {
         planType,
       );
       console.log(`Webhook: ${result.message} for session ${session.id} (${result.paymentIntentId})`);
-    } catch (err: any) {
-      console.error("Webhook: error processing payment:", err);
-      return NextResponse.json({ error: err.message }, { status: 500 });
+    } catch (err: Error | unknown) {
+      console.error("Webhook: error processing payment:", (err as Error).message);
+      return NextResponse.json({ error: (err as Error).message }, { status: 500 });
     }
   }
 

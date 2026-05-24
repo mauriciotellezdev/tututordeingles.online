@@ -77,9 +77,9 @@ export async function getStudentDashboardDataAction() {
         paid: s.paid
       }))
     };
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("Error in getStudentDashboardDataAction:", error);
-    return { success: false, error: error.message || "Error al cargar los datos del panel." };
+    return { success: false, error: (error instanceof Error ? error.message : "Error al cargar los datos del panel.") };
   }
 }
 
@@ -106,7 +106,7 @@ export async function getBookedSlotsAction(payload: { dateIso: string }) {
     });
 
     return { success: true, bookedSlots };
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("Error in getBookedSlotsAction:", error);
     return { success: false, bookedSlots: [] };
   }
@@ -280,9 +280,9 @@ export async function bookSessionAction(payload: {
       success: true,
       sessionId
     };
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("Error in bookSessionAction:", error);
-    return { success: false, error: error.message || "Error al agendar la sesión." };
+    return { success: false, error: (error instanceof Error ? error.message : "Error al agendar la sesión.") };
   }
 }
 
@@ -373,9 +373,9 @@ export async function createCheckoutSessionAction(payload: {
       success: true,
       url: session.url
     };
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("Error in createCheckoutSessionAction:", error);
-    return { success: false, error: error.message || "Error al iniciar Stripe checkout." };
+    return { success: false, error: (error instanceof Error ? error.message : "Error al iniciar Stripe checkout.") };
   }
 }
 
@@ -416,8 +416,8 @@ export async function verifyPaymentAction(payload: {
       message: result.message,
       creditsAdded: result.creditsAdded,
     };
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("Error in verifyPaymentAction:", error);
-    return { success: false, error: error.message || "Error al verificar el pago." };
+    return { success: false, error: (error instanceof Error ? error.message : "Error al verificar el pago.") };
   }
 }

@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { Button } from "@/shared/ui/button";
+import Link from "next/link"; 
 
 export default function Header() {
   const [scrolled, setScrolled] = useState(false);
@@ -13,7 +14,7 @@ export default function Header() {
     return () => window.removeEventListener("scroll", onScroll);
   }, []);
 
-  const navLinks: any[] = [];
+  const navLinks: { href: string; label: string }[] = [];
   
   return (
     <header
@@ -25,7 +26,7 @@ export default function Header() {
     >
       <div className="max-w-6xl mx-auto px-6 h-16 flex items-center justify-between">
         {/* Logo */}
-        <a
+        <Link
           href="/"
           className="flex items-center gap-2 group"
           style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}
@@ -34,7 +35,7 @@ export default function Header() {
             Tu Tutor{" "}
             <span className="text-blue-400 font-light">de Inglés</span>
           </span>
-        </a>
+        </Link>
 
         {/* Desktop nav */}
         <nav
@@ -42,13 +43,13 @@ export default function Header() {
           style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}
         >
           {navLinks.map((link) => (
-            <a
+            <Link
               key={link.href}
               href={link.href}
               className="text-white/45 hover:text-white text-sm font-medium transition-colors duration-200"
             >
               {link.label}
-            </a>
+            </Link>
           ))}
         </nav>
 
@@ -57,20 +58,20 @@ export default function Header() {
           className="hidden md:flex items-center gap-3"
           style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}
         >
-          <a
+          <Link
             href="/login"
             className="text-white/45 hover:text-white text-sm font-medium transition-colors duration-200 px-2"
           >
             Entrar
-          </a>
-          <a href="/signup">
+          </Link>
+          <Link href="/signup">
             <Button
               size="sm"
               className="bg-blue-500 hover:bg-blue-400 text-white rounded-full px-5 py-2 text-sm font-semibold transition-all duration-300 hover:scale-[1.02] shadow-lg shadow-blue-500/20"
             >
               Regístrate
             </Button>
-          </a>
+          </Link>
         </div>
 
         {/* Mobile hamburger */}
@@ -96,27 +97,27 @@ export default function Header() {
           style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}
         >
           {navLinks.map((link) => (
-            <a
+            <Link
               key={link.href}
               href={link.href}
               onClick={() => setMenuOpen(false)}
               className="text-white/50 hover:text-white text-sm font-medium transition-colors duration-200"
             >
               {link.label}
-            </a>
+            </Link>
           ))}
           <div className="flex flex-col gap-3 pt-2 border-t border-white/[0.07]">
-            <a href="/login" className="text-white/40 text-sm font-medium">
+            <Link href="/login" className="text-white/40 text-sm font-medium">
               Entrar
-            </a>
-            <a href="/signup">
+            </Link>
+            <Link href="/signup">
               <Button
                 size="sm"
                 className="bg-blue-500 hover:bg-blue-400 text-white rounded-full px-5 py-2 text-sm font-semibold w-fit shadow-lg shadow-blue-500/20"
               >
                 Regístrate
               </Button>
-            </a>
+            </Link>
           </div>
         </nav>
       </div>
