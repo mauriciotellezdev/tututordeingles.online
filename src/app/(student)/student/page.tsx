@@ -43,7 +43,7 @@ interface StudentData {
 
 interface TeacherData {
   email: string;
-  phone: string;
+  phone?: string;
 }
 
 interface SessionData {
@@ -149,7 +149,7 @@ function StudentDashboard() {
 
     if (res.success && res.student) {
       setStudent(res.student);
-      setTeacher(res.teacher || { email: "mauriciotellezdev@gmail.com", phone: "525512345678" });
+      setTeacher(res.teacher || null);
       setUpcomingSessions(res.upcomingSessions || []);
     } else {
       router.push("/login");
