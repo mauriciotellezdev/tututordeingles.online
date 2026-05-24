@@ -57,12 +57,23 @@ export default function Header() {
           className="hidden md:flex items-center gap-3"
           style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}
         >
-          <a
-            href="/logout"
-            className="text-white/45 hover:text-white text-sm font-medium transition-colors duration-200 px-2"
+          <button
+            onClick={async () => {
+              try {
+                await fetch('/api/logout', {
+                  method: 'POST',
+                  headers: {
+                    'Content-Type': 'application/json',
+                  },
+                });
+              } finally {
+                window.location.href = '/login';
+              }
+            }}
+            className="text-white/45 hover:text-white text-sm font-medium transition-colors duration-200 px-2 cursor-pointer"
           >
             Salir
-          </a>
+          </button>
 
         </div>
 
