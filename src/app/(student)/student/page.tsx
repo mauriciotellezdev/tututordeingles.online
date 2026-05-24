@@ -142,6 +142,25 @@ function StudentDashboard() {
 
   const timeSlots = ["09:00", "10:00", "11:00", "13:00", "14:00", "15:00", "16:00", "17:00"];
 
+  // Returns available time slots for a given date, excluding slots already booked by the student
+  const getAvailableTimeSlots = (date: Date) => {
+    // Find times already booked on this date
+    const bookedSlots = upcomingSessions
+      .filter((session) => {
+        const sessionDate = new Date(session.dateTime);
+        return sessionDate.toDateString() === date.toDateString();
+      })
+      .map((session) => {
+        const d = new Date(session.dateTime);
+        const hours = String(d.getHours()).padStart(2, "0");
+        const minutes = String(d.getMinutes()).padStart(2, "0");
+        return `${hours}:${minutes}`;
+      });
+
+    // Filter out booked slots
+    return timeSlots.filter((slot) => !bookedSlots.includes(slot));
+  };
+
   // Handle Booking
   const handleBookSession = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -182,21 +201,8 @@ function StudentDashboard() {
     const res = await createCheckoutSessionAction({ planType });
     setPurchaseLoading(null);
 
-    if (res.success) {
-      if (res.mockRedirect) {
-        // Stripe keys are missing. Open the mock purchase simulator.
-        setMockPlanType(planType);
-        setShowMockModal(true);
-      } else if (res.url) {
-        // Redirect to Stripe checkout
-        window.location.href = res.url;
-      }
-    } else {
-      setStatusMessage({
-        type: "error",
-        text: res.error || "Error al iniciar la compra."
-      });
-    }
+
+    // TODO: Handle errors and edge cases more robustly
   };
 
 
@@ -584,43 +590,6 @@ function StudentDashboard() {
               </Card>
             )}
 
-                    {/* Confirm Button */}
-                    <Button
-                      type="submit"
-                      className="w-full py-3.5 rounded-xl text-sm font-semibold flex items-center justify-center gap-2"
-                      disabled={bookingLoading || !selectedDate || !selectedTimeSlot || (bookingType === "tutoring" && student.credits < 1)}
-                    >
-                      {bookingLoading ? "Agendando..." : "Confirmar y Reservar Horario"}
-                    </Button>
-
-                    {bookingType === "tutoring" && student.credits < 1 && (
-                      <p className="text-center text-[10px] text-destructive font-semibold">
-                        Debes comprar créditos antes de poder agendar una clase privada.
-                      </p>
-                    )}
-                  </form>
-                </CardContent>
-              </Card>
-            ) : (
-              <Card className="bg-[#0f1729]/40 border-white/[0.08] backdrop-blur-xl rounded-2xl">
-                <CardHeader>
-                  <CardTitle className="text-lg font-bold flex items-center gap-2 text-white">
-                    <PlusCircle className="size-5 text-blue-400" /> Comprar Créditos
-                  </CardTitle>
-                  <CardDescription className="text-white/40 text-xs">
-                    No tienes suficientes créditos para agendar una clase privada
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <Button
-                    onClick={() => handleBuyCredits("single")}
-                    className="w-full py-3.5 rounded-xl text-sm font-semibold flex items-center justify-center gap-2"
-                  >
-                    <CreditCard className="size-5" /> Comprar 1 Crédito
-                  </Button>
-                </CardContent>
-              </Card>
-            )}
 
           </div>
 
