@@ -12,9 +12,15 @@ const plusJakarta = Plus_Jakarta_Sans({
 });
 
 export const metadata: Metadata = {
-  title: "Tu Tutor de Inglés — Clases privadas 1 a 1",
+  title: {
+    default: "Tu Tutor de Inglés — Clases privadas 1 a 1",
+    template: "%s | Tu Tutor de Inglés",
+  },
   description:
-    "Clases privadas de inglés para profesionales hispanohablantes. Aprende inglés real con un tutor nativo 1 a 1.",
+    "Clases privadas de inglés para profesionales hispanohablantes.",
+  icons: {
+    icon: "/favicon.svg",
+  },
 };
 
 export default function RootLayout({
