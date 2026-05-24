@@ -1,61 +1,83 @@
 import nodemailer from "nodemailer";
 
-const getTransporter = () => {
+const BREVO_API = "https://api.brevo.com/v3/smtp/email";
+
+async function sendViaBrevoApi(options: {
+  to: string;
+  subject: string;
+  text: string;
+  html?: string;
+  icalEvent?: { filename: string; content: string | Buffer };
+}) {
+  const apiKey = process.env.BREVO_API_KEY;
+  if (!apiKey) throw new Error("BREVO_API_KEY not set");
+
+  const payload: Record<string, unknown> = {
+    sender: { name: "Tu Tutor de Inglés", email: "noreply@tututordeingles.online" },
+    to: [{ email: options.to }],
+    subject: options.subject,
+    textContent: options.text,
+  };
+
+  if (options.html) payload.htmlContent = options.html;
+
+  if (options.icalEvent) {
+    payload.attachment = [
+      {
+        name: options.icalEvent.filename,
+        content: Buffer.isBuffer(options.icalEvent.content)
+          ? options.icalEvent.content.toString("base64")
+          : Buffer.from(options.icalEvent.content).toString("base64"),
+      },
+    ];
+  }
+
+  const res = await fetch(BREVO_API, {
+    method: "POST",
+    headers: {
+      "api-key": apiKey,
+      "Content-Type": "application/json",
+      Accept: "application/json",
+    },
+    body: JSON.stringify(payload),
+  });
+
+  if (!res.ok) {
+    const body = await res.text();
+    throw new Error(`Brevo API error ${res.status}: ${body}`);
+  }
+
+  console.log(`Email sent via Brevo API to ${options.to}`);
+}
+
+function getTransporter() {
   const host = process.env.MAIL_HOST || "127.0.0.1";
   const port = parseInt(process.env.MAIL_PORT || "1026");
   const user = process.env.MAIL_USER;
   const pass = process.env.MAIL_PASS;
 
-  const transportConfig: any = {
-    host,
-    port,
-  };
+  const transportConfig: any = { host, port };
 
   const isLocal = host === "127.0.0.1" || host === "localhost";
-  if (isLocal) {
-    transportConfig.ignoreTLS = true;
-  }
+  if (isLocal) transportConfig.ignoreTLS = true;
 
-  // Only append auth if credentials are provided
   if (user && pass) {
     transportConfig.auth = { user, pass };
-  } else {
-    // If not localhost/local network and no auth, warn and mock
-    if (!isLocal) {
-      console.warn(
-        "Mail environment variables (MAIL_USER / MAIL_PASS) are not set. Emails will be logged to console in mock format."
-      );
-      return null;
-    }
   }
 
   return nodemailer.createTransport(transportConfig);
-};
+}
 
-export async function sendMail(options: {
+async function sendViaSmtp(options: {
   to: string;
   subject: string;
   text: string;
   html?: string;
-  icalEvent?: {
-    filename: string;
-    content: string | Buffer;
-  };
+  icalEvent?: { filename: string; content: string | Buffer };
 }) {
-  const transporter = getTransporter();
   const from = process.env.MAIL_FROM || "Tu Tutor de Inglés <noreply@tututordeingles.online>";
 
-  if (!transporter) {
-    console.log("\n=== MOCK EMAIL SENT ===");
-    console.log(`To: ${options.to}`);
-    console.log(`Subject: ${options.subject}`);
-    console.log(`Body: ${options.text}`);
-    if (options.icalEvent) {
-      console.log(`Calendar Attachment Included: ${options.icalEvent.filename}`);
-    }
-    console.log("=======================\n");
-    return { mock: true };
-  }
+  const transporter = getTransporter();
 
   const mailOptions: any = {
     from,
@@ -75,6 +97,33 @@ export async function sendMail(options: {
   }
 
   const info = await transporter.sendMail(mailOptions);
-  console.log(`Email sent successfully: ${info.messageId}`);
-  return info;
+  console.log(`Email sent via SMTP: ${info.messageId}`);
+}
+
+export async function sendMail(options: {
+  to: string;
+  subject: string;
+  text: string;
+  html?: string;
+  icalEvent?: {
+    filename: string;
+    content: string | Buffer;
+  };
+}) {
+  if (process.env.BREVO_API_KEY) {
+    return sendViaBrevoApi(options);
+  }
+
+  if (process.env.MAIL_HOST && process.env.MAIL_HOST !== "127.0.0.1" && process.env.MAIL_HOST !== "localhost") {
+    return sendViaSmtp(options);
+  }
+
+  console.log("\n=== MOCK EMAIL ===");
+  console.log(`To: ${options.to}`);
+  console.log(`Subject: ${options.subject}`);
+  console.log(`Body: ${options.text}`);
+  if (options.icalEvent) {
+    console.log(`Calendar: ${options.icalEvent.filename}`);
+  }
+  console.log("==================\n");
 }
