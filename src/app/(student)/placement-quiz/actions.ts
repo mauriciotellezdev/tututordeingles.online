@@ -115,8 +115,7 @@ export async function submitQuizAction(payload: {
     quiz.questions.forEach(q => {
       const submitted = answers.find(a => a.questionId === q._id.toString());
       if (submitted) {
-        const correctAnswer = q.answers.find(ans => ans.correct);
-        if (correctAnswer && correctAnswer._id.toString() === submitted.answerId) {
+        if (q.correctAnswerId.toString() === submitted.answerId) {
           score += 1;
         }
       }
@@ -179,7 +178,7 @@ export async function bookIntroCallAction(payload: {
       type: "intro",
       dateTime,
       duration: 30,
-      meetingLink: `https://wa.me/${process.env.TEACHER_PHONE.replace(/\D/g, '')}`
+      meetingLink: `https://wa.me/${(process.env.TEACHER_PHONE || "525512345678").replace(/\D/g, '')}`
     });
 
     const result = await sessionsCol.insertOne(sessionData);

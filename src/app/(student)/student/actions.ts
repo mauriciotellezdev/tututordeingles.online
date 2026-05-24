@@ -113,41 +113,58 @@ export async function bookSessionAction(payload: {
       return { success: false, error: "Las clases deben agendarse con al menos 24 horas de anticipación." };
     }
 
-    // 2. Enforce credits for tutoring sessions
+    // 2. Enforce credits for tutoring sessions, create session
+    const sessionsCol = await getCollection(SESSION_COLLECTION);
+    const creditsCol = await getCollection(CREDIT_COLLECTION);
+    let sessionId: string;
+
     if (type === "tutoring") {
-      const currentCredits = student.credits || 0;
+      const creditAgg = await creditsCol.aggregate<{ total: number }>([
+        { $match: { studentId: studentOid } },
+        { $group: { _id: null, total: { $sum: "$amount" } } },
+      ]).toArray();
+      const currentCredits = creditAgg.length > 0 ? creditAgg[0].total : 0;
+
       if (currentCredits < 1) {
         return { success: false, error: "No tienes suficientes créditos. Compra créditos primero." };
       }
 
-      // Decrement student credits
-      await studentsCol.updateOne(
-        { _id: studentOid },
-        {
-          $inc: { credits: -1 },
-          $set: { updatedAt: new Date() }
-        }
+      const { insertedId: creditId } = await creditsCol.insertOne(
+        createCredit({
+          studentId: studentIdStr,
+          amount: -1,
+          source: "debit",
+          description: "Clase agendada",
+        })
       );
+
+      const sessionData = createSession({
+        studentId: studentOid,
+        type,
+        dateTime,
+        duration: 60,
+        meetingLink: `https://wa.me/${student.phone.replace(/\D/g, '')}`,
+        creditId: creditId as ObjectId,
+      });
+      const result = await sessionsCol.insertOne(sessionData);
+      sessionId = result.insertedId.toString();
+    } else {
+      // Intro session — free, no credit needed
+      const sessionData = createSession({
+        studentId: studentOid,
+        type,
+        dateTime,
+        duration: 30,
+        meetingLink: `https://wa.me/${student.phone.replace(/\D/g, '')}`,
+      });
+      const result = await sessionsCol.insertOne(sessionData);
+      sessionId = result.insertedId.toString();
     }
 
-    // Create session document
-    const sessionsCol = await getCollection(SESSION_COLLECTION);
-    const sessionData = createSession({
-      studentId: studentOid,
-      type,
-      dateTime,
-      duration: 60, // 60 minutes for tutoring, intro will default or we override
-      meetingLink: `https://wa.me/${student.phone.replace(/\D/g, '')}`,
-      paid: type === "tutoring" ? true : false
-    });
-
-    // Intro is 30 mins, tutoring is 60 mins
-    if (type === "intro") {
-      sessionData.duration = 30;
+    const sessionData = await sessionsCol.findOne({ _id: new ObjectId(sessionId) });
+    if (!sessionData) {
+      return { success: false, error: "Error al crear la sesión." };
     }
-
-    const result = await sessionsCol.insertOne(sessionData);
-    const sessionId = result.insertedId.toString();
 
     // 3. Build the ICS Calendar invitation
     const endDateTime = new Date(dateTime);

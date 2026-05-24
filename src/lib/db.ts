@@ -66,8 +66,8 @@ function wrapCollection<T extends Document>(col: Collection<T>): Collection<T> {
 
       // Methods that return cursors (thenable in mongodb v7) — don't await, preserve chaining
       if (prop === 'find' || prop === 'aggregate') {
-        return function(...args: unknown[]) {
-          const cursor = original.apply(this, args) as any;
+        return function(this: Collection<T>, ...args: unknown[]) {
+          const cursor = (original as Function).apply(this, args) as any;
           return cursor;
         };
       }

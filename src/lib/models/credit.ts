@@ -4,7 +4,7 @@ export interface Credit {
   _id: ObjectId;
   studentId: ObjectId;
   amount: number;
-  source: "purchase" | "bonus" | "adjustment";
+  source: "purchase" | "bonus" | "adjustment" | "debit";
   description?: string;
   createdAt: Date;
   stripeChargeId?: string;
@@ -13,7 +13,7 @@ export interface Credit {
 export interface CreditPurchaseInput {
   studentId: string;
   amount: number;
-  source: "purchase" | "bonus" | "adjustment";
+  source: "purchase" | "bonus" | "adjustment" | "debit";
   description?: string;
   stripeChargeId?: string;
 }

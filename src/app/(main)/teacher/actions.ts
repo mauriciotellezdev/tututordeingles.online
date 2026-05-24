@@ -6,6 +6,7 @@ import { getCollection } from "@/lib/db";
 import { STUDENT_COLLECTION, Student } from "@/lib/models/student";
 import { SESSION_COLLECTION } from "@/lib/models/session";
 import { PAYMENT_COLLECTION } from "@/lib/models/payment";
+import { CREDIT_COLLECTION } from "@/lib/models/credit";
 
 /**
  * Action 1: Get teacher dashboard data (upcoming sessions & active students)
@@ -76,6 +77,15 @@ export async function getTeacherDashboardDataAction() {
       _id: { $in: activeStudentOids }
     }).toArray();
 
+    // Compute credit balances for active students
+    const creditsCol = await getCollection(CREDIT_COLLECTION);
+    const creditBalances = await creditsCol.aggregate<{ studentId: string; total: number }>([
+      { $match: { studentId: { $in: activeStudentOids } } },
+      { $group: { _id: "$studentId", total: { $sum: "$amount" } } },
+      { $project: { studentId: { $toString: "$_id" }, total: 1, _id: 0 } },
+    ]).toArray();
+    const balanceMap = new Map(creditBalances.map(b => [b.studentId, b.total]));
+
     return {
       success: true,
       upcomingSessions: upcomingSessions.map(s => ({
@@ -98,7 +108,7 @@ export async function getTeacherDashboardDataAction() {
         name: st.name,
         email: st.email,
         phone: st.phone,
-        credits: st.credits || 0,
+        credits: balanceMap.get(st._id.toString()) || 0,
         quizResult: st.quizResult
       }))
     };
