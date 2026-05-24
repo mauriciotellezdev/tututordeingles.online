@@ -44,7 +44,36 @@ export async function getCurrentStudentAction() {
 }
 
 /**
- * Action 2: Get the placement quiz (excluding correct keys for cheating prevention)
+ * Action 2: Get booked hour-slots for a given date (across all students)
+ */
+export async function getBookedSlotsAction(payload: { dateIso: string }) {
+  try {
+    const { dateIso } = payload;
+    const start = new Date(dateIso);
+    start.setHours(0, 0, 0, 0);
+    const end = new Date(start);
+    end.setDate(end.getDate() + 1);
+
+    const sessionsCol = await getCollection(SESSION_COLLECTION);
+    const booked = await sessionsCol
+      .find({ status: "booked", dateTime: { $gte: start, $lt: end } })
+      .project({ dateTime: 1 })
+      .toArray();
+
+    const bookedSlots = booked.map(s => {
+      const h = String(s.dateTime.getHours()).padStart(2, "0");
+      return `${h}:00`;
+    });
+
+    return { success: true, bookedSlots };
+  } catch (error: any) {
+    console.error("Error in getBookedSlotsAction:", error);
+    return { success: false, bookedSlots: [] };
+  }
+}
+
+/**
+ * Action 3: Get the placement quiz (excluding correct keys for cheating prevention)
  */
 export async function getQuizAction() {
   try {
@@ -172,6 +201,21 @@ export async function bookIntroCallAction(payload: {
     }
 
     const dateTime = new Date(dateTimeIso);
+
+    // Check for existing booking in the same hour slot
+    const hourStart = new Date(dateTime);
+    hourStart.setMinutes(0, 0, 0);
+    const hourEnd = new Date(hourStart);
+    hourEnd.setHours(hourEnd.getHours() + 1);
+
+    const existingSlot = await sessionsCol.findOne({
+      status: "booked",
+      dateTime: { $gte: hourStart, $lt: hourEnd }
+    });
+
+    if (existingSlot) {
+      return { success: false, error: "Este horario ya está ocupado. Por favor elige otro." };
+    }
 
     const sessionData = createSession({
       studentId: studentOid,

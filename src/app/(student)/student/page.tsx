@@ -11,6 +11,7 @@ import {
   logoutAction, 
   createCheckoutSessionAction,
   verifyPaymentAction,
+  getBookedSlotsAction,
 } from "./actions";
 import { 
   Calendar as CalendarIcon, 
@@ -69,9 +70,19 @@ function StudentDashboard() {
   const [bookingType, setBookingType] = useState<"tutoring">("tutoring");
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [selectedTimeSlot, setSelectedTimeSlot] = useState<string | null>(null);
+  const [bookedSlots, setBookedSlots] = useState<string[]>([]);
   const [bookingLoading, setBookingLoading] = useState(false);
   const [bookingError, setBookingError] = useState<string | null>(null);
   const [bookingSuccess, setBookingSuccess] = useState<string | null>(null);
+
+  // Fetch booked slots whenever selectedDate changes
+  useEffect(() => {
+    if (!selectedDate) { setBookedSlots([]); return; }
+    (async () => {
+      const res = await getBookedSlotsAction({ dateIso: selectedDate.toISOString() });
+      if (res.success) setBookedSlots(res.bookedSlots);
+    })();
+  }, [selectedDate]);
 
   // Purchase State
   const [purchaseLoading, setPurchaseLoading] = useState<string | null>(null); // "single" or "package" or null

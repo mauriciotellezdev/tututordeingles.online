@@ -4,7 +4,7 @@ import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/shared/ui/button";
 import { AlertCircle, Calendar as CalendarIcon, Clock, ChevronRight, Award } from "lucide-react";
-import { getCurrentStudentAction, bookIntroCallAction } from "@/app/(student)/placement-quiz/actions";
+import { getCurrentStudentAction, bookIntroCallAction, getBookedSlotsAction } from "@/app/(student)/placement-quiz/actions";
 
 interface StudentData {
   _id: string;
@@ -28,8 +28,18 @@ export default function BookingPage() {
   // Booking State
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [selectedTimeSlot, setSelectedTimeSlot] = useState<string | null>(null);
+  const [bookedSlots, setBookedSlots] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  // Fetch booked slots whenever selectedDate changes
+  useEffect(() => {
+    if (!selectedDate) { setBookedSlots([]); return; }
+    (async () => {
+      const res = await getBookedSlotsAction({ dateIso: selectedDate.toISOString() });
+      if (res.success) setBookedSlots(res.bookedSlots);
+    })();
+  }, [selectedDate]);
 
   // Verify session on load
   useEffect(() => {
@@ -204,15 +214,19 @@ export default function BookingPage() {
             </label>
             <div className="grid grid-cols-4 gap-2">
               {timeSlots.map((slot) => {
+                const isBooked = bookedSlots.includes(slot);
                 const isSelected = selectedTimeSlot === slot;
                 return (
                   <button
                     key={slot}
+                    disabled={isBooked}
                     onClick={() => setSelectedTimeSlot(slot)}
                     className={`p-2.5 rounded-xl border text-xs font-bold text-center transition-all ${
-                      isSelected
-                        ? "border-blue-500 bg-blue-500/10 text-white"
-                        : "border-white/[0.06] bg-[#111827]/25 text-white/60 hover:border-white/15 hover:text-white"
+                      isBooked
+                        ? "border-white/[0.03] bg-white/[0.02] text-white/20 cursor-not-allowed line-through"
+                        : isSelected
+                          ? "border-blue-500 bg-blue-500/10 text-white"
+                          : "border-white/[0.06] bg-[#111827]/25 text-white/60 hover:border-white/15 hover:text-white"
                     }`}
                   >
                     {slot}
