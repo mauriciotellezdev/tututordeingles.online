@@ -6,7 +6,7 @@ import { getCollection } from "@/lib/db";
 import { STUDENT_COLLECTION, Student } from "@/lib/models/student";
 import { createSession, SESSION_COLLECTION } from "@/lib/models/session";
 import { createCredit, CREDIT_COLLECTION } from "@/lib/models/credit";
-import { createPayment, applyPaymentStatus, PAYMENT_COLLECTION } from "@/lib/models/payment";
+import { processCompletedPayment } from "@/lib/stripe-verify";
 import { sendMail } from "@/lib/mail";
 import Stripe from "stripe";
 
@@ -342,69 +342,13 @@ export async function verifyPaymentAction(payload: {
 
     const paymentIntentId = session.payment_intent as string;
     const stripeCustomerId = session.customer as string;
-    const studentOid = new ObjectId(studentId);
-    const creditsToAdd = planType === "single" ? 1 : 12;
-    const amount = planType === "single" ? 30000 : 240000;
 
-    const paymentsCol = await getCollection(PAYMENT_COLLECTION);
-    const creditsCol = await getCollection(CREDIT_COLLECTION);
-
-    // 1:1 mapping: for every Stripe PaymentIntent, exactly one payment record + one credit record
-    const existingPayment = await paymentsCol.findOne({ stripePaymentIntentId: paymentIntentId });
-
-    if (existingPayment) {
-      // Payment exists — check if credit was created (recover from partial failure)
-      const existingCredit = await creditsCol.findOne({ stripeChargeId: paymentIntentId });
-      if (existingCredit) {
-        return { success: true, message: "Pago ya procesado anteriormente.", creditsAdded: 0 };
-      }
-      // Recovery: payment exists but credit doesn't → create the missing credit
-      await creditsCol.insertOne(
-        createCredit({
-          studentId,
-          amount: creditsToAdd,
-          source: "purchase",
-          description: planType === "single" ? "Compra 1 crédito" : "Paquete 12 créditos",
-          stripeChargeId: paymentIntentId,
-        })
-      );
-      return { success: true, message: "Créditos añadidos", creditsAdded: creditsToAdd };
-    }
-
-    // Persist stripeCustomerId on student
-    const studentsCol = await getCollection<Student>(STUDENT_COLLECTION);
-    await studentsCol.updateOne(
-      { _id: studentOid, stripeCustomerId: { $exists: false } },
-      { $set: { stripeCustomerId } }
-    );
-
-    // Insert payment first, then credit — if this crashes, retry hits the recovery path above
-    await paymentsCol.insertOne({
-      ...createPayment({
-        studentId: studentOid,
-        stripePaymentIntentId: paymentIntentId,
-        stripeCustomerId,
-        amount,
-        currency: "mxn",
-        description: planType === "single" ? "Compra 1 crédito" : "Paquete 12 créditos",
-      }),
-      ...applyPaymentStatus("succeeded"),
-    });
-
-    await creditsCol.insertOne(
-      createCredit({
-        studentId,
-        amount: creditsToAdd,
-        source: "purchase",
-        description: planType === "single" ? "Compra 1 crédito" : "Paquete 12 créditos",
-        stripeChargeId: paymentIntentId,
-      })
-    );
+    const result = await processCompletedPayment(studentId, paymentIntentId, stripeCustomerId, planType);
 
     return {
-      success: true,
-      message: "Créditos añadidos",
-      creditsAdded: creditsToAdd,
+      success: result.success,
+      message: result.message,
+      creditsAdded: result.creditsAdded,
     };
   } catch (error: any) {
     console.error("Error in verifyPaymentAction:", error);
