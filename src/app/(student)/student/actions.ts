@@ -172,7 +172,7 @@ export async function bookSessionAction(payload: {
       ].join("\r\n");
 
     const emailSubject = `Confirmación: ${titleText} Agendada 🎉`;
-    const emailText = `¡Hola ${student.name}!\n\nTu clase de inglés ha sido agendada con éxito.\n\nDetalles:\n- Tipo: ${titleText}\n- Fecha y Hora: ${dateTime.toLocaleString("es-MX", { timeZone: "America/Mexico_City" })}\n- Duración: ${durationText}\n- Plataforma: WhatsApp\n- Número: ${process.env.WHATSAPP_NUMBER}\n\nTe adjuntamos una invitación de calendario (.ics) para que la agregues a tu agenda.\n\n¡Nos vemos en clase!\nMauricio Tellez\nTu Tutor de Inglés`;
+    const emailText = `¡Hola ${student.name}!\n\nTu clase de inglés ha sido agendada con éxito.\n\nDetalles:\n- Tipo: ${titleText}\n- Fecha y Hora: ${dateTime.toLocaleString("es-MX", { timeZone: "America/Mexico_City" })}\n- Duración: ${durationText}\n- Plataforma: WhatsApp\n- Número: ${process.env.WHATSAPP_NUMBER}\n- Teléfono: ${student.phone}\n\nTe adjuntamos una invitación de calendario (.ics) para que la agregues a tu agenda.\n\n¡Nos vemos en clase!\nMauricio Tellez\nTu Tutor de Inglés`;
 
     // Send confirmation email to student
     await sendMail({
@@ -266,7 +266,8 @@ export async function createCheckoutSessionAction(payload: {
       payment_method_types: ["card"],
       line_items: lineItems,
       mode: "payment",
-      success_url: `${appUrl}/student?checkout_success=true&plan=${planType}&session_id=${session.id}`,
+      // Use Stripe placeholder for session ID
+      success_url: `${appUrl}/student?checkout_success=true&plan=${planType}&session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${appUrl}/student?checkout_cancel=true`,
       metadata: {
         studentId: studentIdStr,

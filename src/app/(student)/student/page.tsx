@@ -200,9 +200,13 @@ function StudentDashboard() {
     setPurchaseLoading(planType);
     const res = await createCheckoutSessionAction({ planType });
     setPurchaseLoading(null);
-
-
-    // TODO: Handle errors and edge cases more robustly
+    if (res.success && res.url) {
+      // Redirect to Stripe Checkout
+      window.location.href = res.url;
+    } else {
+      // Show error banner
+      setStatusMessage({ type: "error", text: res.error || "Error al iniciar compra" });
+    }
   };
 
 
