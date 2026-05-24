@@ -4,6 +4,7 @@ import { cookies } from "next/headers";
 import { getCollection } from "@/lib/db";
 import { ObjectId } from "mongodb";
 import { STUDENT_COLLECTION, Student, generateVerificationCode } from "@/lib/models/student";
+import { getTeacherData } from "@/lib/models/teacher";
 import { sendMail } from "@/lib/mail";
 
 const TEACHER_AUTH_COLLECTION = "teacher_auth";
@@ -14,7 +15,8 @@ const TEACHER_AUTH_COLLECTION = "teacher_auth";
 export async function requestLoginCodeAction(email: string) {
   try {
     const normalizedEmail = email.toLowerCase().trim();
-    const teacherEmail = (process.env.TEACHER_EMAIL || "mauriciotellezdev@gmail.com").toLowerCase().trim();
+    const teacher = await getTeacherData();
+    const teacherEmail = teacher.email.toLowerCase().trim();
 
     let isTeacher = normalizedEmail === teacherEmail;
     let studentId: ObjectId | undefined = undefined;
@@ -97,7 +99,8 @@ export async function verifyLoginCodeAction(payload: { email: string; code: stri
     const { email, code } = payload;
     const normalizedEmail = email.toLowerCase().trim();
     const cleanCode = code.trim();
-    const teacherEmail = (process.env.TEACHER_EMAIL || "mauriciotellezdev@gmail.com").toLowerCase().trim();
+    const teacher = await getTeacherData();
+    const teacherEmail = teacher.email.toLowerCase().trim();
 
     const isTeacher = normalizedEmail === teacherEmail;
     const now = new Date();

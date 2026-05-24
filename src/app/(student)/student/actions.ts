@@ -5,6 +5,7 @@ import { ObjectId } from "mongodb";
 import { getCollection } from "@/lib/db";
 import { STUDENT_COLLECTION, Student } from "@/lib/models/student";
 import { createSession, SESSION_COLLECTION } from "@/lib/models/session";
+import { getTeacherData } from "@/lib/models/teacher";
 import { createCredit, CREDIT_COLLECTION } from "@/lib/models/credit";
 import { processCompletedPayment } from "@/lib/stripe-verify";
 import { sendMail } from "@/lib/mail";
@@ -50,6 +51,8 @@ export async function getStudentDashboardDataAction() {
       .sort({ dateTime: 1 })
       .toArray();
 
+    const teacher = await getTeacherData();
+
     return {
       success: true,
       student: {
@@ -61,8 +64,8 @@ export async function getStudentDashboardDataAction() {
         quizResult: student.quizResult
       },
       teacher: {
-        email: process.env.TEACHER_EMAIL || "mauriciotellezdev@gmail.com",
-        phone: process.env.TEACHER_PHONE
+        email: teacher.email,
+        phone: teacher.phone,
       },
       upcomingSessions: upcomingSessions.map(s => ({
         _id: s._id.toString(),
@@ -151,6 +154,8 @@ export async function bookSessionAction(payload: {
       return { success: false, error: "Este horario ya está ocupado. Por favor elige otro." };
     }
 
+    const teacher = await getTeacherData();
+
     // 1. Enforce 24 hours advance notice
     const minimumTime = new Date();
     minimumTime.setHours(minimumTime.getHours() + 24);
@@ -234,7 +239,7 @@ export async function bookSessionAction(payload: {
         `DTSTART:${startStr}`,
         `DTEND:${endStr}`,
         `SUMMARY:${titleText} - Tu Tutor de Inglés`,
-        `DESCRIPTION:Clase de inglés de ${durationText} con Mauricio. WhatsApp: ${process.env.TEACHER_PHONE}`,
+        `DESCRIPTION:Clase de inglés de ${durationText} con Mauricio. WhatsApp: ${teacher.phone}`,
         "LOCATION:WhatsApp",
         "STATUS:CONFIRMED",
         "SEQUENCE:0",
@@ -243,7 +248,7 @@ export async function bookSessionAction(payload: {
       ].join("\r\n");
 
     const emailSubject = `Confirmación: ${titleText} Agendada 🎉`;
-    const emailText = `¡Hola ${student.name}!\n\nTu clase de inglés ha sido agendada con éxito.\n\nDetalles:\n- Tipo: ${titleText}\n- Fecha y Hora: ${dateTime.toLocaleString("es-MX", { timeZone: "America/Mexico_City" })}\n- Duración: ${durationText}\n- Plataforma: WhatsApp\n- Número: ${process.env.TEACHER_PHONE}\n- Teléfono: ${student.phone}\n\nTe adjuntamos una invitación de calendario (.ics) para que la agregues a tu agenda.\n\n¡Nos vemos en clase!\nMauricio Tellez\nTu Tutor de Inglés`;
+    const emailText = `¡Hola ${student.name}!\n\nTu clase de inglés ha sido agendada con éxito.\n\nDetalles:\n- Tipo: ${titleText}\n- Fecha y Hora: ${dateTime.toLocaleString("es-MX", { timeZone: "America/Mexico_City" })}\n- Duración: ${durationText}\n- Plataforma: WhatsApp\n- Número: ${teacher.phone}\n- Teléfono: ${student.phone}\n\nTe adjuntamos una invitación de calendario (.ics) para que la agregues a tu agenda.\n\n¡Nos vemos en clase!\nMauricio Tellez\nTu Tutor de Inglés`;
 
     // Send confirmation email to student
     await sendMail({
@@ -257,7 +262,7 @@ export async function bookSessionAction(payload: {
     });
 
     // Also notify teacher
-    const teacherEmail = process.env.TEACHER_EMAIL || "mauriciotellezdev@gmail.com";
+    const teacherEmail = teacher.email;
     const teacherSubject = `Nueva clase agendada: ${student.name} 📅`;
     const teacherText = `Hola Mauricio,\n\nSe ha agendado una nueva clase.\n\nEstudiante: ${student.name}\nEmail: ${student.email}\nTeléfono: ${student.phone}\nTipo: ${titleText}\nFecha: ${dateTime.toLocaleString("es-MX", { timeZone: "America/Mexico_City" })}\n\nPlataforma: WhatsApp`;
 

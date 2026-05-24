@@ -1,4 +1,5 @@
 import { ObjectId } from "mongodb";
+import { getTeacherData } from "./teacher";
 
 export type SessionType = "intro" | "tutoring";
 export type SessionStatus = "booked" | "completed" | "canceled";
@@ -35,7 +36,7 @@ export function isPaidSession(session: Session): boolean {
   return session.creditId !== undefined;
 }
 
-export function createSession(input: CreateSessionInput): Omit<Session, "_id"> {
+export async function createSession(input: CreateSessionInput): Promise<Omit<Session, "_id">> {
   if (input.type === "tutoring" && !input.creditId) {
     throw new Error("Tutoring sessions require a creditId");
   }
@@ -49,10 +50,8 @@ export function createSession(input: CreateSessionInput): Omit<Session, "_id"> {
     throw new Error("Sessions must be booked at least 24 hours in the future");
   }
 
-  const teacherPhone = process.env.TEACHER_PHONE;
-  if (!teacherPhone) {
-    throw new Error("TEACHER_PHONE env variable is not set");
-  }
+  const teacher = await getTeacherData();
+  const teacherPhone = teacher.phone.replace(/\D/g, "");
 
   const now = new Date();
   return {

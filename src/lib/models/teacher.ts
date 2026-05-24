@@ -1,5 +1,6 @@
 import { randomInt } from "crypto";
 import { ObjectId } from "mongodb";
+import { getCollection } from "@/lib/db";
 
 export interface Teacher {
   _id: ObjectId;
@@ -13,6 +14,15 @@ export interface Teacher {
 }
 
 export const TEACHER_COLLECTION = "teachers";
+
+export async function getTeacherData(): Promise<Pick<Teacher, "email" | "phone">> {
+  const col = await getCollection<Teacher>(TEACHER_COLLECTION);
+  const teacher = await col.findOne({}, { projection: { email: 1, phone: 1 } });
+  if (!teacher) {
+    throw new Error("Teacher record not found in database");
+  }
+  return { email: teacher.email, phone: teacher.phone };
+}
 
 export function isTeacherEmailVerified(teacher: Teacher): boolean {
   return !teacher.verificationCode && !teacher.verificationCodeExpires;
