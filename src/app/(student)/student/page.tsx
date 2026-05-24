@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, Suspense } from "react";
+import React, { useState, useEffect, Suspense, useRef } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Button } from "@/shared/ui/button";
 import { Badge } from "@/shared/ui/badge";
@@ -79,7 +79,58 @@ function StudentDashboard() {
   // Notifications
   const [statusMessage, setStatusMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
 
-  // Load Data
+  const verifiedSession = useRef<string | null>(null);
+
+  // Load initial dashboard data
+  useEffect(() => {
+    loadDashboardData();
+  }, []);
+
+  // Verify payment after Stripe redirect (once student data has loaded)
+  useEffect(() => {
+    const success = searchParams.get("checkout_success");
+    const cancel = searchParams.get("checkout_cancel");
+    const plan = searchParams.get("plan");
+    const sessionId = searchParams.get("session_id");
+
+    if (cancel === "true") {
+      setStatusMessage({
+        type: "error",
+        text: "La compra fue cancelada. No se realizó ningún cargo."
+      });
+      router.replace("/student");
+      return;
+    }
+
+    if (success === "true" && sessionId && plan && student) {
+      if (verifiedSession.current === sessionId) return; // already verified
+      verifiedSession.current = sessionId;
+
+      (async () => {
+        const verifyRes = await verifyPaymentAction({
+          sessionId,
+          studentId: student._id,
+          planType: plan as "single" | "package"
+        });
+
+        if (verifyRes.success) {
+          setStatusMessage({
+            type: "success",
+            text: `¡Compra de ${plan === "single" ? "1 clase" : "12 clases"} procesada con éxito! Tus créditos han sido actualizados.`
+          });
+          loadDashboardData();
+        } else {
+          setStatusMessage({
+            type: "error",
+            text: verifyRes.error || "Error al verificar el pago."
+          });
+        }
+
+        router.replace("/student");
+      })();
+    }
+  }, [searchParams, student]);
+
   const loadDashboardData = async () => {
     setLoading(true);
     const res = await getStudentDashboardDataAction();
@@ -93,30 +144,6 @@ function StudentDashboard() {
       router.push("/login");
     }
   };
-
-  useEffect(() => {
-    loadDashboardData();
-
-    // Check query parameters for Stripe checkout callbacks
-    const success = searchParams.get("checkout_success");
-    const cancel = searchParams.get("checkout_cancel");
-    const plan = searchParams.get("plan");
-
-    if (success === "true") {
-      setStatusMessage({
-        type: "success",
-        text: `¡Compra de ${plan === "single" ? "1 clase" : "12 clases"} procesada con éxito! Tus créditos han sido actualizados.`
-      });
-      // Clean query params
-      router.replace("/student");
-    } else if (cancel === "true") {
-      setStatusMessage({
-        type: "error",
-        text: "La compra fue cancelada. No se realizó ningún cargo."
-      });
-      router.replace("/student");
-    }
-  }, [searchParams]);
 
   // Handle Logout
   const handleLogout = async () => {

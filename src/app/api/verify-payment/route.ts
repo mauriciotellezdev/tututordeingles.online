@@ -15,7 +15,7 @@ export async function POST(request: Request) {
     if (!stripeSecretKey) {
       return NextResponse.json({ error: 'Stripe not configured' }, { status: 500 });
     }
-    const stripe = new Stripe(stripeSecretKey, { apiVersion: '2025-01-27.accredited-gratis' as any });
+    const stripe = new Stripe(stripeSecretKey);
 
     const session = await stripe.checkout.sessions.retrieve(sessionId);
     if (!session) {

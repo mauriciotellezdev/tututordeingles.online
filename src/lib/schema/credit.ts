@@ -6,7 +6,7 @@ export const creditSchemaValidation = {
     properties: {
       _id: { bsonType: "objectId" },
       studentId: { bsonType: "objectId" },
-      amount: { bsonType: "double", minimum: -9999, maximum: 9999 },
+      amount: { bsonType: "int", minimum: -9999, maximum: 9999 },
       source: {
         bsonType: "string",
         enum: ["purchase", "bonus", "adjustment", "debit"],

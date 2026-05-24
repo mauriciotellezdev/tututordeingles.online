@@ -19,7 +19,7 @@ export const sessionSchemaValidation = {
       duration: { bsonType: "int", minimum: 1 },
       status: { bsonType: "string", enum: ["booked", "completed", "canceled"] },
       meetingLink: { bsonType: "string", minLength: 1 },
-      creditId: { bsonType: "objectId" },
+      creditId: { bsonType: ["objectId", "null"] },
       createdAt: { bsonType: "date" },
       updatedAt: { bsonType: "date" },
     },

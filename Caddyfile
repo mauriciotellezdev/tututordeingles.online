@@ -1,12 +1,15 @@
 # Caddyfile for local HTTPS development
-# Reverse-proxy tututordeingles.local to local Next.js server (port 3000)
-
-tututordeingles.local {
+# Reverse-proxy tututordeingles.test to local Next.js server (port 3000)
+tututordeingles.test {
     reverse_proxy localhost:7777
     tls internal
-
     # Optional security headers
     header {
         Strict-Transport-Security "max-age=31536000; includeSubDomains; preload"
     }
+}
+
+# LAN access from iPhone/other devices on the same network
+http://192.168.1.68 {
+    reverse_proxy localhost:7777
 }

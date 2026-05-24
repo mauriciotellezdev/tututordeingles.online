@@ -5,6 +5,8 @@ import { ObjectId } from "mongodb";
 import { getCollection } from "@/lib/db";
 import { STUDENT_COLLECTION, Student } from "@/lib/models/student";
 import { createSession, SESSION_COLLECTION } from "@/lib/models/session";
+import { createCredit, CREDIT_COLLECTION } from "@/lib/models/credit";
+import { createPayment, applyPaymentStatus, PAYMENT_COLLECTION } from "@/lib/models/payment";
 import { sendMail } from "@/lib/mail";
 import Stripe from "stripe";
 
@@ -27,6 +29,14 @@ export async function getStudentDashboardDataAction() {
       return { success: false, error: "Estudiante no encontrado." };
     }
 
+    // Compute credit balance from the credits collection
+    const creditsCol = await getCollection(CREDIT_COLLECTION);
+    const creditAgg = await creditsCol.aggregate<{ total: number }>([
+      { $match: { studentId: new ObjectId(studentIdStr) } },
+      { $group: { _id: null, total: { $sum: "$amount" } } },
+    ]).toArray();
+    const credits = creditAgg.length > 0 ? creditAgg[0].total : 0;
+
     const sessionsCol = await getCollection(SESSION_COLLECTION);
     const now = new Date();
 
@@ -47,7 +57,7 @@ export async function getStudentDashboardDataAction() {
         name: student.name,
         email: student.email,
         phone: student.phone,
-        credits: student.credits || 0,
+        credits,
         quizResult: student.quizResult
       },
       teacher: {
@@ -241,9 +251,27 @@ export async function createCheckoutSessionAction(payload: {
       return { success: false, error: "Stripe API key not configured. Please contact support." };
     }
 
-    const stripe = new Stripe(stripeSecretKey, {
-      apiVersion: "2025-01-27.accredited-gratis" as any
-    });
+    const studentsCol = await getCollection<Student>(STUDENT_COLLECTION);
+    const student = await studentsCol.findOne({ _id: new ObjectId(studentIdStr) });
+    if (!student) {
+      return { success: false, error: "Estudiante no encontrado." };
+    }
+
+    const stripe = new Stripe(stripeSecretKey);
+
+    // Reuse existing Stripe customer or create one
+    let stripeCustomerId = student.stripeCustomerId;
+    if (!stripeCustomerId) {
+      const customer = await stripe.customers.create({
+        email: student.email,
+        name: student.name,
+      });
+      stripeCustomerId = customer.id;
+      await studentsCol.updateOne(
+        { _id: student._id },
+        { $set: { stripeCustomerId } }
+      );
+    }
 
     const isSingle = planType === "single";
     const lineItems = [
@@ -266,7 +294,7 @@ export async function createCheckoutSessionAction(payload: {
       payment_method_types: ["card"],
       line_items: lineItems,
       mode: "payment",
-      // Use Stripe placeholder for session ID
+      customer: stripeCustomerId,
       success_url: `${appUrl}/student?checkout_success=true&plan=${planType}&session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${appUrl}/student?checkout_cancel=true`,
       metadata: {
@@ -286,7 +314,7 @@ export async function createCheckoutSessionAction(payload: {
 }
 
 /**
- * Action 5: Verify payment status via API and update credits
+ * Action 5: Verify payment status via Stripe and update credits
  */
 export async function verifyPaymentAction(payload: {
   sessionId: string;
@@ -295,39 +323,89 @@ export async function verifyPaymentAction(payload: {
 }) {
   try {
     const { sessionId, studentId, planType } = payload;
-    
-    // Call the API endpoint to verify payment
-    const response = await fetch(`${process.env.NEXT_PUBLIC_APP_URL || "http://localhost:7777"}/api/verify-payment`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        sessionId,
-        studentId,
-        planType
-      })
+
+    const stripeSecretKey = process.env.STRIPE_SECRET_KEY;
+    if (!stripeSecretKey) {
+      return { success: false, error: "Stripe API key not configured." };
+    }
+
+    const stripe = new Stripe(stripeSecretKey);
+
+    const session = await stripe.checkout.sessions.retrieve(sessionId);
+    if (!session) {
+      return { success: false, error: "Sesión de pago no encontrada." };
+    }
+
+    if (session.payment_status !== "paid") {
+      return { success: false, error: "El pago aún no se ha completado. Por favor, espera unos segundos." };
+    }
+
+    const paymentIntentId = session.payment_intent as string;
+    const stripeCustomerId = session.customer as string;
+    const studentOid = new ObjectId(studentId);
+    const creditsToAdd = planType === "single" ? 1 : 12;
+    const amount = planType === "single" ? 30000 : 240000;
+
+    const paymentsCol = await getCollection(PAYMENT_COLLECTION);
+    const creditsCol = await getCollection(CREDIT_COLLECTION);
+
+    // 1:1 mapping: for every Stripe PaymentIntent, exactly one payment record + one credit record
+    const existingPayment = await paymentsCol.findOne({ stripePaymentIntentId: paymentIntentId });
+
+    if (existingPayment) {
+      // Payment exists — check if credit was created (recover from partial failure)
+      const existingCredit = await creditsCol.findOne({ stripeChargeId: paymentIntentId });
+      if (existingCredit) {
+        return { success: true, message: "Pago ya procesado anteriormente.", creditsAdded: 0 };
+      }
+      // Recovery: payment exists but credit doesn't → create the missing credit
+      await creditsCol.insertOne(
+        createCredit({
+          studentId,
+          amount: creditsToAdd,
+          source: "purchase",
+          description: planType === "single" ? "Compra 1 crédito" : "Paquete 12 créditos",
+          stripeChargeId: paymentIntentId,
+        })
+      );
+      return { success: true, message: "Créditos añadidos", creditsAdded: creditsToAdd };
+    }
+
+    // Persist stripeCustomerId on student
+    const studentsCol = await getCollection<Student>(STUDENT_COLLECTION);
+    await studentsCol.updateOne(
+      { _id: studentOid, stripeCustomerId: { $exists: false } },
+      { $set: { stripeCustomerId } }
+    );
+
+    // Insert payment first, then credit — if this crashes, retry hits the recovery path above
+    await paymentsCol.insertOne({
+      ...createPayment({
+        studentId: studentOid,
+        stripePaymentIntentId: paymentIntentId,
+        stripeCustomerId,
+        amount,
+        currency: "mxn",
+        description: planType === "single" ? "Compra 1 crédito" : "Paquete 12 créditos",
+      }),
+      ...applyPaymentStatus("succeeded"),
     });
 
-    if (!response.ok) {
-      const errorData = await response.json();
-      return { success: false, error: errorData.error || "Error al verificar el pago" };
-    }
+    await creditsCol.insertOne(
+      createCredit({
+        studentId,
+        amount: creditsToAdd,
+        source: "purchase",
+        description: planType === "single" ? "Compra 1 crédito" : "Paquete 12 créditos",
+        stripeChargeId: paymentIntentId,
+      })
+    );
 
-    const result = await response.json();
-    
-    if (result.status === "success") {
-      return { 
-        success: true, 
-        message: result.message,
-        creditsAdded: result.creditsAdded
-      };
-    } else if (result.status === "pending") {
-      return { success: false, error: "El pago aún no se ha completado. Por favor, espera unos segundos." };
-    } else {
-      return { success: false, error: result.message || "Error al procesar el pago" };
-    }
-    
+    return {
+      success: true,
+      message: "Créditos añadidos",
+      creditsAdded: creditsToAdd,
+    };
   } catch (error: any) {
     console.error("Error in verifyPaymentAction:", error);
     return { success: false, error: error.message || "Error al verificar el pago." };
