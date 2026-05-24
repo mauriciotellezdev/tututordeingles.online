@@ -127,7 +127,7 @@ export async function bookSessionAction(payload: {
       type,
       dateTime,
       duration: 60, // 60 minutes for tutoring, intro will default or we override
-      meetingLink: `https://wa.me/${process.env.TEACHER_PHONE.replace(/\D/g, '')}`,
+      meetingLink: `https://wa.me/${student.phone.replace(/\D/g, '')}`,
       paid: type === "tutoring" ? true : false
     });
 
