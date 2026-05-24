@@ -16,6 +16,11 @@ export interface Student {
     totalQuestions: number;
     completedAt: Date;
   };
+  quizProgress?: {
+    lastQuestionId: string;
+    answeredQuestions: string[];
+    updatedAt: Date;
+  };
 }
 
 export interface StudentSignupInput {

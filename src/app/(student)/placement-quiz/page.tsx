@@ -18,7 +18,18 @@ export default function PlacementQuizRedirect() {
       if (res.student.quizResult) {
         router.push("/student");
       } else {
-        router.push("/quiz/placement/question/1");
+        // If student has quiz progress, redirect to the last unanswered question
+        if (res.student.quizProgress) {
+          // Find the next unanswered question
+          const lastQuestionId = res.student.quizProgress.lastQuestionId;
+          if (lastQuestionId) {
+            router.push(`/quiz/placement/question/${lastQuestionId}`);
+          } else {
+            router.push("/quiz/placement/question/1");
+          }
+        } else {
+          router.push("/quiz/placement/question/1");
+        }
       }
     }
     handleRedirect();

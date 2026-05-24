@@ -161,6 +161,9 @@ export async function submitQuizAction(payload: {
             completedAt: new Date()
           },
           updatedAt: new Date()
+        },
+        $unset: {
+          quizProgress: ""
         }
       }
     );
