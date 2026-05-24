@@ -252,7 +252,7 @@ export async function bookIntroCallAction(payload: {
       `DTSTART:${startStr}`,
       `DTEND:${endStr}`,
       "SUMMARY:Clase Demo de Ingles - Tu Tutor de Ingles",
-      `DESCRIPTION:Tu llamada introductoria de 30 minutos con Mauricio. WhatsApp: ${teacher.phone}`,
+      `DESCRIPTION:Tu llamada introductoria de 30 minutos con Mauricio.\nWhatsApp: ${teacher.phone}\nEmail: ${teacher.email}`,
       "LOCATION:WhatsApp",
       "STATUS:CONFIRMED",
       "SEQUENCE:0",
@@ -261,7 +261,7 @@ export async function bookIntroCallAction(payload: {
     ].join("\r\n");
 
     const emailSubject = "Tu Clase Demo de Inglés está Confirmada! 🎉";
-    const emailText = `¡Hola ${student.name}!\n\nTu clase demo de inglés ha sido agendada con éxito.\n\nFecha y Hora: ${dateTime.toLocaleString("es-MX", { timeZone: "America/Mexico_City" })}\nPlataforma: WhatsApp\nNúmero: ${teacher.phone}\n\nTe hemos adjuntado una invitación de calendario (.ics) a este correo para que la agregues a tu agenda.\n\n¡Nos vemos pronto!\nMauricio Tellez\nTu Tutor de Inglés`;
+    const emailText = `¡Hola ${student.name}!\n\nTu clase demo de inglés ha sido agendada con éxito.\n\nFecha y Hora: ${dateTime.toLocaleString("es-MX", { timeZone: "America/Mexico_City" })}\nPlataforma: WhatsApp\nNúmero: ${teacher.phone}\nEmail: ${teacher.email}\n\nTe hemos adjuntado una invitación de calendario (.ics) a este correo para que la agregues a tu agenda.\n\n¡Nos vemos pronto!\nMauricio Tellez\nTu Tutor de Inglés`;
 
     await sendMail({
       to: student.email,
