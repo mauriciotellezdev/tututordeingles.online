@@ -11,6 +11,14 @@ const isLocalHost = (() => {
     return false;
   }
 })();
+const automationBypassSecret = process.env.VERCEL_AUTOMATION_BYPASS_SECRET;
+const remoteProtectionHeaders =
+  !isLocalHost && automationBypassSecret
+    ? {
+        "x-vercel-protection-bypass": automationBypassSecret,
+        "x-vercel-set-bypass-cookie": "true",
+      }
+    : undefined;
 
 const webServer = isLocalHost
   ? {
@@ -30,6 +38,9 @@ export default defineConfig({
   use: {
     baseURL,
     trace: "on-first-retry",
+    ...(remoteProtectionHeaders
+      ? { extraHTTPHeaders: remoteProtectionHeaders }
+      : {}),
   },
   ...(webServer ? { webServer } : {}),
 });

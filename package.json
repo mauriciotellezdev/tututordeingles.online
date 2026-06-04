@@ -15,6 +15,7 @@
     "test:e2e": "playwright test",
     "test:e2e:staging": "bash .githooks/test-e2e-staging.sh",
     "test:all": "bash .githooks/run-all-tests.sh",
+    "audit:run": "bun run tools/audit-run.ts",
     "test": "bun run test:all",
     "db:seed:dev": "node --import tsx --env-file=.env.development scripts/seed.ts --drop",
     "db:seed:prod": "node --import tsx --env-file=.env.production scripts/seed.ts",
