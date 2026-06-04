@@ -11,6 +11,7 @@ import {
   Sparkles,
 } from "lucide-react";
 import { Button } from "@/shared/ui/button";
+import { Breadcrumbs } from "@/shared/seo/breadcrumbs";
 import { blogPosts, getReadingTime } from "@/lib/blog-posts";
 
 const BASE = process.env.NEXT_PUBLIC_APP_URL || "https://tututordeingles.online";
@@ -129,6 +130,30 @@ export default async function BlogPostPage({ params }: PageProps) {
   const related = post.relatedSlugs
     .map((relatedSlug) => blogPosts.find((p) => p.slug === relatedSlug))
     .filter(Boolean) as typeof blogPosts;
+  const breadcrumbItems = [
+    { label: "Home", href: "/" },
+    { label: "Blog", href: "/blog" },
+    { label: post.title, href: `/blog/${post.slug}` },
+  ];
+  const postJsonLd = {
+    "@context": "https://schema.org",
+    "@type": "BlogPosting",
+    headline: post.title,
+    description: post.description,
+    url: `${BASE}/blog/${post.slug}`,
+    datePublished: post.date,
+    dateModified: post.date,
+    inLanguage: "en",
+    author: {
+      "@type": "Organization",
+      name: "Tu Tutor de Inglés",
+    },
+    publisher: {
+      "@type": "Organization",
+      name: "Tu Tutor de Inglés",
+      url: BASE,
+    },
+  };
 
   const introLines: string[] = [];
   let summaryLine = "";
@@ -155,18 +180,22 @@ export default async function BlogPostPage({ params }: PageProps) {
 
   return (
     <main className="relative isolate overflow-hidden bg-[#070b14] text-white">
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(postJsonLd) }} />
       <div className="pointer-events-none absolute inset-x-0 top-0 -z-10 h-[28rem] bg-[radial-gradient(circle_at_top,_rgba(59,130,246,0.16),_rgba(7,11,20,0.16)_52%,_rgba(7,11,20,0)_100%)]" />
       <div className="pointer-events-none absolute left-[-8rem] top-28 -z-10 h-[20rem] w-[20rem] rounded-full bg-blue-500/10 blur-3xl" />
       <div className="pointer-events-none absolute right-[-7rem] top-[32rem] -z-10 h-[18rem] w-[18rem] rounded-full bg-emerald-400/8 blur-3xl" />
 
       <div className="mx-auto max-w-7xl px-4 pb-24 pt-28 sm:px-6 lg:px-8">
-        <Link
-          href="/blog"
-          className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.04] px-4 py-2 text-xs font-semibold uppercase tracking-[0.22em] text-white/65 shadow-sm backdrop-blur transition hover:border-white/20 hover:text-white"
-        >
-          <ArrowLeft className="h-3.5 w-3.5" />
-          Back to blog
-        </Link>
+        <div className="flex items-center justify-between gap-4">
+          <Breadcrumbs items={breadcrumbItems} />
+          <Link
+            href="/blog"
+            className="hidden sm:inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.04] px-4 py-2 text-xs font-semibold uppercase tracking-[0.22em] text-white/65 shadow-sm backdrop-blur transition hover:border-white/20 hover:text-white"
+          >
+            <ArrowLeft className="h-3.5 w-3.5" />
+            Back to blog
+          </Link>
+        </div>
 
         <div className="mt-8 grid gap-10 lg:grid-cols-[minmax(0,1fr)_18rem] lg:items-start">
           <article className="min-w-0">

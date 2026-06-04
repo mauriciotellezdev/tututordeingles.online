@@ -20,7 +20,7 @@ Focus on **low-competition, high-intent LATAM Spanish keywords** rather than bro
 
 - Add breadcrumb structured data to hub pages, landing pages, and blog posts.
 - Add or expose stronger trust signals: About, author, and credentials context that search engines and users can verify.
-- Add `robots.txt` and keep sitemap submission current in Google Search Console and Bing Webmaster Tools.
+- Keep the existing `robots.txt` current and ensure sitemap submission stays current in Google Search Console and Bing Webmaster Tools.
 - Use IndexNow for faster Bing discovery of new or updated URLs.
 - Expand each landing page with more original examples, scenarios, and proof of expertise.
 - Keep title, H1, OG title, and anchor text aligned with the same intent on every page.
@@ -369,6 +369,38 @@ If a page is the hub for a topic, it should own that topic. Supporting pages sho
 - Internal links use descriptive anchor text.
 - Open Graph and Twitter metadata are present.
 - Structured data validates cleanly.
+
+### 11. AI Search / LLM Visibility
+
+AI search and LLM answer systems usually work better when pages are easy to summarize, clearly scoped, and machine-readable. Treat this as an extension of on-page SEO, not a separate trick.
+
+Do this:
+
+- Put the answer up front.
+- Use short intro paragraphs that state the page purpose immediately.
+- Keep headings descriptive and specific.
+- Use question-based subheadings when the query is naturally a question.
+- Add visible summaries, examples, and concrete takeaways.
+- Keep the same entity names, page titles, and anchor text across the site.
+- Use canonical URLs, sitemap coverage, and structured data consistently.
+- Make sure important content is server-rendered and crawlable.
+
+For this site, the pages most likely to get quoted by AI systems are:
+
+- English for Job Interviews
+- STAR Method Interview Answers
+- Interview Vocabulary for Professionals
+- How to Describe Work Experience in English
+- How to Answer Tell Me About Yourself in English
+
+These pages should have:
+
+- Strong intros
+- Answer-first paragraphs
+- Breadcrumbs
+- FAQ schema when relevant
+- Concrete examples from real interview contexts
+- Clear links to the hub page and the conversion page
 
 ---
 

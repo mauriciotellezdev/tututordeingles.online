@@ -2,6 +2,7 @@ import type { Metadata } from "next/types";
 import Link from "next/link";
 import { ArrowRight, CalendarDays, Sparkles } from "lucide-react";
 import { blogPosts, getReadingTime } from "@/lib/blog-posts";
+import { Breadcrumbs } from "@/shared/seo/breadcrumbs";
 
 const BASE = process.env.NEXT_PUBLIC_APP_URL || "https://tututordeingles.online";
 
@@ -37,6 +38,13 @@ export default function BlogPage() {
       <div className="pointer-events-none absolute right-[-8rem] top-40 -z-10 h-[20rem] w-[20rem] rounded-full bg-amber-400/10 blur-3xl" />
 
       <div className="mx-auto max-w-6xl px-4 pb-24 pt-28 sm:px-6 lg:px-8">
+        <Breadcrumbs
+          items={[
+            { label: "Home", href: "/" },
+            { label: "Blog", href: "/blog" },
+          ]}
+        />
+
         <div className="max-w-3xl">
           <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.04] px-4 py-2 text-[11px] font-semibold uppercase tracking-[0.24em] text-white/65 shadow-sm backdrop-blur">
             <Sparkles className="h-3.5 w-3.5 text-blue-400" />

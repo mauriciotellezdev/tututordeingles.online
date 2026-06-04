@@ -2,6 +2,7 @@ import type { ReactNode } from "react";
 import Link from "next/link";
 import { ArrowLeft, ArrowRight, CalendarDays, Clock3, BookOpen, Sparkles } from "lucide-react";
 import { Button } from "@/shared/ui/button";
+import { Breadcrumbs } from "@/shared/seo/breadcrumbs";
 import { blogPosts, getReadingTime, type BlogPost } from "@/lib/blog-posts";
 
 interface LandingPageProps {
@@ -9,6 +10,8 @@ interface LandingPageProps {
   hubHref: string;
   hubLabel: string;
   relatedSlugs?: string[];
+  breadcrumbs: { label: string; href: string }[];
+  pageUrl: string;
 }
 
 interface Section {
@@ -179,7 +182,7 @@ function renderLine(line: string, key: string) {
   );
 }
 
-export function LandingPage({ post, hubHref, hubLabel, relatedSlugs = [] }: LandingPageProps) {
+export function LandingPage({ post, hubHref, hubLabel, relatedSlugs = [], breadcrumbs, pageUrl }: LandingPageProps) {
   const readTime = getReadingTime(post.content);
   const { summary, intro, sections, outro } = parseSections(post.content);
   const related = relatedSlugs
@@ -198,22 +201,39 @@ export function LandingPage({ post, hubHref, hubLabel, relatedSlugs = [] }: Land
       },
     })),
   };
+  const pageJsonLd = {
+    "@context": "https://schema.org",
+    "@type": "WebPage",
+    name: post.title,
+    url: pageUrl,
+    description: post.description,
+    inLanguage: "en",
+    isPartOf: {
+      "@type": "WebSite",
+      name: "Tu Tutor de Inglés",
+      url: pageUrl.split("/").slice(0, 3).join("/"),
+    },
+  };
 
   return (
     <main className="relative isolate overflow-hidden bg-[#070b14] text-white">
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(faqJsonLd) }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(pageJsonLd) }} />
       <div className="pointer-events-none absolute inset-x-0 top-0 -z-10 h-[28rem] bg-[radial-gradient(circle_at_top,_rgba(59,130,246,0.16),_rgba(7,11,20,0.16)_52%,_rgba(7,11,20,0)_100%)]" />
       <div className="pointer-events-none absolute left-[-8rem] top-28 -z-10 h-[20rem] w-[20rem] rounded-full bg-blue-500/10 blur-3xl" />
       <div className="pointer-events-none absolute right-[-7rem] top-[32rem] -z-10 h-[18rem] w-[18rem] rounded-full bg-emerald-400/8 blur-3xl" />
 
       <div className="mx-auto max-w-5xl px-4 pb-24 pt-28 sm:px-6 lg:px-8">
-        <Link
-          href={hubHref}
-          className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.04] px-4 py-2 text-xs font-semibold uppercase tracking-[0.22em] text-white/65 shadow-sm backdrop-blur transition hover:border-white/20 hover:text-white"
-        >
-          <ArrowLeft className="h-3.5 w-3.5" />
-          {hubLabel}
-        </Link>
+        <div className="flex items-center justify-between gap-4">
+          <Breadcrumbs items={breadcrumbs} />
+          <Link
+            href={hubHref}
+            className="hidden sm:inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.04] px-4 py-2 text-xs font-semibold uppercase tracking-[0.22em] text-white/65 shadow-sm backdrop-blur transition hover:border-white/20 hover:text-white"
+          >
+            <ArrowLeft className="h-3.5 w-3.5" />
+            {hubLabel}
+          </Link>
+        </div>
 
         <article className="mt-8 rounded-[2.25rem] border border-white/10 bg-white/[0.04] px-6 py-8 shadow-[0_24px_80px_-45px_rgba(0,0,0,0.78)] backdrop-blur sm:px-8 sm:py-10 lg:px-10 lg:py-12">
           <div className="flex flex-wrap items-center gap-2 text-xs text-white/50">

@@ -27,6 +27,12 @@ export default function Page() {
       post={post}
       hubHref="/english-for-job-interviews"
       hubLabel="English for Job Interviews"
+      pageUrl={`${BASE}/${slug}`}
+      breadcrumbs={[
+        { label: "Home", href: "/" },
+        { label: "English for Job Interviews", href: "/english-for-job-interviews" },
+        { label: post.title, href: `/how-to-describe-work-experience` },
+      ]}
       relatedSlugs={post.relatedSlugs}
     />
   );

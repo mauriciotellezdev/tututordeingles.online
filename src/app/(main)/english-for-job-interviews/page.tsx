@@ -1,6 +1,7 @@
 import type { Metadata } from "next/types";
 import { Button } from "@/shared/ui/button";
 import Link from "next/link";
+import { Breadcrumbs } from "@/shared/seo/breadcrumbs";
 
 const BASE = process.env.NEXT_PUBLIC_APP_URL || "https://tututordeingles.online";
 
@@ -59,6 +60,13 @@ export default function EnglishForJobInterviewsPage() {
       <div className="pointer-events-none absolute right-[-7rem] top-[32rem] -z-10 h-[18rem] w-[18rem] rounded-full bg-emerald-400/8 blur-3xl" />
 
       <div className="mx-auto max-w-5xl px-4 pb-24 pt-28 sm:px-6 lg:px-8">
+        <Breadcrumbs
+          items={[
+            { label: "Home", href: "/" },
+            { label: "English for Job Interviews", href: "/english-for-job-interviews" },
+          ]}
+        />
+
         <article className="rounded-[2.25rem] border border-white/10 bg-white/[0.04] px-6 py-8 shadow-[0_24px_80px_-45px_rgba(0,0,0,0.78)] backdrop-blur sm:px-8 sm:py-10 lg:px-10 lg:py-12">
           <div className="inline-flex items-center rounded-full border border-blue-400/15 bg-blue-500/10 px-4 py-2 text-[11px] font-semibold uppercase tracking-[0.24em] text-blue-300">
             Interview Preparation
