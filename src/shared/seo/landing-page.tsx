@@ -3,6 +3,7 @@ import Link from "next/link";
 import { ArrowLeft, ArrowRight, CalendarDays, Clock3, Sparkles } from "lucide-react";
 import { Button } from "@/shared/ui/button";
 import { Breadcrumbs } from "@/shared/seo/breadcrumbs";
+import { ShareBar } from "@/shared/social/share-bar";
 import { blogPosts, getReadingTime, type BlogPost } from "@/lib/blog-posts";
 
 type LandingLang = "en" | "es-MX";
@@ -29,6 +30,8 @@ interface LandingPageCopy {
   sampleAnswerLabel: string;
   sampleQuestionsLabel: string;
   sampleSentenceLabel: string;
+  shareLabel: string;
+  shareCtaLabel: string;
 }
 
 interface LandingPageProps {
@@ -111,6 +114,8 @@ const DEFAULT_COPY: Record<LandingLang, LandingPageCopy> = {
     sampleAnswerLabel: "Sample answer",
     sampleQuestionsLabel: "Sample questions",
     sampleSentenceLabel: "Sample sentence",
+    shareLabel: "Share this page",
+    shareCtaLabel: "Send this page to a friend or teammate.",
   },
   "es-MX": {
     pageTypeLabel: "Página SEO",
@@ -130,6 +135,8 @@ const DEFAULT_COPY: Record<LandingLang, LandingPageCopy> = {
     sampleAnswerLabel: "Respuesta de ejemplo",
     sampleQuestionsLabel: "Preguntas de ejemplo",
     sampleSentenceLabel: "Oración de ejemplo",
+    shareLabel: "Compartir esta página",
+    shareCtaLabel: "Envía esta página a un amigo o colega.",
   },
 };
 
@@ -412,6 +419,16 @@ export function LandingPage({
                 {copy.bookSessionLabel}
               </Button>
             </Link>
+          </div>
+
+          <div className="mt-8">
+            <ShareBar
+              title={post.title}
+              description={post.description}
+              url={pageUrl}
+              label={copy.shareLabel}
+              ctaLabel={copy.shareCtaLabel}
+            />
           </div>
 
           <div className="mt-12 space-y-8">

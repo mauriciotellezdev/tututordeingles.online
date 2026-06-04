@@ -12,6 +12,7 @@ import {
 } from "lucide-react";
 import { Button } from "@/shared/ui/button";
 import { Breadcrumbs } from "@/shared/seo/breadcrumbs";
+import { ShareBar } from "@/shared/social/share-bar";
 import { blogPosts, getReadingTime } from "@/lib/blog-posts";
 
 const BASE = process.env.NEXT_PUBLIC_APP_URL || "https://tututordeingles.online";
@@ -256,6 +257,16 @@ export default async function BlogPostPage({ params }: PageProps) {
                   <BookOpen className="mr-2 h-3.5 w-3.5" />
                   Structured for fast scanning
                 </span>
+              </div>
+
+              <div className="mt-8">
+                <ShareBar
+                  title={post.title}
+                  description={post.description}
+                  url={`${BASE}/blog/${post.slug}`}
+                  label="Share this article"
+                  ctaLabel="Copy or send the link to your network."
+                />
               </div>
 
               {summaryLine && (
