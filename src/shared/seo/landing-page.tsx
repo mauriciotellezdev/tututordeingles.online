@@ -345,48 +345,73 @@ export function LandingPage({ post, hubHref, hubLabel, relatedSlugs = [], breadc
           )}
         </article>
 
-        <section className="mt-8 grid gap-4 sm:grid-cols-2">
-          {related.map((item) => (
-            <Link key={item.slug} href={item.kind === "blog" ? `/blog/${item.slug}` : `/${item.slug}`} className="group">
-              <div className="h-full rounded-[1.75rem] border border-white/10 bg-white/[0.04] p-5 transition hover:border-white/20 hover:bg-white/[0.06]">
-                <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-white/45">
-                  {item.category}
-                </p>
-                <p className="mt-3 font-heading text-xl font-medium tracking-tight text-white group-hover:text-blue-300">
-                  {item.title}
-                </p>
-                <p className="mt-2 text-sm leading-6 text-white/64">
-                  {item.description}
-                </p>
-                <p className="mt-4 inline-flex items-center gap-2 text-sm font-medium text-white/55">
-                  Read guide
-                  <ArrowRight className="h-4 w-4" />
-                </p>
-              </div>
-            </Link>
-          ))}
-        </section>
+        <div className="mt-8 grid gap-8 lg:grid-cols-[minmax(0,1fr)_18rem] lg:items-start">
+          <div className="space-y-8">
+            <section className="grid gap-4 sm:grid-cols-2">
+              {related.map((item) => (
+                <Link key={item.slug} href={item.kind === "blog" ? `/blog/${item.slug}` : `/${item.slug}`} className="group">
+                  <div className="h-full rounded-[1.75rem] border border-white/10 bg-white/[0.04] p-5 transition hover:border-white/20 hover:bg-white/[0.06]">
+                    <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-white/45">
+                      {item.category}
+                    </p>
+                    <p className="mt-3 font-heading text-xl font-medium tracking-tight text-white group-hover:text-blue-300">
+                      {item.title}
+                    </p>
+                    <p className="mt-2 text-sm leading-6 text-white/64">
+                      {item.description}
+                    </p>
+                    <p className="mt-4 inline-flex items-center gap-2 text-sm font-medium text-white/55">
+                      Read guide
+                      <ArrowRight className="h-4 w-4" />
+                    </p>
+                  </div>
+                </Link>
+              ))}
+            </section>
 
-        <section className="mt-8 rounded-[2rem] border border-white/10 bg-white/[0.04] p-6 sm:p-8">
-          <div className="flex items-center gap-3">
-            <h2 className="text-xs font-semibold uppercase tracking-[0.24em] text-white/45">
-              FAQ
-            </h2>
-            <div className="h-px flex-1 bg-white/10" />
-          </div>
-          <div className="mt-6 grid gap-4">
-            {FAQS.map((faq) => (
-              <div key={faq.question} className="rounded-[1.5rem] border border-white/10 bg-black/20 p-5">
-                <h3 className="font-heading text-lg font-medium tracking-tight text-white">
-                  {faq.question}
-                </h3>
-                <p className="mt-2 text-sm leading-7 text-white/68">
-                  {faq.answer}
-                </p>
+            <section className="rounded-[2rem] border border-white/10 bg-white/[0.04] p-6 sm:p-8">
+              <div className="flex items-center gap-3">
+                <h2 className="text-xs font-semibold uppercase tracking-[0.24em] text-white/45">
+                  FAQ
+                </h2>
+                <div className="h-px flex-1 bg-white/10" />
               </div>
-            ))}
+              <div className="mt-6 grid gap-4">
+                {FAQS.map((faq) => (
+                  <div key={faq.question} className="rounded-[1.5rem] border border-white/10 bg-black/20 p-5">
+                    <h3 className="font-heading text-lg font-medium tracking-tight text-white">
+                      {faq.question}
+                    </h3>
+                    <p className="mt-2 text-sm leading-7 text-white/68">
+                      {faq.answer}
+                    </p>
+                  </div>
+                ))}
+              </div>
+            </section>
           </div>
-        </section>
+
+          <aside className="lg:sticky lg:top-28">
+            <div className="rounded-[2rem] border border-blue-400/15 bg-blue-500/10 p-6 sm:p-8 shadow-[0_20px_60px_-35px_rgba(0,0,0,0.75)]">
+              <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-blue-300">
+                Next step
+              </p>
+              <h2 className="mt-3 font-heading text-2xl font-medium tracking-tight text-white sm:text-[2rem]">
+                Turn this into speaking practice
+              </h2>
+              <p className="mt-4 text-sm leading-7 text-white/68 sm:text-base">
+                Reading the structure helps. Practicing it out loud with feedback is what makes the language stick.
+              </p>
+              <div className="mt-6">
+                <Link href="/signup">
+                  <Button className="rounded-full bg-white px-6 py-5 text-sm font-semibold text-slate-950 transition hover:bg-blue-100">
+                    Book a practice session
+                  </Button>
+                </Link>
+              </div>
+            </div>
+          </aside>
+        </div>
       </div>
     </main>
   );

@@ -508,40 +508,42 @@ export default async function BlogPostPage({ params }: PageProps) {
             )}
           </article>
 
-          <aside className="hidden lg:block lg:sticky lg:top-28">
-            <div className="rounded-[2rem] border border-white/10 bg-white/[0.04] p-5 shadow-[0_18px_50px_-30px_rgba(0,0,0,0.7)] backdrop-blur">
-              <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-white/45">
-                On this page
-              </p>
-              <nav className="mt-4 space-y-2">
-                {toc.map((item) => (
-                  <a
-                    key={item.id}
-                    href={`#${item.id}`}
-                    className="group flex items-start gap-3 rounded-2xl px-3 py-2 text-sm text-white/64 transition hover:bg-white/[0.05] hover:text-white"
-                  >
-                    <span className="mt-0.5 text-[11px] font-semibold uppercase tracking-[0.2em] text-white/35 group-hover:text-white/55">
-                      {item.number || "§"}
-                    </span>
-                    <span className="leading-6">{item.title}</span>
-                  </a>
-                ))}
-              </nav>
-            </div>
+          <aside className="hidden lg:block lg:sticky lg:top-28 self-start">
+            <div className="space-y-5">
+              <div className="rounded-[2rem] border border-white/10 bg-white/[0.04] p-5 shadow-[0_18px_50px_-30px_rgba(0,0,0,0.7)] backdrop-blur">
+                <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-white/45">
+                  On this page
+                </p>
+                <nav className="mt-4 space-y-2">
+                  {toc.map((item) => (
+                    <a
+                      key={item.id}
+                      href={`#${item.id}`}
+                      className="group flex items-start gap-3 rounded-2xl px-3 py-2 text-sm text-white/64 transition hover:bg-white/[0.05] hover:text-white"
+                    >
+                      <span className="mt-0.5 text-[11px] font-semibold uppercase tracking-[0.2em] text-white/35 group-hover:text-white/55">
+                        {item.number || "§"}
+                      </span>
+                      <span className="leading-6">{item.title}</span>
+                    </a>
+                  ))}
+                </nav>
+              </div>
 
-            <div className="mt-5 rounded-[2rem] border border-blue-400/15 bg-blue-500/10 p-5">
-              <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-blue-300">
-                Need live practice?
-              </p>
-              <p className="mt-3 text-sm leading-7 text-white/68">
-                Reading gives you structure. Speaking with feedback makes it
-                usable.
-              </p>
-              <Link href="/signup" className="mt-5 inline-flex">
-                <Button className="rounded-full bg-white px-5 py-5 text-sm font-semibold text-slate-950 transition hover:bg-blue-100">
-                  Book a session
-                </Button>
-              </Link>
+              <div className="rounded-[2rem] border border-blue-400/15 bg-blue-500/10 p-5 shadow-[0_20px_60px_-35px_rgba(0,0,0,0.75)]">
+                <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-blue-300">
+                  Need live practice?
+                </p>
+                <p className="mt-3 text-sm leading-7 text-white/68">
+                  Reading gives you structure. Speaking with feedback makes it
+                  usable.
+                </p>
+                <Link href="/signup" className="mt-5 inline-flex">
+                  <Button className="rounded-full bg-white px-5 py-5 text-sm font-semibold text-slate-950 transition hover:bg-blue-100">
+                    Book a session
+                  </Button>
+                </Link>
+              </div>
             </div>
           </aside>
         </div>
