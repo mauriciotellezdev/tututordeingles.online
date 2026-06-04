@@ -1,9 +1,17 @@
 import type { Metadata } from "next/types";
+import type { ReactNode } from "react";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { blogPosts } from "@/lib/blog-posts";
-import { getReadingTime } from "@/lib/blog-posts";
+import {
+  ArrowLeft,
+  ArrowRight,
+  BookOpen,
+  CalendarDays,
+  Clock3,
+  Sparkles,
+} from "lucide-react";
 import { Button } from "@/shared/ui/button";
+import { blogPosts, getReadingTime } from "@/lib/blog-posts";
 
 const BASE = process.env.NEXT_PUBLIC_APP_URL || "https://tututordeingles.online";
 
@@ -36,11 +44,18 @@ interface TocItem {
   id: string;
 }
 
+const formatDate = (date: string) =>
+  new Intl.DateTimeFormat("en-US", {
+    month: "long",
+    day: "numeric",
+    year: "numeric",
+  }).format(new Date(`${date}T00:00:00`));
+
 function extractToc(content: string[]): TocItem[] {
   return content
-    .filter((l) => l.startsWith("## "))
-    .map((l) => {
-      const raw = l.replace("## ", "");
+    .filter((line) => line.startsWith("## "))
+    .map((line) => {
+      const raw = line.replace("## ", "");
       const match = raw.match(/^(\d+)\.\s+(.+)/);
       if (match) {
         return {
@@ -49,26 +64,52 @@ function extractToc(content: string[]): TocItem[] {
           id: `q-${match[1]}`,
         };
       }
-      return { number: "", title: raw, id: raw.toLowerCase().replace(/[^a-z0-9]+/g, "-") };
+
+      return {
+        number: "",
+        title: raw,
+        id: raw.toLowerCase().replace(/[^a-z0-9]+/g, "-"),
+      };
     });
 }
 
-function mdLinks(text: string) {
-  const parts: (string | React.ReactNode)[] = [];
-  let lastIndex = 0;
-  const regex = /\[([^\]]+)\]\(([^)]+)\)/g;
+function renderInlineMarkdown(text: string): ReactNode[] {
+  const nodes: ReactNode[] = [];
+  let cursor = 0;
+  const pattern = /\*\*([^*]+)\*\*|\[([^\]]+)\]\(([^)]+)\)/g;
   let match: RegExpExecArray | null;
-  while ((match = regex.exec(text)) !== null) {
-    if (match.index > lastIndex) parts.push(text.slice(lastIndex, match.index));
-    parts.push(
-      <a key={match.index} href={match[2]} className="text-blue-400 hover:text-blue-300 underline underline-offset-2 transition-colors">
-        {match[1]}
-      </a>
-    );
-    lastIndex = match.index + match[0].length;
+
+  while ((match = pattern.exec(text)) !== null) {
+    if (match.index > cursor) {
+      nodes.push(text.slice(cursor, match.index));
+    }
+
+    if (match[1]) {
+      nodes.push(
+        <strong key={`${match.index}-bold`} className="font-semibold text-white">
+          {match[1]}
+        </strong>
+      );
+    } else {
+      nodes.push(
+        <a
+          key={`${match.index}-link`}
+          href={match[3]}
+          className="font-medium text-blue-300 underline decoration-blue-400/30 underline-offset-4 transition hover:text-blue-200 hover:decoration-blue-300"
+        >
+          {match[2]}
+        </a>
+      );
+    }
+
+    cursor = match.index + match[0].length;
   }
-  if (lastIndex < text.length) parts.push(text.slice(lastIndex));
-  return parts.length ? parts : text;
+
+  if (cursor < text.length) {
+    nodes.push(text.slice(cursor));
+  }
+
+  return nodes.length ? nodes : [text];
 }
 
 export default async function BlogPostPage({ params }: PageProps) {
@@ -78,266 +119,376 @@ export default async function BlogPostPage({ params }: PageProps) {
 
   const readTime = getReadingTime(post.content);
   const toc = extractToc(post.content);
+  const headings = post.content.filter((line) => line.startsWith("## "));
 
-  const allPosts = [...blogPosts];
-  const currentIndex = allPosts.findIndex((p) => p.slug === slug);
-  const prevPost = currentIndex > 0 ? allPosts[currentIndex - 1] : null;
-  const nextPost = currentIndex < allPosts.length - 1 ? allPosts[currentIndex + 1] : null;
+  const currentIndex = blogPosts.findIndex((p) => p.slug === slug);
+  const prevPost = currentIndex > 0 ? blogPosts[currentIndex - 1] : null;
+  const nextPost = currentIndex < blogPosts.length - 1 ? blogPosts[currentIndex + 1] : null;
 
   const related = post.relatedSlugs
-    .map((s) => blogPosts.find((p) => p.slug === s))
+    .map((relatedSlug) => blogPosts.find((p) => p.slug === relatedSlug))
     .filter(Boolean) as typeof blogPosts;
 
-  let summaryLine = "";
   const introLines: string[] = [];
-  let questionsStarted = false;
+  let summaryLine = "";
+  let hitFirstHeading = false;
 
   for (const line of post.content) {
     if (line.startsWith("\u{1F4D8}")) {
       summaryLine = line;
       continue;
     }
+
     if (line.startsWith("## ")) {
-      questionsStarted = true;
+      hitFirstHeading = true;
       continue;
     }
-    if (!questionsStarted && line !== "") {
+
+    if (!hitFirstHeading && line !== "") {
       introLines.push(line);
     }
   }
 
+  const outroStart = post.content.findLastIndex((line) => line.startsWith("---"));
+  const outroLines = outroStart >= 0 ? post.content.slice(outroStart + 1).filter((line) => line !== "") : [];
+
   return (
-    <main className="min-h-screen bg-[#0a0a0a] pt-32 pb-20 px-4 md:px-8">
-      <div className="max-w-4xl mx-auto relative z-10">
+    <main className="relative isolate overflow-hidden bg-[#070b14] text-white">
+      <div className="pointer-events-none absolute inset-x-0 top-0 -z-10 h-[28rem] bg-[radial-gradient(circle_at_top,_rgba(59,130,246,0.16),_rgba(7,11,20,0.16)_52%,_rgba(7,11,20,0)_100%)]" />
+      <div className="pointer-events-none absolute left-[-8rem] top-28 -z-10 h-[20rem] w-[20rem] rounded-full bg-blue-500/10 blur-3xl" />
+      <div className="pointer-events-none absolute right-[-7rem] top-[32rem] -z-10 h-[18rem] w-[18rem] rounded-full bg-emerald-400/8 blur-3xl" />
+
+      <div className="mx-auto max-w-7xl px-4 pb-24 pt-28 sm:px-6 lg:px-8">
         <Link
           href="/blog"
-          className="text-zinc-500 hover:text-zinc-300 text-xs font-medium transition-colors mb-8 inline-block"
+          className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.04] px-4 py-2 text-xs font-semibold uppercase tracking-[0.22em] text-white/65 shadow-sm backdrop-blur transition hover:border-white/20 hover:text-white"
         >
-          &larr; Back to Blog
+          <ArrowLeft className="h-3.5 w-3.5" />
+          Back to blog
         </Link>
 
-        <div className="flex items-center gap-3 mb-5">
-          <span className="text-[11px] font-semibold tracking-wider uppercase text-blue-400 bg-blue-500/10 px-2.5 py-1 rounded-full">
-            {post.category}
-          </span>
-          <span className="text-zinc-600 text-xs">&middot;</span>
-          <span className="text-zinc-500 text-xs">{readTime} min read</span>
-          <span className="text-zinc-600 text-xs">&middot;</span>
-          <span className="text-zinc-500 text-xs">{post.date}</span>
-        </div>
+        <div className="mt-8 grid gap-10 lg:grid-cols-[minmax(0,1fr)_18rem] lg:items-start">
+          <article className="min-w-0">
+            <div className="rounded-[2.25rem] border border-white/10 bg-white/[0.04] px-6 py-8 shadow-[0_24px_80px_-45px_rgba(0,0,0,0.78)] backdrop-blur sm:px-8 sm:py-10 lg:px-10 lg:py-12">
+              <div className="flex flex-wrap items-center gap-2 text-xs text-white/50">
+                <span className="rounded-full border border-white/10 bg-white/[0.05] px-3 py-1 font-medium text-white/80">
+                  {post.category}
+                </span>
+                <span className="text-white/18">•</span>
+                <span className="inline-flex items-center gap-1.5">
+                  <Clock3 className="h-3.5 w-3.5" />
+                  {readTime} min read
+                </span>
+                <span className="text-white/18">•</span>
+                <span className="inline-flex items-center gap-1.5">
+                  <CalendarDays className="h-3.5 w-3.5" />
+                  {formatDate(post.date)}
+                </span>
+              </div>
 
-        <h1 className="text-4xl md:text-5xl font-bold text-white mb-5 leading-tight tracking-tight">
-          {post.title}
-        </h1>
+              <h1 className="mt-5 max-w-4xl font-heading text-4xl font-medium tracking-tight text-white sm:text-5xl lg:text-6xl">
+                {post.title}
+              </h1>
 
-        <p className="text-xl leading-8 text-zinc-300 mb-2 max-w-3xl">
-          {post.description}
-        </p>
-
-        <hr className="border-zinc-800 my-10" />
-
-        {toc.length > 0 && (
-          <>
-            <p className="text-zinc-500 text-xs font-semibold tracking-wider uppercase mb-4">
-              Jump to
-            </p>
-            <div className="grid grid-cols-2 gap-x-12 gap-y-2 mb-10">
-              {toc.map((item) => (
-                <a
-                  key={item.id}
-                  href={`#${item.id}`}
-                  className="text-zinc-400 hover:text-white text-sm transition-colors"
-                >
-                  <span className="text-zinc-600 mr-2">{item.number}.</span>
-                  {item.title}
-                </a>
-              ))}
-            </div>
-            <hr className="border-zinc-800 my-10" />
-          </>
-        )}
-
-        {summaryLine && (
-          <div className="border-l-2 border-blue-500/40 pl-5 py-1 my-8">
-            <p className="text-zinc-400 text-sm leading-relaxed">{summaryLine}</p>
-          </div>
-        )}
-
-        {introLines.map((line, i) => (
-          <p key={i} className="text-zinc-300 text-base leading-7 mb-5 last:mb-0">
-            {line}
-          </p>
-        ))}
-
-        <div className="mt-14 space-y-14">
-          {post.content
-            .filter((l) => l.startsWith("## "))
-            .map((heading) => {
-              const raw = heading.replace("## ", "");
-              const match = raw.match(/^(\d+)\.\s+(.+)/);
-              const num = match ? match[1] : "";
-              const title = match ? match[2] : raw;
-              const id = match ? `q-${match[1]}` : "";
-
-              const idx = post.content.indexOf(heading);
-              const blockLines: string[] = [];
-              for (let j = idx + 1; j < post.content.length; j++) {
-                const l = post.content[j];
-                if (l.startsWith("## ")) break;
-                blockLines.push(l);
-              }
-
-              let description = "";
-              let sampleAnswer = "";
-              let whyThisWorks = "";
-
-              for (const l of blockLines) {
-                if (l.startsWith("**Why this works:")) {
-                  whyThisWorks = l.replace("**Why this works:** ", "").replace("**Why this works:**", "");
-                } else if (l.startsWith("**Sample answer:") || l.startsWith("**Sample questions:")) {
-                  sampleAnswer = l.replace(/\*\*Sample answer:\*\*\s*"?/, "").replace(/\*\*Sample questions:\*\*\s*"?/, "").replace(/"$/, "");
-                } else {
-                  description = l;
-                }
-              }
-
-              const nextQ = post.content
-                .filter((l) => l.startsWith("## "))
-                .slice(post.content.filter((l) => l.startsWith("## ")).indexOf(heading) + 1);
-              const hasNext = nextQ.length > 0;
-
-              return (
-                <section key={id} id={id} className="scroll-mt-28">
-                  <h2 className="text-2xl font-bold text-white mb-4">
-                    {num && <span className="text-zinc-500 mr-3">{num}.</span>}
-                    {title}
-                  </h2>
-
-                  <p className="text-zinc-300 text-base leading-7 mb-5">
-                    {description}
-                  </p>
-
-                  {sampleAnswer && (
-                    <blockquote className="border-l-2 border-zinc-700 pl-6 my-6">
-                      <p className="text-zinc-400 text-base leading-7 italic">
-                        &ldquo;{sampleAnswer.replace(/^"/, "").replace(/"$/, "")}&rdquo;
-                      </p>
-                    </blockquote>
-                  )}
-
-                  {whyThisWorks && (
-                    <div className="flex items-start gap-3 mt-4">
-                      <span className="text-[11px] font-semibold tracking-wider text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded shrink-0 mt-0.5">
-                        Why this works
-                      </span>
-                      <p className="text-zinc-500 text-sm leading-relaxed">
-                        {whyThisWorks}
-                      </p>
-                    </div>
-                  )}
-
-                  {hasNext && <hr className="border-zinc-800 my-14" />}
-                </section>
-              );
-            })}
-        </div>
-
-        <hr className="border-zinc-800 my-16" />
-
-        <div className="space-y-4">
-          {(() => {
-            const sepIdx = post.content.findLastIndex((l) => l.startsWith("---"));
-            const outroLines = sepIdx >= 0 ? post.content.slice(sepIdx + 1).filter((l) => l !== "") : [];
-            return outroLines.map((line, i) => {
-              if (line.startsWith("- ")) {
-                return (
-                  <p key={i} className="text-zinc-400 text-sm pl-4 border-l-2 border-zinc-800 ml-1">
-                    {mdLinks(line.replace("- ", ""))}
-                  </p>
-                );
-              }
-              return (
-                <p key={i} className="text-zinc-400 text-sm leading-relaxed">
-                  {mdLinks(line)}
-                </p>
-              );
-            });
-          })()}
-        </div>
-
-        <hr className="border-zinc-800 my-16" />
-
-        <div className="bg-zinc-900 border border-zinc-800 rounded-3xl p-10 md:p-12 text-center">
-          <h2 className="text-2xl font-bold text-white mb-3">
-            Ready to Practice These Questions?
-          </h2>
-          <p className="text-zinc-400 text-sm mb-8 max-w-lg mx-auto leading-relaxed">
-            Reading answers is useful. Practicing them with a native English tutor
-            who gives real-time feedback is better. Book a session and walk into
-            your next interview with confidence.
-          </p>
-          <Link href="/signup">
-            <Button className="bg-white hover:bg-zinc-200 text-black rounded-full px-8 py-6 text-sm font-semibold transition-all">
-              Book a Practice Session
-            </Button>
-          </Link>
-        </div>
-
-        <hr className="border-zinc-800 my-16" />
-
-        <nav className="flex flex-col sm:flex-row justify-between gap-4 mb-16">
-          {prevPost ? (
-            <Link
-              href={`/blog/${prevPost.slug}`}
-              className="group flex-1"
-            >
-              <span className="text-zinc-600 text-xs tracking-wider uppercase">&larr; Previous</span>
-              <p className="text-zinc-300 text-sm mt-1 group-hover:text-white transition-colors">
-                {prevPost.title}
+              <p className="mt-6 max-w-3xl text-lg leading-8 text-white/68 sm:text-xl">
+                {post.description}
               </p>
-            </Link>
-          ) : (
-            <div className="flex-1" />
-          )}
-          {nextPost ? (
-            <Link
-              href={`/blog/${nextPost.slug}`}
-              className="group flex-1 text-right"
-            >
-              <span className="text-zinc-600 text-xs tracking-wider uppercase">Next &rarr;</span>
-              <p className="text-zinc-300 text-sm mt-1 group-hover:text-white transition-colors">
-                {nextPost.title}
-              </p>
-            </Link>
-          ) : (
-            <div className="flex-1" />
-          )}
-        </nav>
 
-        {related.length > 0 && (
-          <>
-            <hr className="border-zinc-800 mb-10" />
-            <h2 className="text-white font-semibold text-sm tracking-wider uppercase mb-4">
-              Related Articles
-            </h2>
-            <div className="space-y-3 mb-10">
-              {related.map((r) => (
-                <Link
-                  key={r.slug}
-                  href={`/blog/${r.slug}`}
-                  className="group flex items-center justify-between py-2 border-b border-zinc-800/50 last:border-0"
-                >
-                  <span className="text-zinc-400 text-sm group-hover:text-white transition-colors">
-                    {r.title}
-                  </span>
-                  <span className="text-zinc-600 text-sm group-hover:text-zinc-400 transition-colors">
-                    &rarr;
-                  </span>
+              <div className="mt-8 flex flex-wrap gap-3">
+                <Link href="/signup">
+                  <Button className="rounded-full bg-white px-6 py-5 text-sm font-semibold text-slate-950 transition hover:bg-blue-100">
+                    Book a Practice Session
+                  </Button>
                 </Link>
-              ))}
+                <span className="inline-flex items-center rounded-full border border-white/10 bg-white/[0.04] px-4 py-2 text-xs font-medium text-white/55">
+                  <BookOpen className="mr-2 h-3.5 w-3.5" />
+                  Structured for fast scanning
+                </span>
+              </div>
+
+              {summaryLine && (
+                <div className="mt-10 rounded-3xl border border-blue-400/15 bg-blue-500/10 px-5 py-5 text-sm leading-7 text-white/78">
+                  <div className="mb-2 inline-flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.24em] text-blue-300">
+                    <Sparkles className="h-3.5 w-3.5" />
+                    Summary
+                  </div>
+                  <p>{renderInlineMarkdown(summaryLine)}</p>
+                </div>
+              )}
+
+              {toc.length > 0 && (
+                <div className="mt-10 rounded-3xl border border-white/10 bg-white/[0.03] p-5 lg:hidden">
+                  <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-white/45">
+                    Jump to section
+                  </p>
+                  <div className="mt-4 flex flex-wrap gap-2">
+                    {toc.map((item) => (
+                      <a
+                        key={item.id}
+                        href={`#${item.id}`}
+                        className="rounded-full border border-white/10 bg-white/[0.04] px-3 py-2 text-sm text-white/70 transition hover:border-blue-400/30 hover:text-white"
+                      >
+                        {item.number ? `${item.number}. ` : ""}
+                        {item.title}
+                      </a>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              <div className="mt-12 space-y-8">
+                {introLines.map((line) => (
+                  <p
+                    key={line}
+                    className="max-w-3xl text-[1.04rem] leading-8 text-white/78"
+                  >
+                    {renderInlineMarkdown(line)}
+                  </p>
+                ))}
+              </div>
+
+              <div className="mt-14 space-y-6">
+                {headings.map((heading) => {
+                  const raw = heading.replace("## ", "");
+                  const match = raw.match(/^(\d+)\.\s+(.+)/);
+                  const num = match ? match[1] : "";
+                  const title = match ? match[2] : raw;
+                  const id = match ? `q-${match[1]}` : raw.toLowerCase().replace(/[^a-z0-9]+/g, "-");
+
+                  const idx = post.content.indexOf(heading);
+                  const blockLines: string[] = [];
+                  for (let i = idx + 1; i < post.content.length; i += 1) {
+                    const line = post.content[i];
+                    if (line.startsWith("## ")) break;
+                    blockLines.push(line);
+                  }
+
+                  let description = "";
+                  let sampleAnswer = "";
+                  let whyThisWorks = "";
+
+                  for (const line of blockLines) {
+                    if (line.startsWith("**Why this works:")) {
+                      whyThisWorks = line.replace("**Why this works:** ", "").replace("**Why this works:**", "");
+                    } else if (line.startsWith("**Sample answer:") || line.startsWith("**Sample questions:")) {
+                      sampleAnswer = line
+                        .replace(/\*\*Sample answer:\*\*\s*"?/, "")
+                        .replace(/\*\*Sample questions:\*\*\s*"?/, "")
+                        .replace(/"$/, "");
+                    } else {
+                      description = line;
+                    }
+                  }
+
+                  const hasNext = headings.indexOf(heading) < headings.length - 1;
+
+                  return (
+                    <section
+                      key={id}
+                      id={id}
+                      className="scroll-mt-32 rounded-[1.75rem] border border-white/10 bg-white/[0.04] p-5 shadow-[0_12px_30px_-24px_rgba(0,0,0,0.7)] sm:p-7"
+                    >
+                      <div className="flex items-start gap-4">
+                        <span className="mt-1 inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-white/10 bg-white/[0.05] text-sm font-semibold text-white/55 shadow-sm">
+                          {num || "§"}
+                        </span>
+                        <div className="min-w-0">
+                          <h2 className="font-heading text-2xl font-medium tracking-tight text-white sm:text-[2rem]">
+                            {title}
+                          </h2>
+                          <p className="mt-3 text-[1.02rem] leading-8 text-white/72">
+                            {renderInlineMarkdown(description)}
+                          </p>
+                        </div>
+                      </div>
+
+                      {sampleAnswer && (
+                        <blockquote className="mt-6 rounded-3xl border border-white/10 bg-black/20 px-5 py-5">
+                          <p className="text-[1rem] leading-8 text-white/78">
+                            <span className="mr-2 inline-block align-top text-2xl leading-none text-white/20">
+                              “
+                            </span>
+                            {renderInlineMarkdown(sampleAnswer)}
+                            <span className="ml-1 inline-block align-bottom text-2xl leading-none text-white/20">
+                              ”
+                            </span>
+                          </p>
+                        </blockquote>
+                      )}
+
+                      {whyThisWorks && (
+                        <div className="mt-6 rounded-3xl border border-emerald-400/15 bg-emerald-500/10 p-5">
+                          <div className="mb-2 inline-flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.24em] text-emerald-300">
+                            Why this works
+                          </div>
+                          <p className="text-sm leading-7 text-emerald-50/80">
+                            {renderInlineMarkdown(whyThisWorks)}
+                          </p>
+                        </div>
+                      )}
+
+                      {hasNext && <div className="mt-8 h-px bg-white/10" />}
+                    </section>
+                  );
+                })}
+              </div>
+
+              <div className="mt-14 rounded-[2rem] border border-white/10 bg-white/[0.04] p-5 sm:p-7">
+                <div className="space-y-4 text-[0.98rem] leading-8 text-white/72">
+                  {outroLines.map((line) => {
+                    if (line.startsWith("- ")) {
+                      return (
+                        <p
+                          key={line}
+                          className="border-l-2 border-white/15 pl-4 text-white/62"
+                        >
+                          {renderInlineMarkdown(line.replace("- ", ""))}
+                        </p>
+                      );
+                    }
+
+                    return <p key={line}>{renderInlineMarkdown(line)}</p>;
+                  })}
+                </div>
+              </div>
+
+              <div className="mt-14 rounded-[2rem] border border-blue-400/15 bg-blue-500/10 p-6 sm:p-8">
+                <div className="max-w-2xl">
+                  <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-blue-300">
+                    Next step
+                  </p>
+                  <h2 className="mt-3 font-heading text-2xl font-medium tracking-tight text-white sm:text-[2rem]">
+                    Ready to practice these answers out loud?
+                  </h2>
+                  <p className="mt-4 text-sm leading-7 text-white/68 sm:text-base">
+                    Reading polished examples helps. Practicing them with a tutor
+                    who can correct your wording, timing, and pronunciation is
+                    what makes them usable in a real interview.
+                  </p>
+                  <div className="mt-6">
+                    <Link href="/signup">
+                      <Button className="rounded-full bg-white px-6 py-5 text-sm font-semibold text-slate-950 transition hover:bg-blue-100">
+                        Book a practice session
+                      </Button>
+                    </Link>
+                  </div>
+                </div>
+              </div>
             </div>
-          </>
-        )}
+
+            <div className="mt-8 grid gap-4 sm:grid-cols-2">
+              {prevPost ? (
+                <Link href={`/blog/${prevPost.slug}`} className="group">
+                  <div className="h-full rounded-[1.75rem] border border-white/10 bg-white/[0.04] p-5 transition hover:border-white/20 hover:bg-white/[0.06]">
+                    <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-white/45">
+                      Previous article
+                    </p>
+                    <p className="mt-3 font-heading text-xl font-medium tracking-tight text-white group-hover:text-blue-300">
+                      {prevPost.title}
+                    </p>
+                    <p className="mt-2 text-sm leading-6 text-white/64">
+                      {prevPost.description}
+                    </p>
+                    <p className="mt-4 inline-flex items-center gap-2 text-sm font-medium text-white/55">
+                      <ArrowLeft className="h-4 w-4" />
+                      Continue reading
+                    </p>
+                  </div>
+                </Link>
+              ) : (
+                <div />
+              )}
+
+              {nextPost ? (
+                <Link href={`/blog/${nextPost.slug}`} className="group">
+                  <div className="h-full rounded-[1.75rem] border border-white/10 bg-white/[0.04] p-5 text-right transition hover:border-white/20 hover:bg-white/[0.06]">
+                    <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-white/45">
+                      Next article
+                    </p>
+                    <p className="mt-3 font-heading text-xl font-medium tracking-tight text-white group-hover:text-blue-300">
+                      {nextPost.title}
+                    </p>
+                    <p className="mt-2 text-sm leading-6 text-white/64">
+                      {nextPost.description}
+                    </p>
+                    <p className="mt-4 inline-flex items-center gap-2 text-sm font-medium text-white/55">
+                      Continue reading
+                      <ArrowRight className="h-4 w-4" />
+                    </p>
+                  </div>
+                </Link>
+              ) : (
+                <div />
+              )}
+            </div>
+
+            {related.length > 0 && (
+              <div className="mt-8 rounded-[2rem] border border-white/10 bg-white/[0.04] p-6 sm:p-8">
+                <div className="flex items-center gap-3">
+                  <h2 className="text-xs font-semibold uppercase tracking-[0.24em] text-white/45">
+                    Related articles
+                  </h2>
+                  <div className="h-px flex-1 bg-white/10" />
+                </div>
+
+                <div className="mt-6 grid gap-4 md:grid-cols-2">
+                  {related.map((article) => (
+                    <Link key={article.slug} href={`/blog/${article.slug}`} className="group">
+                      <div className="h-full rounded-[1.5rem] border border-white/10 bg-white/[0.03] p-5 transition hover:border-blue-400/20 hover:bg-blue-500/5">
+                        <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-white/45">
+                          {article.category}
+                        </p>
+                        <p className="mt-3 font-heading text-lg font-medium tracking-tight text-white group-hover:text-blue-300">
+                          {article.title}
+                        </p>
+                        <p className="mt-2 text-sm leading-6 text-white/64">
+                          {article.description}
+                        </p>
+                      </div>
+                    </Link>
+                  ))}
+                </div>
+              </div>
+            )}
+          </article>
+
+          <aside className="hidden lg:block lg:sticky lg:top-28">
+            <div className="rounded-[2rem] border border-white/10 bg-white/[0.04] p-5 shadow-[0_18px_50px_-30px_rgba(0,0,0,0.7)] backdrop-blur">
+              <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-white/45">
+                On this page
+              </p>
+              <nav className="mt-4 space-y-2">
+                {toc.map((item) => (
+                  <a
+                    key={item.id}
+                    href={`#${item.id}`}
+                    className="group flex items-start gap-3 rounded-2xl px-3 py-2 text-sm text-white/64 transition hover:bg-white/[0.05] hover:text-white"
+                  >
+                    <span className="mt-0.5 text-[11px] font-semibold uppercase tracking-[0.2em] text-white/35 group-hover:text-white/55">
+                      {item.number || "§"}
+                    </span>
+                    <span className="leading-6">{item.title}</span>
+                  </a>
+                ))}
+              </nav>
+            </div>
+
+            <div className="mt-5 rounded-[2rem] border border-blue-400/15 bg-blue-500/10 p-5">
+              <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-blue-300">
+                Need live practice?
+              </p>
+              <p className="mt-3 text-sm leading-7 text-white/68">
+                Reading gives you structure. Speaking with feedback makes it
+                usable.
+              </p>
+              <Link href="/signup" className="mt-5 inline-flex">
+                <Button className="rounded-full bg-white px-5 py-5 text-sm font-semibold text-slate-950 transition hover:bg-blue-100">
+                  Book a session
+                </Button>
+              </Link>
+            </div>
+          </aside>
+        </div>
       </div>
     </main>
   );
