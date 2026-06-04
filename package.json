@@ -13,6 +13,7 @@
     "test:unit": "bun test tests/unit",
     "test:integration": "bun test tests/integration",
     "test:e2e": "playwright test",
+    "test:e2e:staging": "bash .githooks/test-e2e-staging.sh",
     "test:all": "bash .githooks/run-all-tests.sh",
     "test": "bun run test:all",
     "db:seed:dev": "node --import tsx --env-file=.env.development scripts/seed.ts --drop",
