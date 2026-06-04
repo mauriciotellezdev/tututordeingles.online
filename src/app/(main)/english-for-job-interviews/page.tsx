@@ -107,8 +107,8 @@ export default function EnglishForJobInterviewsPage() {
               pero en una entrevista los nervios y la presión te juegan en
               contra. Te ayudamos a prepararte con un tutor estadounidense
               nativo que entiende el proceso de contratación en empresas de
-              Estados Unidos. Practicamos preguntas reales, trabajamos tu
-              fluidez y corregimos tu pronunciación para que llegues seguro a tu
+              Estados Unidos. Practico preguntas reales contigo, trabajo tu
+              fluidez y corrijo tu pronunciación para que llegues seguro a tu
               próxima entrevista.
             </p>
           </div>
@@ -117,8 +117,8 @@ export default function EnglishForJobInterviewsPage() {
             <div className="grid gap-4">
               {[
                 "Job interviews in English are different from interviews in Spanish. US hiring managers expect behavioral answers, confident communication, and cultural fit - not just technical skills. If English isn't your first language, the interview is often the hardest part of the job search.",
-                "I help Mexican professionals and LATAM developers prepare for English-language interviews. We practice real questions, refine your answers, and build the fluency you need to walk into any interview feeling prepared.",
-                "Most of my students already have strong technical skills. They don't need help with their resume or qualifications. What they need is the ability to communicate those qualifications naturally in English, under the pressure of a live interview. That's what we work on.",
+                "I help Mexican professionals and LATAM developers prepare for English-language interviews. I practice real questions with you, refine your answers, and build the fluency you need to walk into any interview feeling prepared.",
+                "Most of my students already have strong technical skills. They don't need help with their resume or qualifications. What they need is the ability to communicate those qualifications naturally in English, under the pressure of a live interview. That's what I work on.",
                 "Whether you're applying to a US tech company, preparing for a FAANG interview, or seeking remote work with an international team, the ability to express yourself clearly in English is often the deciding factor between moving forward and getting rejected.",
               ].map((paragraph) => (
                 <p key={paragraph} className="text-[1.02rem] leading-8 text-white/76">
@@ -130,7 +130,7 @@ export default function EnglishForJobInterviewsPage() {
 
           <section className="mt-16">
             <h2 className="font-heading text-2xl font-medium tracking-tight text-white sm:text-3xl">
-              What We Cover
+              What I Cover
             </h2>
             <div className="mt-6 grid gap-4">
               {[
@@ -242,7 +242,7 @@ export default function EnglishForJobInterviewsPage() {
               <div className="h-px flex-1 bg-white/10" />
             </div>
             <p className="mt-4 text-sm leading-7 text-white/64">
-              Explore our complete library of interview preparation guides:
+              Explore my complete library of interview preparation guides:
             </p>
             <div className="mt-6 grid gap-4">
               {supportingArticles.map((article) => (
@@ -278,7 +278,7 @@ export default function EnglishForJobInterviewsPage() {
 
           <section className="mt-8">
             <p className="text-sm leading-7 text-white/50">
-              Can't commit yet? Start with our{" "}
+              Can't commit yet? Start with my{" "}
               <Link
                 href="/blog/25-common-interview-questions-in-english"
                 className="font-medium text-blue-300 underline decoration-blue-400/30 underline-offset-4 transition hover:text-blue-200"
