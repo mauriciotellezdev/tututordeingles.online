@@ -24,6 +24,34 @@ export const metadata: Metadata = {
   },
 };
 
+const supportingArticles = [
+  {
+    title: "How to Answer 'Tell Me About Yourself' in English",
+    slug: "how-to-answer-tell-me-about-yourself",
+    desc: "Structure your opening answer to make a strong first impression in any English interview.",
+  },
+  {
+    title: "25 Common Interview Questions in English",
+    slug: "25-common-interview-questions-in-english",
+    desc: "The most frequently asked questions by US hiring managers, with sample answers.",
+  },
+  {
+    title: "STAR Method Interview Answers in English",
+    slug: "star-method-interview-answers",
+    desc: "Master the Situation-Task-Action-Result format that US recruiters expect.",
+  },
+  {
+    title: "Interview Vocabulary for Professionals",
+    slug: "interview-vocabulary-for-professionals",
+    desc: "Key English phrases and vocabulary to use naturally in job interviews.",
+  },
+  {
+    title: "How to Describe Work Experience in English",
+    slug: "how-to-describe-work-experience",
+    desc: "Talk about your professional background clearly and confidently in English.",
+  },
+];
+
 export default function EnglishForJobInterviewsPage() {
   return (
     <main className="min-h-screen bg-[#0a0a0a] pt-32 pb-20 px-4 md:px-8">
@@ -57,6 +85,18 @@ export default function EnglishForJobInterviewsPage() {
             English-language interviews. We practice real questions, refine your
             answers, and build the fluency you need to walk into any interview
             feeling prepared.
+          </p>
+          <p className="text-white/60 text-base leading-relaxed mb-6">
+            Most of my students already have strong technical skills. They don't
+            need help with their resume or qualifications. What they need is the
+            ability to communicate those qualifications naturally in English,
+            under the pressure of a live interview. That's what we work on.
+          </p>
+          <p className="text-white/60 text-base leading-relaxed">
+            Whether you're applying to a US tech company, preparing for a FAANG
+            interview, or seeking remote work with an international team, the
+            ability to express yourself clearly in English is often the deciding
+            factor between moving forward and getting rejected.
           </p>
         </section>
 
@@ -104,6 +144,52 @@ export default function EnglishForJobInterviewsPage() {
 
         <section className="mb-16">
           <h2 className="text-2xl font-bold text-white mb-6">
+            Why English Interviews Are Different
+          </h2>
+          <p className="text-white/60 text-base leading-relaxed mb-4">
+            If you've only interviewed in Spanish, the US interview process can
+            feel unfamiliar. Here are the key differences:
+          </p>
+          <div className="grid gap-4 mb-6">
+            {[
+              {
+                title: "Behavioral questions dominate",
+                desc: "US interviews focus heavily on past behavior as a predictor of future performance. 'Tell me about a time...' questions are standard.",
+              },
+              {
+                title: "Cultural fit matters",
+                desc: "Hiring managers evaluate not just your skills but how you communicate, collaborate, and handle feedback.",
+              },
+              {
+                title: "Self-promotion is expected",
+                desc: "In many cultures, humility is valued. In US interviews, you're expected to confidently describe your achievements.",
+              },
+              {
+                title: "Small talk is part of the evalution",
+                desc: "The first few minutes of casual conversation are being observed. Can you build rapport naturally in English?",
+              },
+              {
+                title: "Language fluency affects perception",
+                desc: "Even if your English is functional, hesitations and grammar mistakes can make you seem less competent than you are.",
+              },
+            ].map((item) => (
+              <div
+                key={item.title}
+                className="bg-[#0f1729]/40 border border-white/[0.08] rounded-xl p-5 backdrop-blur-sm"
+              >
+                <h3 className="text-white font-semibold text-sm mb-1.5">
+                  {item.title}
+                </h3>
+                <p className="text-white/40 text-xs leading-relaxed">
+                  {item.desc}
+                </p>
+              </div>
+            ))}
+          </div>
+        </section>
+
+        <section className="mb-16">
+          <h2 className="text-2xl font-bold text-white mb-6">
             Who Is This For?
           </h2>
           <ul className="space-y-3">
@@ -120,6 +206,29 @@ export default function EnglishForJobInterviewsPage() {
               </li>
             ))}
           </ul>
+        </section>
+
+        <section className="mb-16">
+          <h2 className="text-2xl font-bold text-white mb-6">
+            Interview English Guide
+          </h2>
+          <p className="text-white/50 text-sm mb-6">
+            Explore our complete library of interview preparation guides:
+          </p>
+          <div className="grid gap-4">
+            {supportingArticles.map((article) => (
+              <Link key={article.slug} href={`/blog/${article.slug}`}>
+                <div className="bg-[#0f1729]/40 border border-white/[0.08] rounded-xl p-5 backdrop-blur-sm hover:bg-[#0f1729]/60 transition-colors">
+                  <h3 className="text-blue-400 font-semibold text-sm mb-1">
+                    {article.title}
+                  </h3>
+                  <p className="text-white/40 text-xs leading-relaxed">
+                    {article.desc}
+                  </p>
+                </div>
+              </Link>
+            ))}
+          </div>
         </section>
 
         <section className="mb-16 bg-blue-500/5 border border-blue-500/10 rounded-2xl p-8 text-center">

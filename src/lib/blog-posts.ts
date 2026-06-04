@@ -118,7 +118,13 @@ export const blogPosts: BlogPost[] = [
       "**Sample answer:** \"Based on my research and experience, I'm looking for a range between X and Y. I'm open to discussing based on the full compensation package.\"",
 
       "---",
-      "Preparing for an interview in English is different from preparing in your native language. The vocabulary, cultural expectations, and communication style all matter. If you want personalized practice with a native English speaker who understands the hiring process for US companies, consider booking a session to practice real interview questions.",
+      "This guide is part of our comprehensive [English for Job Interviews](/english-for-job-interviews) resource. For more targeted preparation, check out these related guides:",
+      "",
+      "- [STAR Method Interview Answers in English](/blog/star-method-interview-answers) — Learn how to structure behavioral responses that US recruiters expect.",
+      "- [Interview Vocabulary for Professionals](/blog/interview-vocabulary-for-professionals) — Key phrases to use naturally in your next interview.",
+      "- [How to Describe Work Experience in English](/blog/how-to-describe-work-experience) — Talk about your professional background with clarity and confidence.",
+      "",
+      "If you'd like personalized practice, [book a private tutoring session](/signup) with a native English speaker who specializes in interview preparation for LATAM professionals.",
     ],
   },
 ];

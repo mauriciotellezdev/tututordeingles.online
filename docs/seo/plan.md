@@ -147,15 +147,61 @@ Pages:
 
 ---
 
-## Internal Linking Rules
+## Internal Linking: Hub-and-Spoke Model
 
-New content may link **to** existing pages. Existing pages must not be modified.
+All new pages must follow a **hub-and-spoke** structure.
 
-| ✅ Allowed | ❌ Not Allowed |
-|-----------|---------------|
-| New article → homepage | Editing existing pages to add links |
-| New article → pricing page | |
-| New article → contact page | |
+### Levels
+
+| Level | Type | Examples | Word Count |
+|-------|------|----------|------------|
+| 1 | Existing conversion pages (untouched) | `/`, `/signup` | — |
+| 2 | SEO hub pages | `/english-for-job-interviews` | 2000–4000 |
+| 3 | Supporting blog posts | `/blog/25-common-interview-questions-in-english` | 1200–2500 |
+
+### Every Blog Post Must Link To
+
+1. **Its parent hub page** — using relevant anchor text (e.g., "English for Job Interviews Guide")
+2. **2–4 related articles** — to build topical relevance
+3. **One conversion page** — near the end (e.g., "Book a private English tutoring session" → `/signup`)
+
+### Every Hub Page Must Link To
+
+All supporting articles in its cluster, listed explicitly so Google understands the relationship:
+
+```text
+/english-for-job-interviews
+├── How to Answer Tell Me About Yourself
+├── STAR Method Interview Answers
+├── Interview Vocabulary for Professionals
+├── Common Interview Questions in English
+└── Work Experience Vocabulary
+```
+
+### Linking Don'ts
+
+- Don't create random links everywhere — Google can't identify topical relationships.
+- Don't use generic anchors like "click here" or "read more" — use descriptive anchors like "English for Software Developers".
+- Don't orphan pages — every page must receive links from its hub + related articles + blog index.
+
+### Ideal Numbers Per Article
+
+**Incoming links:** 1 hub page + 2–4 related articles
+**Outgoing links:** 1 hub page + 2–4 related articles + 1 conversion page
+
+---
+
+## 5 Planned Hubs
+
+```text
+/english-for-job-interviews
+/english-for-software-developers
+/english-for-remote-workers
+/business-english-for-professionals
+/improve-english-speaking
+```
+
+Build 5–10 supporting articles under each hub for ~30–50 pages total.
 
 ---
 

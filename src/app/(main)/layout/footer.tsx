@@ -8,6 +8,7 @@ const links = {
     { label: "Cómo funciona", href: "#como-funciona" },
     { label: "Tu tutor", href: "#tutor" },
     { label: "Precios", href: "#precios" },
+    { label: "Blog", href: "/blog" },
   ],
   cuenta: [
     { label: "Registrarse", href: "/signup" },
