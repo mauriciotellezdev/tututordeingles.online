@@ -7,7 +7,7 @@ import { STUDENT_COLLECTION, Student } from "@/lib/models/student";
 import { createSession, SESSION_COLLECTION } from "@/lib/models/session";
 import { getTeacherData } from "@/lib/models/teacher";
 import { createCredit, CREDIT_COLLECTION } from "@/lib/models/credit";
-import { processCompletedPayment } from "@/lib/stripe-verify";
+import { processCompletedPayment, resolveCheckoutSessionPaymentContext } from "@/lib/stripe-verify";
 import { sendMail } from "@/lib/mail";
 import Stripe from "stripe";
 import { getReferralDashboardSummary } from "@/lib/referrals";
@@ -411,19 +411,20 @@ export async function verifyPaymentAction(payload: {
       return { success: false, error: "El pago aún no se ha completado. Por favor, espera unos segundos." };
     }
 
-    const metadataStudentId = session.metadata?.studentId;
-    const metadataPlanType = session.metadata?.planType;
-    if (!metadataStudentId || !metadataPlanType) {
-      return { success: false, error: "La sesión de Stripe no incluye metadatos válidos." };
-    }
-    if (metadataStudentId !== studentId || metadataPlanType !== planType) {
-      return { success: false, error: "La sesión de Stripe no coincide con los datos solicitados." };
+    const verifiedPaymentContext = resolveCheckoutSessionPaymentContext(session, studentId, planType);
+    if (!verifiedPaymentContext.ok) {
+      return { success: false, error: verifiedPaymentContext.error };
     }
 
     const paymentIntentId = session.payment_intent as string;
     const stripeCustomerId = session.customer as string;
 
-    const result = await processCompletedPayment(metadataStudentId, paymentIntentId, stripeCustomerId, metadataPlanType as "single" | "package");
+    const result = await processCompletedPayment(
+      verifiedPaymentContext.studentId,
+      paymentIntentId,
+      stripeCustomerId,
+      verifiedPaymentContext.planType,
+    );
 
     return {
       success: result.success,

@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import Stripe from 'stripe';
-import { processCompletedPayment } from '@/lib/stripe-verify';
+import { processCompletedPayment, resolveCheckoutSessionPaymentContext } from '@/lib/stripe-verify';
 
 export async function POST(request: Request) {
   try {
@@ -25,20 +25,16 @@ export async function POST(request: Request) {
       return NextResponse.json({ status: 'pending', message: 'Payment not completed yet.' }, { status: 200 });
     }
 
-    const metadataStudentId = session.metadata?.studentId;
-    const metadataPlanType = session.metadata?.planType;
-    if (!metadataStudentId || !metadataPlanType) {
-      return NextResponse.json({ error: 'Session metadata missing' }, { status: 400 });
-    }
-    if (metadataStudentId !== studentId || metadataPlanType !== planType) {
-      return NextResponse.json({ error: 'Session metadata does not match request' }, { status: 403 });
+    const verifiedPaymentContext = resolveCheckoutSessionPaymentContext(session, studentId, planType);
+    if (!verifiedPaymentContext.ok) {
+      return NextResponse.json({ error: verifiedPaymentContext.error }, { status: 403 });
     }
 
     const result = await processCompletedPayment(
-      metadataStudentId,
+      verifiedPaymentContext.studentId,
       session.payment_intent as string,
       session.customer as string,
-      metadataPlanType as "single" | "package"
+      verifiedPaymentContext.planType
     );
 
     return NextResponse.json(

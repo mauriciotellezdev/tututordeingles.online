@@ -1,4 +1,5 @@
 import { MongoServerError, ObjectId } from "mongodb";
+import Stripe from "stripe";
 import { getCollection } from "@/lib/db";
 import { STUDENT_COLLECTION, Student } from "@/lib/models/student";
 import { createPayment, applyPaymentStatus, PAYMENT_COLLECTION } from "@/lib/models/payment";
@@ -10,6 +11,29 @@ export interface VerifyResult {
   creditsAdded: number;
   message: string;
   paymentIntentId: string;
+}
+
+export function resolveCheckoutSessionPaymentContext(
+  session: Stripe.Checkout.Session,
+  expectedStudentId: string,
+  expectedPlanType: "single" | "package",
+) {
+  const metadataStudentId = session.metadata?.studentId;
+  const metadataPlanType = session.metadata?.planType as "single" | "package" | undefined;
+
+  if (!metadataStudentId || !metadataPlanType) {
+    return { ok: false as const, error: "La sesión de Stripe no incluye metadatos válidos." };
+  }
+
+  if (metadataStudentId !== expectedStudentId || metadataPlanType !== expectedPlanType) {
+    return { ok: false as const, error: "La sesión de Stripe no coincide con los datos solicitados." };
+  }
+
+  return {
+    ok: true as const,
+    studentId: metadataStudentId,
+    planType: metadataPlanType,
+  };
 }
 
 /**
