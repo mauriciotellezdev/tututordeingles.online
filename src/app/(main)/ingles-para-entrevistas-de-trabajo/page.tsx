@@ -107,8 +107,17 @@ export default function SpanishInterviewHubPage() {
 
           <div className="mt-10 rounded-3xl border border-white/10 bg-white/[0.04] p-6">
             <p className="text-sm leading-8 text-white/74">
-              <strong className="font-semibold text-white">Resumen en español:</strong>{" "}
-              Si te cuesta sostener una entrevista de trabajo en ingles, no estas solo. Muchos profesionistas de Mexico y LATAM saben suficiente ingles para trabajar, pero se bloquean cuando toca responder bajo presion. Aqui practicas preguntas reales conmigo, ajustas tu fluidez y mejoras tu pronunciacion para llegar listo a tu siguiente entrevista.
+              <strong className="font-semibold text-white">Quick summary in English:</strong>{" "}
+              Job interviews in English are different from interviews in Spanish. US hiring managers expect behavioral answers, confident communication, and cultural fit, not just technical skills. If English is not your first language, the interview is often the hardest part of the job search.
+            </p>
+            <p className="mt-3 text-xs font-medium text-white/55">
+              Leer la version en ingles:{" "}
+              <Link
+                href="/english-for-job-interviews"
+                className="underline decoration-white/25 underline-offset-4 transition hover:text-white"
+              >
+                English for Job Interviews
+              </Link>
             </p>
           </div>
 

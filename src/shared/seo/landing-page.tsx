@@ -95,7 +95,7 @@ const ES_FAQS: LandingFAQ[] = [
 const DEFAULT_COPY: Record<LandingLang, LandingPageCopy> = {
   en: {
     pageTypeLabel: "SEO landing page",
-    summaryLabel: "Quick summary in English",
+    summaryLabel: "Resumen en español",
     exploreHubLabel: "Explore the hub",
     bookSessionLabel: "Book a practice session",
     nextStepEyebrow: "Next step",
@@ -114,7 +114,7 @@ const DEFAULT_COPY: Record<LandingLang, LandingPageCopy> = {
   },
   "es-MX": {
     pageTypeLabel: "Página SEO",
-    summaryLabel: "Resumen en español",
+    summaryLabel: "Quick summary in English",
     exploreHubLabel: "Explorar la guía",
     bookSessionLabel: "Reservar una clase",
     nextStepEyebrow: "Siguiente paso",
@@ -383,6 +383,18 @@ export function LandingPage({
                 {copy.summaryLabel}
               </div>
               <p>{renderInline(summary)}</p>
+              {alternateHref && alternateLabel ? (
+                <p className="mt-3 text-xs font-medium text-white/55">
+                  {lang === "es-MX" ? "Read the English version: " : "Leer la versión en español: "}
+                  <Link
+                    href={alternateHref}
+                    hrefLang={lang === "es-MX" ? "en-US" : "es-MX"}
+                    className="underline decoration-white/25 underline-offset-4 transition hover:text-white"
+                  >
+                    {alternateLabel}
+                  </Link>
+                </p>
+              ) : null}
             </div>
           )}
 

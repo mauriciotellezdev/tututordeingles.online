@@ -30,7 +30,7 @@ export const blogPosts: BlogPost[] = [
       "how-to-answer-tell-me-about-yourself",
     ],
     content: [
-      "\u{1F4D8} Resumen en español: Estas son las 25 preguntas más comunes en entrevistas de trabajo en Estados Unidos. Incluye ejemplos de respuestas y estrategias para profesionistas mexicanos y LATAM que buscan trabajo en empresas estadounidenses. Si te has quedado en blanco durante una entrevista en inglés, esta guía te ayudará a prepararte con respuestas naturales y efectivas.",
+      "\u{1F4D8} Quick summary in English: These are the 25 most common interview questions in the United States. It includes sample answers and strategies for Mexican and LATAM professionals looking for jobs at US companies. If you have ever gone blank during an English interview, this guide will help you prepare natural, effective responses.",
 
       "If you're a Spanish-speaking professional preparing for a job interview in English, you've probably noticed the questions feel different. They're more behavioral. More open-ended. And the pressure of speaking in a second language makes it harder to think on your feet.",
       "This guide covers the 25 most common interview questions asked by US hiring managers, with sample answers and strategies to help you respond naturally — not like you memorized a script.",
@@ -185,7 +185,7 @@ export const blogPosts: BlogPost[] = [
       "how-to-answer-tell-me-about-yourself",
     ],
     content: [
-      "\u{1F4D8} Quick summary in English: The STAR method helps you answer behavioral interview questions with structure, clarity, and concrete results. If you freeze under pressure, this guide gives you a simple formula to sound professional and convincing.",
+      "\u{1F4D8} Resumen en español: El metodo STAR te ayuda a responder preguntas de comportamiento con estructura, claridad y resultados concretos. Si te bloqueas bajo presion, esta guia te da una formula simple para sonar profesional y convincente.",
       "Behavioral interview questions are hard because they ask for evidence, not opinions. US hiring managers want to hear about a real situation, the task you owned, the action you took, and the result you delivered.",
       "The STAR method gives you a repeatable structure so you can answer clearly without rambling or freezing.",
       "## 1. Situation",
@@ -232,7 +232,7 @@ export const blogPosts: BlogPost[] = [
       "how-to-answer-tell-me-about-yourself",
     ],
     content: [
-      "\u{1F4D8} Quick summary in English: In an English interview, good fluency is not enough. You also need professional vocabulary to describe accomplishments, responsibilities, and strengths naturally.",
+      "\u{1F4D8} Resumen en español: En una entrevista en ingles no basta con tener buen nivel. Tambien necesitas vocabulario profesional para describir logros, responsabilidades y fortalezas con naturalidad.",
       "Interview vocabulary is not about using fancy words. It's about using the right words for the right moment so you sound clear, direct, and credible.",
       "## 1. Describing your role",
       "Use verbs and nouns that sound active and professional.",
@@ -279,7 +279,7 @@ export const blogPosts: BlogPost[] = [
       "how-to-answer-tell-me-about-yourself",
     ],
     content: [
-      "\u{1F4D8} Quick summary in English: This guide shows you how to describe your work experience in English in a professional, clear, and interview-ready way.",
+      "\u{1F4D8} Resumen en español: Esta guia te muestra como describir tu experiencia laboral en ingles de forma profesional, clara y lista para entrevista.",
       "A lot of candidates know their resume well in Spanish, but struggle to explain that same experience naturally in English.",
       "The key is not translating word for word. The key is to present your experience as a clear story: what you did, what you used, what changed, and what impact you made.",
       "## 1. Start with your current role",
@@ -325,7 +325,7 @@ export const blogPosts: BlogPost[] = [
       "how-to-describe-work-experience",
     ],
     content: [
-      "\u{1F4D8} Quick summary in English: 'Tell me about yourself' is often the first question in an English interview and one of the most important. Here you'll learn how to answer it with structure, confidence, and without memorizing a script.",
+      "\u{1F4D8} Resumen en español: 'Tell me about yourself' suele ser la primera pregunta en una entrevista en ingles y una de las mas importantes. Aqui aprenderas a responderla con estructura, confianza y sin memorizar un guion.",
       "This question is not asking for your life story. It is asking for a short professional summary that helps the interviewer understand who you are, what you do, and why you are relevant to the role.",
       "A good answer usually has three parts: past, present, future.",
       "## 1. Past",
@@ -367,7 +367,7 @@ export const blogPosts: BlogPost[] = [
       "como-describir-experiencia-laboral-en-ingles",
     ],
     content: [
-      "\u{1F4D8} Resumen en español: 'Tell me about yourself' suele ser la primera pregunta en una entrevista en ingles y una de las mas importantes. Aqui aprendes a responderla con una estructura clara, confianza y sin memorizar un guion.",
+      "\u{1F4D8} Quick summary in English: 'Tell me about yourself' is often the first question in an English interview and one of the most important. Here you'll learn how to answer it with a clear structure, confidence, and without memorizing a script.",
       "Esta pregunta no te pide toda tu historia personal. Te pide un resumen profesional breve que ayude al entrevistador a entender quien eres, que haces y por que eres relevante para el puesto.",
       "Una respuesta fuerte suele tener tres partes: pasado, presente y futuro.",
       "## 1. Pasado",
@@ -409,7 +409,7 @@ export const blogPosts: BlogPost[] = [
       "como-describir-experiencia-laboral-en-ingles",
     ],
     content: [
-      "\u{1F4D8} Resumen en español: El metodo STAR te ayuda a responder preguntas de comportamiento con estructura, claridad y resultados concretos. Si te bloqueas bajo presion, esta guia te da una formula simple para sonar profesional y convincente.",
+      "\u{1F4D8} Quick summary in English: The STAR method helps you answer behavioral interview questions with structure, clarity, and concrete results. If you freeze under pressure, this guide gives you a simple formula to sound professional and convincing.",
       "Las preguntas de comportamiento son dificiles porque piden evidencia, no opiniones. Los reclutadores en Estados Unidos quieren escuchar una situacion real, la tarea que tenias, la accion que tomaste y el resultado que entregaste.",
       "El metodo STAR te da una estructura repetible para responder con claridad sin divagar.",
       "## 1. Situacion",
@@ -455,7 +455,7 @@ export const blogPosts: BlogPost[] = [
       "como-describir-experiencia-laboral-en-ingles",
     ],
     content: [
-      "\u{1F4D8} Resumen en español: En una entrevista en ingles no basta con entender la pregunta. Tambien necesitas vocabulario profesional para describir logros, responsabilidades y fortalezas de forma natural.",
+      "\u{1F4D8} Quick summary in English: In an English interview, good fluency is not enough. You also need professional vocabulary to describe accomplishments, responsibilities, and strengths naturally.",
       "El vocabulario de entrevista no se trata de usar palabras rebuscadas. Se trata de usar las palabras correctas en el momento correcto para sonar claro, directo y creible.",
       "## 1. Describir tu rol",
       "Usa verbos y sustantivos que suenen activos y profesionales.",
@@ -501,7 +501,7 @@ export const blogPosts: BlogPost[] = [
       "vocabulario-para-entrevistas-profesionales",
     ],
     content: [
-      "\u{1F4D8} Resumen en español: Esta guia te ayuda a describir tu experiencia laboral en ingles de forma profesional, clara y relevante para entrevistas de trabajo.",
+      "\u{1F4D8} Quick summary in English: This guide shows you how to describe your work experience in English in a professional, clear, and interview-ready way.",
       "Muchos candidatos conocen muy bien su historial en espanol, pero batallan para explicar esa misma experiencia de forma natural en ingles.",
       "La clave no es traducir palabra por palabra. La clave es presentar tu experiencia como una historia clara: que hiciste, que usaste, que cambio y que impacto generaste.",
       "## 1. Empieza con tu puesto actual",

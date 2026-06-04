@@ -116,9 +116,18 @@ export default function EnglishForJobInterviewsPage() {
           <div className="mt-10 rounded-3xl border border-white/10 bg-white/[0.04] p-6">
             <p className="text-sm leading-8 text-white/74">
               <strong className="font-semibold text-white">
-                Quick summary in English:
+                Resumen en español:
               </strong>{" "}
-              Job interviews in English are different from interviews in Spanish. US hiring managers expect behavioral answers, confident communication, and cultural fit - not just technical skills. If English isn't your first language, the interview is often the hardest part of the job search.
+              Las entrevistas de trabajo en ingles son diferentes a las entrevistas en espanol. Los hiring managers en Estados Unidos esperan respuestas de comportamiento, comunicacion segura y encaje cultural, no solo habilidades tecnicas. Si el ingles no es tu primer idioma, la entrevista suele ser la parte mas dificil de la busqueda.
+            </p>
+            <p className="mt-3 text-xs font-medium text-white/55">
+              Leer la version en espanol:{" "}
+              <Link
+                href={SPANISH_HUB}
+                className="underline decoration-white/25 underline-offset-4 transition hover:text-white"
+              >
+                Inglés para Entrevistas de Trabajo
+              </Link>
             </p>
           </div>
 
