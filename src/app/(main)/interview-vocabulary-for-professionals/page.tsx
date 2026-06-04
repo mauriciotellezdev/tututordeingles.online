@@ -16,6 +16,28 @@ export const metadata: Metadata = post
       alternates: {
         canonical: `${BASE}/${slug}`,
       },
+      openGraph: {
+        title: `${post.title} | Tu Tutor de Inglés`,
+        description: post.description,
+        url: `${BASE}/${slug}`,
+        siteName: "Tu Tutor de Inglés",
+        locale: "en_US",
+        type: "article",
+        images: [
+          {
+            url: "/og-default.svg",
+            width: 1200,
+            height: 630,
+            alt: post.title,
+          },
+        ],
+      },
+      twitter: {
+        card: "summary_large_image",
+        title: `${post.title} | Tu Tutor de Inglés`,
+        description: post.description,
+        images: ["/og-default.svg"],
+      },
     }
   : {};
 

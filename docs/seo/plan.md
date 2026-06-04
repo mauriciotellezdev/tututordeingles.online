@@ -22,6 +22,7 @@ Focus on **low-competition, high-intent LATAM Spanish keywords** rather than bro
 - Add or expose stronger trust signals: About, author, and credentials context that search engines and users can verify.
 - Keep the existing `robots.txt` current and ensure sitemap submission stays current in Google Search Console and Bing Webmaster Tools.
 - Use IndexNow for faster Bing discovery of new or updated URLs.
+- Keep `/llms.txt` up to date as an AI discovery map for the main hub pages, landing pages, and the best supporting articles.
 - Expand each landing page with more original examples, scenarios, and proof of expertise.
 - Keep title, H1, OG title, and anchor text aligned with the same intent on every page.
 
@@ -384,6 +385,7 @@ Do this:
 - Keep the same entity names, page titles, and anchor text across the site.
 - Use canonical URLs, sitemap coverage, and structured data consistently.
 - Make sure important content is server-rendered and crawlable.
+- Publish and maintain a concise `/llms.txt` file that points AI systems to the most important pages.
 
 For this site, the pages most likely to get quoted by AI systems are:
 
@@ -401,6 +403,11 @@ These pages should have:
 - FAQ schema when relevant
 - Concrete examples from real interview contexts
 - Clear links to the hub page and the conversion page
+
+Important note:
+
+- `robots.txt` is a crawl preference file, not security by itself.
+- If bot load becomes a real problem, pair crawl controls with CDN/WAF rules, rate limiting, and edge caching.
 
 ---
 

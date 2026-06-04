@@ -21,6 +21,21 @@ export const metadata: Metadata = {
     siteName: "Tu Tutor de Inglés",
     locale: "en_US",
     type: "website",
+    images: [
+      {
+        url: "/og-default.svg",
+        width: 1200,
+        height: 630,
+        alt: "English for Job Interviews | Tu Tutor de Inglés",
+      },
+    ],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "English for Job Interviews | Tu Tutor de Inglés",
+    description:
+      "Prepare for job interviews in English with a native US tutor. Practice common interview questions, build confidence, and land your next role.",
+    images: ["/og-default.svg"],
   },
 };
 

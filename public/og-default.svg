@@ -1,0 +1,11 @@
+<svg width="1200" height="630" viewBox="0 0 1200 630" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect width="1200" height="630" rx="40" fill="#070B14"/>
+  <circle cx="1030" cy="160" r="210" fill="#2563EB" fill-opacity="0.18"/>
+  <circle cx="170" cy="470" r="230" fill="#0EA5E9" fill-opacity="0.12"/>
+  <rect x="80" y="78" width="1040" height="474" rx="32" fill="white" fill-opacity="0.03" stroke="white" stroke-opacity="0.08"/>
+  <text x="110" y="185" fill="white" font-size="34" font-family="Inter, Arial, sans-serif" font-weight="600" letter-spacing="1.5">Tu Tutor de Inglés</text>
+  <text x="110" y="275" fill="white" font-size="66" font-family="Inter, Arial, sans-serif" font-weight="700">English for</text>
+  <text x="110" y="355" fill="white" font-size="66" font-family="Inter, Arial, sans-serif" font-weight="700">better jobs</text>
+  <text x="110" y="425" fill="#C7D2FE" font-size="28" font-family="Inter, Arial, sans-serif" font-weight="400">Private English tutoring for LATAM professionals</text>
+  <text x="110" y="485" fill="#94A3B8" font-size="22" font-family="Inter, Arial, sans-serif" font-weight="400">Job interviews · Business English · Career confidence</text>
+</svg>

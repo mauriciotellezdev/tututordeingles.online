@@ -44,12 +44,21 @@ export async function generateMetadata(): Promise<Metadata> {
       siteName: "Tu Tutor de Inglés",
       locale: "es_MX",
       type: "website",
+      images: [
+        {
+          url: "/og-default.svg",
+          width: 1200,
+          height: 630,
+          alt: "Tu Tutor de Inglés",
+        },
+      ],
     },
     twitter: {
       card: "summary_large_image",
       title: "Tu Tutor de Inglés — Clases privadas 1 a 1",
       description:
         "Clases privadas de inglés para profesionales hispanohablantes. Aprende inglés real con un tutor nativo 1 a 1.",
+      images: ["/og-default.svg"],
     },
     icons: {
       icon: "/favicon.svg",

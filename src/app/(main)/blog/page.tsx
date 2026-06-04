@@ -14,6 +14,30 @@ export const metadata: Metadata = {
   alternates: {
     canonical: `${BASE}/blog`,
   },
+  openGraph: {
+    title: "Blog | Tu Tutor de Inglés",
+    description:
+      "English learning tips, interview preparation guides, and resources for Spanish-speaking professionals.",
+    url: `${BASE}/blog`,
+    siteName: "Tu Tutor de Inglés",
+    locale: "en_US",
+    type: "website",
+    images: [
+      {
+        url: "/og-default.svg",
+        width: 1200,
+        height: 630,
+        alt: "Tu Tutor de Inglés Blog",
+      },
+    ],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Blog | Tu Tutor de Inglés",
+    description:
+      "English learning tips, interview preparation guides, and resources for Spanish-speaking professionals.",
+    images: ["/og-default.svg"],
+  },
 };
 
 const categories = [
