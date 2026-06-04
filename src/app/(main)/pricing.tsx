@@ -24,11 +24,11 @@ const plans = [
     name: "Paquete 10 Clases",
     price: "$2,400",
     currency: "MXN",
-    unit: "12 clases en total",
+    unit: "10 clases en total",
     description:
       "La forma más efectiva de avanzar. Compromiso real, resultados reales.",
     features: [
-      "10 clases + 2 clases gratis",
+      "8 clases pagadas + 2 clases gratis",
       "Plan de aprendizaje personalizado",
       "Soporte por WhatsApp entre clases",
       "Seguimiento de progreso",

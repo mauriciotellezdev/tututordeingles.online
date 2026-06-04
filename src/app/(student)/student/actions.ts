@@ -345,10 +345,10 @@ export async function createCheckoutSessionAction(payload: {
         price_data: {
           currency: "mxn",
           product_data: {
-            name: isSingle ? "Clase Individual (1 Crédito)" : "Paquete 10 Clases + 2 Gratis (12 Créditos)",
+            name: isSingle ? "Clase Individual (1 Crédito)" : "Paquete 10 Clases (8 Pagadas + 2 Gratis)",
             description: isSingle
               ? "1 sesión privada de inglés (60 minutos) con Mauricio Tellez."
-              : "Paquete premium de 12 sesiones privadas de inglés (60 minutos cada una) con Mauricio Tellez."
+              : "Paquete de 10 sesiones privadas de inglés — 8 pagadas + 2 gratis (60 minutos cada una) con Mauricio Tellez."
           },
           unit_amount: isSingle ? 30000 : 240000 // In cents: $300 MXN vs $2400 MXN
         },

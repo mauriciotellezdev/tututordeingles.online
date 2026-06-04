@@ -22,7 +22,7 @@ export async function processCompletedPayment(
   planType: "single" | "package",
 ): Promise<VerifyResult> {
   const studentOid = new ObjectId(studentId);
-  const creditsToAdd = planType === "single" ? 1 : 12;
+  const creditsToAdd = planType === "single" ? 1 : 10;
   const amount = planType === "single" ? 30000 : 240000;
 
   const paymentsCol = await getCollection(PAYMENT_COLLECTION);
@@ -40,7 +40,7 @@ export async function processCompletedPayment(
         studentId,
         amount: creditsToAdd,
         source: "purchase",
-        description: planType === "single" ? "Compra 1 crédito" : "Paquete 12 créditos",
+        description: planType === "single" ? "Compra 1 crédito" : "Paquete 10 clases (8 pagadas + 2 gratis)",
         stripeChargeId: paymentIntentId,
       })
     );
@@ -60,7 +60,7 @@ export async function processCompletedPayment(
       stripeCustomerId,
       amount,
       currency: "mxn",
-      description: planType === "single" ? "Compra 1 crédito" : "Paquete 12 créditos",
+      description: planType === "single" ? "Compra 1 crédito" : "Paquete 10 clases (8 pagadas + 2 gratis)",
     }),
     ...applyPaymentStatus("succeeded"),
   });
@@ -70,7 +70,7 @@ export async function processCompletedPayment(
       studentId,
       amount: creditsToAdd,
       source: "purchase",
-      description: planType === "single" ? "Compra 1 crédito" : "Paquete 12 créditos",
+      description: planType === "single" ? "Compra 1 crédito" : "Paquete 10 clases (8 pagadas + 2 gratis)",
       stripeChargeId: paymentIntentId,
     })
   );

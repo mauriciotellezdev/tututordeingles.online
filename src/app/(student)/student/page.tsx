@@ -79,7 +79,7 @@ function StudentDashboard() {
         if (verifyRes.success) {
           setStatusMessage({
             type: "success",
-            text: `¡Compra de ${plan === "single" ? "1 clase" : "12 clases"} procesada con éxito! Tus créditos han sido actualizados.`,
+            text: `¡Compra de ${plan === "single" ? "1 clase" : "10 clases"} procesada con éxito! Tus créditos han sido actualizados.`,
           });
           loadDashboardData();
         } else {

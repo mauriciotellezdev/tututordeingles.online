@@ -14,7 +14,9 @@ export default function Header() {
     return () => window.removeEventListener("scroll", onScroll);
   }, []);
 
-  const navLinks: { href: string; label: string }[] = [];
+  const navLinks = [
+    { label: "Blog", href: "/blog" },
+  ];
   
   return (
     <header
