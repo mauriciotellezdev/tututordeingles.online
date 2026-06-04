@@ -2,7 +2,7 @@ import { Collection, ObjectId, MongoServerError } from "mongodb";
 import { randomInt } from "crypto";
 import { getCollection } from "@/lib/db";
 import { createCredit, CREDIT_COLLECTION } from "@/lib/models/credit";
-import { createReferral, REFERRAL_COLLECTION, type Referral } from "@/lib/models/referral";
+import { REFERRAL_COLLECTION, type Referral } from "@/lib/models/referral";
 import { STUDENT_COLLECTION, type Student } from "@/lib/models/student";
 
 const REFERRAL_ALPHABET = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
@@ -17,10 +17,26 @@ export async function ensureReferralIndexes() {
       const referralsCol = await getCollection<Referral>(REFERRAL_COLLECTION);
 
       await Promise.all([
-        studentsCol.createIndex({ referralCode: 1 }, { unique: true, sparse: true, name: "student_referralCode_unique" }),
-        creditsCol.createIndex({ stripeChargeId: 1 }, { unique: true, sparse: true, name: "credit_stripeChargeId_unique" }),
-        referralsCol.createIndex({ referredStudentId: 1 }, { unique: true, sparse: true, name: "referral_referredStudentId_unique" }),
-        referralsCol.createIndex({ referrerStudentId: 1 }, { name: "referral_referrerStudentId_idx" }),
+        studentsCol.createIndex(
+          { referralCode: 1 },
+          { unique: true, sparse: true, name: "student_referralCode_unique" }
+        ),
+        creditsCol.createIndex(
+          { stripeChargeId: 1 },
+          { unique: true, sparse: true, name: "credit_stripeChargeId_unique" }
+        ),
+        referralsCol.createIndex(
+          { referredStudentId: 1 },
+          {
+            unique: true,
+            sparse: true,
+            name: "referral_referredStudentId_unique",
+          }
+        ),
+        referralsCol.createIndex(
+          { referrerStudentId: 1 },
+          { name: "referral_referrerStudentId_idx" }
+        ),
       ]);
     })().catch((error) => {
       ensureReferralIndexesPromise = null;
@@ -39,7 +55,9 @@ function makeReferralCode(length = 8) {
   return code;
 }
 
-export async function generateUniqueReferralCode(studentsCol: Collection<Student>) {
+export async function generateUniqueReferralCode(
+  studentsCol: Collection<Student>
+) {
   for (let attempt = 0; attempt < 20; attempt += 1) {
     const code = makeReferralCode();
     const existing = await studentsCol.findOne({ referralCode: code });
@@ -85,7 +103,10 @@ export async function ensureStudentReferralCode(studentId: string) {
       }
 
       if (refreshedStudent.referralCode) {
-        return { student: refreshedStudent, referralCode: refreshedStudent.referralCode };
+        return {
+          student: refreshedStudent,
+          referralCode: refreshedStudent.referralCode,
+        };
       }
 
       if (result.modifiedCount > 0) {
@@ -111,7 +132,10 @@ export interface ReferralDashboardSummary {
   pendingConversions: number;
 }
 
-export async function getReferralDashboardSummary(studentId: string, baseUrl: string): Promise<ReferralDashboardSummary> {
+export async function getReferralDashboardSummary(
+  studentId: string,
+  baseUrl: string
+): Promise<ReferralDashboardSummary> {
   await ensureReferralIndexes();
   const studentsCol = await getCollection<Student>(STUDENT_COLLECTION);
   const referralsCol = await getCollection<Referral>(REFERRAL_COLLECTION);
@@ -131,17 +155,23 @@ export async function getReferralDashboardSummary(studentId: string, baseUrl: st
 
   const referralLink = buildReferralLink(baseUrl, referralCode);
 
-  const totalInvites = await referralsCol.countDocuments({ referrerStudentId: studentOid });
+  const totalInvites = await referralsCol.countDocuments({
+    referrerStudentId: studentOid,
+  });
   const paidConversions = await referralsCol.countDocuments({
     referrerStudentId: studentOid,
     rewardGrantedAt: { $exists: true },
   });
   const pendingConversions = Math.max(totalInvites - paidConversions, 0);
 
-  const creditAgg = await creditsCol.aggregate<{ total: number }>([
-    { $match: { studentId: studentOid, source: "referral" } },
-    { $group: { _id: null, total: { $sum: "$amount" } } },
-  ]).toArray();
+  const creditAgg = await creditsCol
+    .aggregate<{
+      total: number;
+    }>([
+      { $match: { studentId: studentOid, source: "referral" } },
+      { $group: { _id: null, total: { $sum: "$amount" } } },
+    ])
+    .toArray();
 
   const creditsEarned = creditAgg.length > 0 ? creditAgg[0].total : 0;
 
@@ -176,15 +206,53 @@ export async function awardReferralRewardForPayment(payload: {
   const referredOid = new ObjectId(referredStudentId);
   const rewardChargeId = `referral:${paymentIntentId}`;
 
-  const referral = await referralsCol.findOne({ referredStudentId: referredOid });
+  const referral = await referralsCol.findOne({
+    referredStudentId: referredOid,
+  });
   if (!referral) {
     return { rewarded: false };
   }
 
-  const rewardCredits = referral.rewardCredits ?? DEFAULT_REFERRAL_REWARD_CREDITS;
-  const rewardDescription = referral.rewardDescription ?? "Recompensa por referido pagado";
+  const [referrer, referredStudent] = await Promise.all([
+    studentsCol.findOne({ _id: referral.referrerStudentId }),
+    studentsCol.findOne({ _id: referral.referredStudentId }),
+  ]);
+
+  if (
+    referrer &&
+    referredStudent &&
+    ((referrer.signupBrowserId &&
+      referrer.signupBrowserId === referredStudent.signupBrowserId) ||
+      (referrer.signupIpHash &&
+        referrer.signupIpHash === referredStudent.signupIpHash))
+  ) {
+    await referralsCol.updateOne(
+      { _id: referral._id },
+      {
+        $set: {
+          rewardBlockedAt: new Date(),
+          rewardBlockedReason: "shared_browser_or_ip",
+          firstPaymentIntentId: paymentIntentId,
+          firstPaymentAmount: paymentAmount,
+          convertedAt: new Date(),
+        },
+        $unset: {
+          rewardCreditId: "",
+          rewardGrantedAt: "",
+        },
+      }
+    );
+
+    return { rewarded: false };
+  }
+
+  const rewardCredits =
+    referral.rewardCredits ?? DEFAULT_REFERRAL_REWARD_CREDITS;
+  const rewardDescription =
+    referral.rewardDescription ?? "Recompensa por referido pagado";
   const existingCredit =
-    (referral.rewardCreditId && (await creditsCol.findOne({ _id: referral.rewardCreditId }))) ||
+    (referral.rewardCreditId &&
+      (await creditsCol.findOne({ _id: referral.rewardCreditId }))) ||
     (await creditsCol.findOne({ stripeChargeId: rewardChargeId }));
 
   let rewardCreditId = existingCredit?._id;
@@ -202,7 +270,9 @@ export async function awardReferralRewardForPayment(payload: {
       rewardCreditId = insertedCredit.insertedId;
     } catch (error) {
       if (error instanceof MongoServerError && error.code === 11000) {
-        const duplicateCredit = await creditsCol.findOne({ stripeChargeId: rewardChargeId });
+        const duplicateCredit = await creditsCol.findOne({
+          stripeChargeId: rewardChargeId,
+        });
         rewardCreditId = duplicateCredit?._id;
       } else {
         throw error;
@@ -229,8 +299,6 @@ export async function awardReferralRewardForPayment(payload: {
       $unset: { rewardProcessingAt: "" },
     }
   );
-
-  const referrer = await studentsCol.findOne({ _id: referral.referrerStudentId });
 
   return {
     rewarded: true,

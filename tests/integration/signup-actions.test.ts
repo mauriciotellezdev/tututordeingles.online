@@ -33,6 +33,17 @@ mock.module("next/headers", () => ({
     get: mock(() => undefined),
     set: mock(() => undefined),
   }),
+  headers: async () => ({
+    get: (name: string) => {
+      if (name === "user-agent") {
+        return "Playwright";
+      }
+      if (name === "x-forwarded-for") {
+        return "203.0.113.10";
+      }
+      return null;
+    },
+  }),
 }));
 
 mock.module("../../src/lib/db", () => ({
@@ -85,7 +96,9 @@ test("signupStudentAction stores the referral relationship and sends verificatio
   expect(collections.referrals.docs).toHaveLength(1);
   expect(sendMail).toHaveBeenCalledTimes(1);
 
-  const referredStudent = collections.students.docs.find((student) => student.email === "student@example.com");
+  const referredStudent = collections.students.docs.find(
+    (student) => student.email === "student@example.com"
+  );
   expect(referredStudent?.referralCode).toBeTruthy();
   expect(collections.referrals.docs[0].referralCodeUsed).toBe("REF12345");
 });

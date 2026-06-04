@@ -82,14 +82,18 @@ test("processCompletedPayment adds purchase and referral credits once", async ()
     collections.referredId.toString(),
     "pi_test_123",
     "cus_test_123",
-    "package",
+    "package"
   );
 
   expect(first.success).toBe(true);
   expect(first.creditsAdded).toBe(10);
   expect(collections.payments.docs).toHaveLength(1);
   expect(collections.credits.docs).toHaveLength(2);
-  expect(collections.students.docs.find((student) => String(student._id) === collections.referredId.toString())?.stripeCustomerId).toBe("cus_test_123");
+  expect(
+    collections.students.docs.find(
+      (student) => String(student._id) === collections.referredId.toString()
+    )?.stripeCustomerId
+  ).toBe("cus_test_123");
 
   const referralAfterFirst = collections.referrals.docs[0];
   expect(referralAfterFirst.rewardGrantedAt).toBeInstanceOf(Date);
@@ -99,11 +103,36 @@ test("processCompletedPayment adds purchase and referral credits once", async ()
     collections.referredId.toString(),
     "pi_test_123",
     "cus_test_123",
-    "package",
+    "package"
   );
 
   expect(second.success).toBe(true);
   expect(second.creditsAdded).toBe(0);
   expect(collections.payments.docs).toHaveLength(1);
   expect(collections.credits.docs).toHaveLength(2);
+});
+
+test("processCompletedPayment blocks referral reward when browser or IP matches", async () => {
+  collections = buildCollections();
+  collections.students.docs[0].signupBrowserId = "browser-a";
+  collections.students.docs[0].signupIpHash = "ip-a";
+  collections.students.docs[1].signupBrowserId = "browser-a";
+  collections.students.docs[1].signupIpHash = "ip-a";
+
+  const { processCompletedPayment } = await stripeVerifyPromise;
+
+  const result = await processCompletedPayment(
+    collections.referredId.toString(),
+    "pi_test_blocked",
+    "cus_test_blocked",
+    "single"
+  );
+
+  expect(result.success).toBe(true);
+  expect(result.creditsAdded).toBe(1);
+  expect(collections.credits.docs).toHaveLength(1);
+
+  const referralAfter = collections.referrals.docs[0];
+  expect(referralAfter.rewardGrantedAt).toBeUndefined();
+  expect(referralAfter.rewardBlockedReason).toBe("shared_browser_or_ip");
 });

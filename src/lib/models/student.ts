@@ -9,6 +9,9 @@ export interface Student {
   createdAt: Date;
   updatedAt: Date;
   referralCode?: string;
+  signupBrowserId?: string;
+  signupIpHash?: string;
+  signupUserAgentHash?: string;
   verificationCode?: string;
   verificationCodeExpires?: Date;
   stripeCustomerId?: string;

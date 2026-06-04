@@ -17,6 +17,8 @@ export interface Referral {
   rewardCredits?: number;
   rewardCreditId?: ObjectId;
   rewardDescription?: string;
+  rewardBlockedAt?: Date;
+  rewardBlockedReason?: string;
 }
 
 export interface CreateReferralInput {
@@ -26,7 +28,9 @@ export interface CreateReferralInput {
   referredStudentEmail: string;
 }
 
-export function createReferral(input: CreateReferralInput): Omit<Referral, "_id"> {
+export function createReferral(
+  input: CreateReferralInput
+): Omit<Referral, "_id"> {
   return {
     referrerStudentId: new ObjectId(input.referrerStudentId),
     referredStudentId: new ObjectId(input.referredStudentId),

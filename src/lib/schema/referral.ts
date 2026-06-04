@@ -1,7 +1,13 @@
 export const referralSchemaValidation = {
   $jsonSchema: {
     bsonType: "object",
-    required: ["referrerStudentId", "referredStudentId", "referralCodeUsed", "referredStudentEmail", "createdAt"],
+    required: [
+      "referrerStudentId",
+      "referredStudentId",
+      "referralCodeUsed",
+      "referredStudentEmail",
+      "createdAt",
+    ],
     additionalProperties: false,
     properties: {
       _id: { bsonType: "objectId" },
@@ -18,6 +24,8 @@ export const referralSchemaValidation = {
       rewardCredits: { bsonType: "int", minimum: 1 },
       rewardCreditId: { bsonType: "objectId" },
       rewardDescription: { bsonType: "string", minLength: 1 },
+      rewardBlockedAt: { bsonType: "date" },
+      rewardBlockedReason: { bsonType: "string", minLength: 1 },
     },
   },
 };

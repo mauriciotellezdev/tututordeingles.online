@@ -1,6 +1,6 @@
 import { ObjectId } from "mongodb";
 
-type AnyRecord = Record<string, any>;
+type AnyRecord = Record<string, unknown>;
 
 type UpdateSpec<T extends AnyRecord> = {
   $set?: Partial<T> & AnyRecord;
@@ -8,24 +8,36 @@ type UpdateSpec<T extends AnyRecord> = {
   $setOnInsert?: Partial<T> & AnyRecord;
 };
 
-function isPlainObject(value: unknown): value is Record<string, any> {
-  return !!value && typeof value === "object" && !Array.isArray(value) && !(value instanceof Date) && !(value instanceof ObjectId);
+function isPlainObject(value: unknown): value is Record<string, unknown> {
+  return (
+    !!value &&
+    typeof value === "object" &&
+    !Array.isArray(value) &&
+    !(value instanceof Date) &&
+    !(value instanceof ObjectId)
+  );
 }
 
 function getPathValue(source: AnyRecord, path: string) {
-  return path.split(".").reduce<any>((current, segment) => {
+  return path.split(".").reduce<unknown>((current, segment) => {
     if (current == null) {
       return undefined;
     }
-    return current[segment];
+    return (current as AnyRecord)[segment];
   }, source);
 }
 
-function matchesValue(actual: unknown, expected: unknown) {
+function matchesValue(actual: unknown, expected: unknown): boolean {
   if (isPlainObject(expected)) {
     if ("$exists" in expected) {
       const exists = actual !== undefined;
-      return expected.$exists ? exists : !exists;
+      return Boolean(expected.$exists) ? exists : !exists;
+    }
+    if ("$gte" in expected) {
+      return Number(actual) >= Number(expected.$gte);
+    }
+    if ("$lte" in expected) {
+      return Number(actual) <= Number(expected.$lte);
     }
     if ("$in" in expected && Array.isArray(expected.$in)) {
       return expected.$in.some((item) => matchesValue(actual, item));
@@ -37,7 +49,10 @@ function matchesValue(actual: unknown, expected: unknown) {
   }
 
   if (actual instanceof Date || expected instanceof Date) {
-    return new Date(actual as any).getTime() === new Date(expected as any).getTime();
+    return (
+      new Date(String(actual)).getTime() ===
+      new Date(String(expected)).getTime()
+    );
   }
 
   return actual === expected;
@@ -67,10 +82,15 @@ function applyUpdate<T extends AnyRecord>(doc: T, update: UpdateSpec<T>) {
 }
 
 export function createMemoryCollection<T extends AnyRecord>(initial: T[] = []) {
-  const docs: Array<T & { _id: ObjectId }> = initial.map((doc) => ({
-    ...(doc as T),
-    _id: (doc as AnyRecord)._id instanceof ObjectId ? (doc as AnyRecord)._id : new ObjectId(),
-  }));
+  const docs: Array<T & { _id: ObjectId }> = initial.map((doc) => {
+    const rawDoc = doc as AnyRecord;
+    const existingId = rawDoc._id;
+
+    return {
+      ...(doc as T),
+      _id: existingId instanceof ObjectId ? existingId : new ObjectId(),
+    } as T & { _id: ObjectId };
+  });
 
   return {
     docs,
@@ -82,18 +102,27 @@ export function createMemoryCollection<T extends AnyRecord>(initial: T[] = []) {
     },
     async insertOne(document: T & { _id?: ObjectId }) {
       const stored = {
-        ...(document as AnyRecord),
+        ...(document as Record<string, unknown>),
         _id: document._id instanceof ObjectId ? document._id : new ObjectId(),
       } as T & { _id: ObjectId };
 
       docs.push(stored);
       return { insertedId: stored._id };
     },
-    async updateOne(filter: AnyRecord, update: UpdateSpec<T>, options?: { upsert?: boolean }) {
+    async updateOne(
+      filter: AnyRecord,
+      update: UpdateSpec<T>,
+      options?: { upsert?: boolean }
+    ) {
       const match = docs.find((doc) => matchesFilter(doc, filter));
       if (match) {
         applyUpdate(match, update);
-        return { matchedCount: 1, modifiedCount: 1, upsertedCount: 0, upsertedId: null };
+        return {
+          matchedCount: 1,
+          modifiedCount: 1,
+          upsertedCount: 0,
+          upsertedId: null,
+        };
       }
 
       if (options?.upsert) {
@@ -103,10 +132,20 @@ export function createMemoryCollection<T extends AnyRecord>(initial: T[] = []) {
           _id: new ObjectId(),
         } as T & { _id: ObjectId };
         docs.push(stored);
-        return { matchedCount: 0, modifiedCount: 0, upsertedCount: 1, upsertedId: stored._id };
+        return {
+          matchedCount: 0,
+          modifiedCount: 0,
+          upsertedCount: 1,
+          upsertedId: stored._id,
+        };
       }
 
-      return { matchedCount: 0, modifiedCount: 0, upsertedCount: 0, upsertedId: null };
+      return {
+        matchedCount: 0,
+        modifiedCount: 0,
+        upsertedCount: 0,
+        upsertedId: null,
+      };
     },
     async deleteOne(filter: AnyRecord) {
       const index = docs.findIndex((doc) => matchesFilter(doc, filter));
@@ -120,15 +159,20 @@ export function createMemoryCollection<T extends AnyRecord>(initial: T[] = []) {
       return docs.filter((doc) => matchesFilter(doc, filter)).length;
     },
     aggregate(pipeline: Array<AnyRecord>) {
-      let current = [...docs] as Array<AnyRecord>;
+      let current: AnyRecord[] = [...docs];
 
       for (const stage of pipeline) {
         if (stage.$match) {
-          current = current.filter((doc) => matchesFilter(doc, stage.$match));
+          current = current.filter((doc) =>
+            matchesFilter(doc, stage.$match as AnyRecord)
+          );
         }
 
         if (stage.$group) {
-          const sumSpec = stage.$group.total?.$sum;
+          const groupStage = stage.$group as {
+            total?: { $sum?: string | number };
+          };
+          const sumSpec = groupStage.total?.$sum;
           const total = current.reduce((acc, doc) => {
             if (typeof sumSpec === "number") {
               return acc + sumSpec;
