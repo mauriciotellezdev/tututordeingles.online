@@ -70,11 +70,6 @@ export default function BlogPage() {
         />
 
         <div className="max-w-3xl">
-          <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.04] px-4 py-2 text-[11px] font-semibold uppercase tracking-[0.24em] text-white/65 shadow-sm backdrop-blur">
-            <Sparkles className="h-3.5 w-3.5 text-blue-400" />
-            Editorial blog
-          </div>
-
           <h1 className="font-heading text-5xl font-medium tracking-tight text-white sm:text-6xl lg:text-7xl">
             Clear, readable English guides that feel like a real publication.
           </h1>
