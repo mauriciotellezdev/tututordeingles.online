@@ -1,4 +1,4 @@
-import { ObjectId } from "mongodb";
+import { MongoServerError, ObjectId } from "mongodb";
 import { getCollection } from "@/lib/db";
 import { STUDENT_COLLECTION, Student } from "@/lib/models/student";
 import { createPayment, applyPaymentStatus, PAYMENT_COLLECTION } from "@/lib/models/payment";
@@ -16,12 +16,32 @@ export interface VerifyResult {
  * Process a confirmed Stripe payment: insert payment + credit records atomically.
  * Idempotent — safe to call multiple times for the same PaymentIntent.
  */
+let ensurePaymentIndexesPromise: Promise<void> | null = null;
+
+async function ensurePaymentIndexes() {
+  if (!ensurePaymentIndexesPromise) {
+    ensurePaymentIndexesPromise = (async () => {
+      const paymentsCol = await getCollection(PAYMENT_COLLECTION);
+      await paymentsCol.createIndex(
+        { stripePaymentIntentId: 1 },
+        { unique: true, sparse: true, name: "payment_stripePaymentIntentId_unique" }
+      );
+    })().catch((error) => {
+      ensurePaymentIndexesPromise = null;
+      throw error;
+    });
+  }
+
+  return ensurePaymentIndexesPromise;
+}
+
 export async function processCompletedPayment(
   studentId: string,
   paymentIntentId: string,
   stripeCustomerId: string,
   planType: "single" | "package",
 ): Promise<VerifyResult> {
+  await ensurePaymentIndexes();
   const studentOid = new ObjectId(studentId);
   const creditsToAdd = planType === "single" ? 1 : 10;
   const amount = planType === "single" ? 30000 : 240000;
@@ -30,6 +50,13 @@ export async function processCompletedPayment(
   const creditsCol = await getCollection(CREDIT_COLLECTION);
 
   const existingPayment = await paymentsCol.findOne({ stripePaymentIntentId: paymentIntentId });
+  const purchaseCreditPayload = {
+    studentId,
+    amount: creditsToAdd,
+    source: "purchase" as const,
+    description: planType === "single" ? "Compra 1 crédito" : "Paquete 10 clases (8 pagadas + 2 gratis)",
+    stripeChargeId: paymentIntentId,
+  };
 
   if (existingPayment) {
     const existingCredit = await creditsCol.findOne({ stripeChargeId: paymentIntentId });
@@ -41,15 +68,13 @@ export async function processCompletedPayment(
       });
       return { success: true, creditsAdded: 0, message: "Pago ya procesado anteriormente.", paymentIntentId };
     }
-    await creditsCol.insertOne(
-      createCredit({
-        studentId,
-        amount: creditsToAdd,
-        source: "purchase",
-        description: planType === "single" ? "Compra 1 crédito" : "Paquete 10 clases (8 pagadas + 2 gratis)",
-        stripeChargeId: paymentIntentId,
-      })
-    );
+    try {
+      await creditsCol.insertOne(createCredit(purchaseCreditPayload));
+    } catch (error) {
+      if (!(error instanceof MongoServerError && error.code === 11000)) {
+        throw error;
+      }
+    }
     await awardReferralRewardForPayment({
       referredStudentId: studentId,
       paymentIntentId,
@@ -64,27 +89,31 @@ export async function processCompletedPayment(
     { $set: { stripeCustomerId } }
   );
 
-  await paymentsCol.insertOne({
-    ...createPayment({
-      studentId: studentOid,
-      stripePaymentIntentId: paymentIntentId,
-      stripeCustomerId,
-      amount,
-      currency: "mxn",
-      description: planType === "single" ? "Compra 1 crédito" : "Paquete 10 clases (8 pagadas + 2 gratis)",
-    }),
-    ...applyPaymentStatus("succeeded"),
-  });
+  try {
+    await paymentsCol.insertOne({
+      ...createPayment({
+        studentId: studentOid,
+        stripePaymentIntentId: paymentIntentId,
+        stripeCustomerId,
+        amount,
+        currency: "mxn",
+        description: planType === "single" ? "Compra 1 crédito" : "Paquete 10 clases (8 pagadas + 2 gratis)",
+      }),
+      ...applyPaymentStatus("succeeded"),
+    });
+  } catch (error) {
+    if (!(error instanceof MongoServerError && error.code === 11000)) {
+      throw error;
+    }
+  }
 
-  await creditsCol.insertOne(
-    createCredit({
-      studentId,
-      amount: creditsToAdd,
-      source: "purchase",
-      description: planType === "single" ? "Compra 1 crédito" : "Paquete 10 clases (8 pagadas + 2 gratis)",
-      stripeChargeId: paymentIntentId,
-    })
-  );
+  try {
+    await creditsCol.insertOne(createCredit(purchaseCreditPayload));
+  } catch (error) {
+    if (!(error instanceof MongoServerError && error.code === 11000)) {
+      throw error;
+    }
+  }
 
   await awardReferralRewardForPayment({
     referredStudentId: studentId,

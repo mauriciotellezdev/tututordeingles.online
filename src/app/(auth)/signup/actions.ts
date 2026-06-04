@@ -1,10 +1,11 @@
 "use server";
 
 import { cookies } from "next/headers";
+import { MongoServerError, ObjectId } from "mongodb";
 import { getCollection } from "@/lib/db";
 import { createStudent, STUDENT_COLLECTION, Student, generateVerificationCode } from "@/lib/models/student";
 import { createReferral, REFERRAL_COLLECTION } from "@/lib/models/referral";
-import { generateUniqueReferralCode } from "@/lib/referrals";
+import { ensureReferralIndexes, generateUniqueReferralCode } from "@/lib/referrals";
 import { sendMail } from "@/lib/mail";
 
 /**
@@ -12,6 +13,7 @@ import { sendMail } from "@/lib/mail";
  */
 export async function signupStudentAction(input: { name: string; email: string; phone: string; referralCode?: string | null }) {
   try {
+    await ensureReferralIndexes();
     const studentsCol = await getCollection<Student>(STUDENT_COLLECTION);
     const referralsCol = await getCollection(REFERRAL_COLLECTION);
     const normalizedEmail = input.email.toLowerCase().trim();
@@ -33,39 +35,75 @@ export async function signupStudentAction(input: { name: string; email: string; 
 
     // Create student document
     const studentData = createStudent(input);
-    const referralCode = await generateUniqueReferralCode(studentsCol);
-    const newStudent = {
-      ...studentData,
-      referralCode,
-      verificationCode,
-      verificationCodeExpires
-    } as Student;
+    let insertedId: ObjectId | undefined;
+    let referralCode = "";
+    let createdStudent = false;
+    for (let attempt = 0; attempt < 10; attempt += 1) {
+      referralCode = await generateUniqueReferralCode(studentsCol);
+      const newStudent = {
+        ...studentData,
+        referralCode,
+        verificationCode,
+        verificationCodeExpires,
+      } as Student;
 
-    const { insertedId } = await studentsCol.insertOne(newStudent);
-
-    if (normalizedReferralCode) {
-      const referrer = await studentsCol.findOne({ referralCode: normalizedReferralCode });
-      if (referrer) {
-        await referralsCol.insertOne(
-          createReferral({
-            referrerStudentId: referrer._id.toString(),
-            referredStudentId: insertedId.toString(),
-            referralCodeUsed: normalizedReferralCode,
-            referredStudentEmail: normalizedEmail,
-          })
-        );
+      try {
+        const result = await studentsCol.insertOne(newStudent);
+        insertedId = result.insertedId;
+        createdStudent = true;
+        break;
+      } catch (error) {
+        if (error instanceof MongoServerError && error.code === 11000 && String(error.message).includes("referralCode")) {
+          continue;
+        }
+        throw error;
       }
     }
 
-    // Send the verification code email
-    const subject = "Tu código de verificación - Tu Tutor de Inglés 🔑";
-    const text = `¡Hola ${input.name}!\n\nGracias por registrarte en Tu Tutor de Inglés.\n\nTu código de verificación es: ${verificationCode}\n\nEste código vencerá en 15 minutos.\n\nSi no solicitaste este registro, puedes ignorar este mensaje.\n\nSaludos,\nMauricio Tellez\nTu Tutor de Inglés`;
+    if (!createdStudent || !insertedId) {
+      return {
+        success: false,
+        error: "No se pudo generar tu código de referido. Intenta de nuevo."
+      };
+    }
 
-    await sendMail({
-      to: normalizedEmail,
-      subject,
-      text
-    });
+    try {
+      if (normalizedReferralCode) {
+        const referrer = await studentsCol.findOne({ referralCode: normalizedReferralCode });
+        if (referrer) {
+          await referralsCol.updateOne(
+            { referredStudentId: insertedId },
+            {
+              $setOnInsert: createReferral({
+                referrerStudentId: referrer._id.toString(),
+                referredStudentId: insertedId.toString(),
+                referralCodeUsed: normalizedReferralCode,
+                referredStudentEmail: normalizedEmail,
+              }),
+            },
+            { upsert: true }
+          );
+        }
+      }
+
+      // Send the verification code email
+      const subject = "Tu código de verificación - Tu Tutor de Inglés 🔑";
+      const text = `¡Hola ${input.name}!\n\nGracias por registrarte en Tu Tutor de Inglés.\n\nTu código de verificación es: ${verificationCode}\n\nEste código vencerá en 15 minutos.\n\nSi no solicitaste este registro, puedes ignorar este mensaje.\n\nSaludos,\nMauricio Tellez\nTu Tutor de Inglés`;
+
+      await sendMail({
+        to: normalizedEmail,
+        subject,
+        text
+      });
+    } catch (mailError) {
+      if (createdStudent && insertedId) {
+        await studentsCol.deleteOne({ _id: insertedId });
+      }
+      if (insertedId) {
+        await referralsCol.deleteOne({ referredStudentId: insertedId });
+      }
+      throw mailError;
+    }
 
     return {
       success: true,

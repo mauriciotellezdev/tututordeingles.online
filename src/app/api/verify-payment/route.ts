@@ -25,11 +25,20 @@ export async function POST(request: Request) {
       return NextResponse.json({ status: 'pending', message: 'Payment not completed yet.' }, { status: 200 });
     }
 
+    const metadataStudentId = session.metadata?.studentId;
+    const metadataPlanType = session.metadata?.planType;
+    if (!metadataStudentId || !metadataPlanType) {
+      return NextResponse.json({ error: 'Session metadata missing' }, { status: 400 });
+    }
+    if (metadataStudentId !== studentId || metadataPlanType !== planType) {
+      return NextResponse.json({ error: 'Session metadata does not match request' }, { status: 403 });
+    }
+
     const result = await processCompletedPayment(
-      studentId,
+      metadataStudentId,
       session.payment_intent as string,
       session.customer as string,
-      planType as "single" | "package"
+      metadataPlanType as "single" | "package"
     );
 
     return NextResponse.json(

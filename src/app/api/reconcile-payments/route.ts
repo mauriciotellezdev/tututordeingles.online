@@ -1,7 +1,5 @@
 import { NextResponse } from "next/server";
 import Stripe from "stripe";
-import { getCollection } from "@/lib/db";
-import { PAYMENT_COLLECTION } from "@/lib/models/payment";
 import { processCompletedPayment } from "@/lib/stripe-verify";
 
 export async function GET(request: Request) {
@@ -44,7 +42,6 @@ export async function GET(request: Request) {
       results.push({ sessionId, status: "processed", message: result.message });
     } else if (studentId) {
       // Reconcile all sessions for a specific student (via their Stripe customer ID)
-      const paymentsCol = await getCollection(PAYMENT_COLLECTION);
       const stripe = new Stripe(stripeSecretKey);
 
       const sessions = await stripe.checkout.sessions.list({
@@ -56,12 +53,8 @@ export async function GET(request: Request) {
         const meta = session.metadata;
         if (meta?.studentId !== studentId) continue;
         if (session.payment_status !== "paid") continue;
-
-        const existing = await paymentsCol.findOne({
-          stripePaymentIntentId: session.payment_intent as string,
-        });
-        if (existing) {
-          results.push({ sessionId: session.id, status: "skipped", message: "already processed" });
+        if (!meta?.planType) {
+          results.push({ sessionId: session.id, status: "skipped", message: "missing metadata" });
           continue;
         }
 
@@ -75,7 +68,6 @@ export async function GET(request: Request) {
       }
     } else {
       // Scan recent sessions across all students
-      const paymentsCol = await getCollection(PAYMENT_COLLECTION);
 
       const sessions = await stripe.checkout.sessions.list({
         limit: 100,
@@ -90,14 +82,6 @@ export async function GET(request: Request) {
           continue;
         }
         if (session.payment_status !== "paid") continue;
-
-        const existing = await paymentsCol.findOne({
-          stripePaymentIntentId: session.payment_intent as string,
-        });
-        if (existing) {
-          results.push({ sessionId: session.id, status: "skipped", message: "already processed" });
-          continue;
-        }
 
         try {
           const result = await processCompletedPayment(

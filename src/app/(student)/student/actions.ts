@@ -411,10 +411,19 @@ export async function verifyPaymentAction(payload: {
       return { success: false, error: "El pago aún no se ha completado. Por favor, espera unos segundos." };
     }
 
+    const metadataStudentId = session.metadata?.studentId;
+    const metadataPlanType = session.metadata?.planType;
+    if (!metadataStudentId || !metadataPlanType) {
+      return { success: false, error: "La sesión de Stripe no incluye metadatos válidos." };
+    }
+    if (metadataStudentId !== studentId || metadataPlanType !== planType) {
+      return { success: false, error: "La sesión de Stripe no coincide con los datos solicitados." };
+    }
+
     const paymentIntentId = session.payment_intent as string;
     const stripeCustomerId = session.customer as string;
 
-    const result = await processCompletedPayment(studentId, paymentIntentId, stripeCustomerId, planType);
+    const result = await processCompletedPayment(metadataStudentId, paymentIntentId, stripeCustomerId, metadataPlanType as "single" | "package");
 
     return {
       success: result.success,
