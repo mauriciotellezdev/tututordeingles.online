@@ -147,7 +147,7 @@ export default function TeacherDashboard() {
                     <CalendarIcon className="size-8 text-white/15 mx-auto mb-3" />
                     <h5 className="text-sm font-semibold text-white/70">No hay clases próximas</h5>
                     <p className="text-xs text-white/40 mt-1 max-w-xs mx-auto leading-relaxed">
-                      Las clases que programen los estudiantes aparecerán listadas aquí con su enlace de Google Meet.
+                      Las clases que programen los estudiantes aparecerán listadas aquí con su enlace de WhatsApp.
                     </p>
                   </div>
                 ) : (
@@ -218,7 +218,7 @@ export default function TeacherDashboard() {
                                     className="bg-blue-500 hover:bg-blue-400 text-white rounded-full py-2 px-4 text-xs font-semibold transition-all inline-flex items-center gap-1 shadow-md shadow-blue-500/10"
                                   >
                                     <Video className="size-3.5" />
-                                    Google Meet
+                                    WhatsApp
                                   </a>
                                 )}
                               </TableCell>

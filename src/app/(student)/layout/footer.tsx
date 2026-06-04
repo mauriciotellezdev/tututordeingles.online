@@ -76,7 +76,7 @@ export default function Footer() {
             className="text-white/15 text-[10px]"
             style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}
           >
-            Pagos seguros con Stripe · Google Meet
+            Pagos seguros con Stripe · WhatsApp
           </p>
         </div>
       </div>

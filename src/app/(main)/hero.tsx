@@ -15,7 +15,7 @@ export default function Hero() {
         {/* Left — copy */}
         <div>
           <Badge className="mb-6 bg-blue-500/10 text-blue-400 border border-blue-500/20 rounded-full px-4 py-1.5 text-[11px] tracking-widest uppercase font-normal">
-            Clases 1 a 1 · Google Meet
+            Clases 1 a 1 · WhatsApp
           </Badge>
 
           <h1
