@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Plus_Jakarta_Sans } from "next/font/google";
+import { headers } from "next/headers";
 import "../globals.css";
 
 import Header from "./layout/header";
@@ -11,17 +12,28 @@ const plusJakarta = Plus_Jakarta_Sans({
   weight: ["300", "400", "500", "600", "700", "800"],
 });
 
-export const metadata: Metadata = {
-  title: {
-    default: "Tu Tutor de Inglés — Clases privadas 1 a 1",
-    template: "%s | Tu Tutor de Inglés",
-  },
-  description:
-    "Clases privadas de inglés para profesionales hispanohablantes.",
-  icons: {
-    icon: "/favicon.svg",
-  },
-};
+const BASE = process.env.NEXT_PUBLIC_APP_URL || "https://tututordeingles.online";
+
+export async function generateMetadata(): Promise<Metadata> {
+  const hdrs = await headers();
+  const pathname = hdrs.get("x-pathname") || "/";
+
+  return {
+    title: {
+      default: "Tu Tutor de Inglés — Clases privadas 1 a 1",
+      template: "%s | Tu Tutor de Inglés",
+    },
+    description:
+      "Clases privadas de inglés para profesionales hispanohablantes.",
+    metadataBase: new URL(BASE),
+    alternates: {
+      canonical: `${BASE}${pathname}`,
+    },
+    icons: {
+      icon: "/favicon.svg",
+    },
+  };
+}
 
 export default function RootLayout({
   children,
