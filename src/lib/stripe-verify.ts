@@ -3,6 +3,7 @@ import { getCollection } from "@/lib/db";
 import { STUDENT_COLLECTION, Student } from "@/lib/models/student";
 import { createPayment, applyPaymentStatus, PAYMENT_COLLECTION } from "@/lib/models/payment";
 import { createCredit, CREDIT_COLLECTION } from "@/lib/models/credit";
+import { awardReferralRewardForPayment } from "@/lib/referrals";
 
 export interface VerifyResult {
   success: boolean;
@@ -33,6 +34,11 @@ export async function processCompletedPayment(
   if (existingPayment) {
     const existingCredit = await creditsCol.findOne({ stripeChargeId: paymentIntentId });
     if (existingCredit) {
+      await awardReferralRewardForPayment({
+        referredStudentId: studentId,
+        paymentIntentId,
+        paymentAmount: amount,
+      });
       return { success: true, creditsAdded: 0, message: "Pago ya procesado anteriormente.", paymentIntentId };
     }
     await creditsCol.insertOne(
@@ -44,6 +50,11 @@ export async function processCompletedPayment(
         stripeChargeId: paymentIntentId,
       })
     );
+    await awardReferralRewardForPayment({
+      referredStudentId: studentId,
+      paymentIntentId,
+      paymentAmount: amount,
+    });
     return { success: true, creditsAdded: creditsToAdd, message: "Créditos añadidos (recuperado)", paymentIntentId };
   }
 
@@ -74,6 +85,12 @@ export async function processCompletedPayment(
       stripeChargeId: paymentIntentId,
     })
   );
+
+  await awardReferralRewardForPayment({
+    referredStudentId: studentId,
+    paymentIntentId,
+    paymentAmount: amount,
+  });
 
   return { success: true, creditsAdded: creditsToAdd, message: "Créditos añadidos", paymentIntentId };
 }

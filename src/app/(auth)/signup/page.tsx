@@ -1,14 +1,15 @@
 "use client";
 
-import React, { useState } from "react";
-import { useRouter } from "next/navigation";
+import React, { Suspense, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { Button } from "@/shared/ui/button";
 import { Input } from "@/shared/ui/input";
 import { AlertCircle, User, Mail, Phone, Lock, ChevronRight, CheckCircle2 } from "lucide-react";
 import { signupStudentAction, verifyCodeAndLoginAction } from "./actions";
 
-export default function SignupPage() {
+function SignupForm() {
   const router = useRouter();
+  const searchParams = useSearchParams();
 
   // Wizard steps: 1 = Form, 2 = Verification Code
   const [step, setStep] = useState<1 | 2>(1);
@@ -37,7 +38,8 @@ export default function SignupPage() {
     setLoading(true);
     setError(null);
 
-    const res = await signupStudentAction({ name, email, phone });
+    const referralCode = searchParams.get("ref");
+    const res = await signupStudentAction({ name, email, phone, referralCode });
     setLoading(false);
 
     if (res.success && res.email) {
@@ -208,5 +210,19 @@ export default function SignupPage() {
 
       </div>
     </main>
+  );
+}
+
+export default function SignupPage() {
+  return (
+    <Suspense
+      fallback={
+        <main className="min-h-screen bg-[#0a0a0a] pt-24 pb-16 flex flex-col items-center justify-center px-4 relative overflow-hidden">
+          <div className="text-white/50 text-sm">Cargando formulario de registro...</div>
+        </main>
+      }
+    >
+      <SignupForm />
+    </Suspense>
   );
 }

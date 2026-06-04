@@ -10,6 +10,7 @@ import { createCredit, CREDIT_COLLECTION } from "@/lib/models/credit";
 import { processCompletedPayment } from "@/lib/stripe-verify";
 import { sendMail } from "@/lib/mail";
 import Stripe from "stripe";
+import { getReferralDashboardSummary } from "@/lib/referrals";
 
 /**
  * Action 1: Get data for student dashboard
@@ -29,6 +30,9 @@ export async function getStudentDashboardDataAction() {
     if (!student) {
       return { success: false, error: "Estudiante no encontrado." };
     }
+
+    const referralBaseUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:7777";
+    const referralSummary = await getReferralDashboardSummary(studentIdStr, referralBaseUrl);
 
     // Compute credit balance from the credits collection
     const creditsCol = await getCollection(CREDIT_COLLECTION);
@@ -63,6 +67,7 @@ export async function getStudentDashboardDataAction() {
         credits,
         quizResult: student.quizResult
       },
+      referral: referralSummary,
       teacher: {
         email: teacher.email,
         phone: teacher.phone,

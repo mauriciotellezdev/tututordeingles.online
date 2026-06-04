@@ -8,6 +8,7 @@ export interface Student {
   phone: string;
   createdAt: Date;
   updatedAt: Date;
+  referralCode?: string;
   verificationCode?: string;
   verificationCodeExpires?: Date;
   stripeCustomerId?: string;

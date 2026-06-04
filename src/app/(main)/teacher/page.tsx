@@ -16,6 +16,8 @@ import {
   Video,
   Award,
   Phone,
+  Gift,
+  BadgeCheck,
 } from "lucide-react";
 
 interface StudentData {
@@ -47,11 +49,33 @@ interface SessionData {
   };
 }
 
+interface ReferralData {
+  _id: string;
+  referralCodeUsed: string;
+  createdAt: string;
+  convertedAt: string | null;
+  rewardGrantedAt: string | null;
+  rewardCredits: number;
+  rewardDescription: string;
+  firstPaymentAmount: number;
+  referrer: {
+    _id: string;
+    name: string;
+    email: string;
+  } | null;
+  referred: {
+    _id: string;
+    name: string;
+    email: string;
+  } | null;
+}
+
 export default function TeacherDashboard() {
   const router = useRouter();
 
   const [upcomingSessions, setUpcomingSessions] = useState<SessionData[]>([]);
   const [activeStudents, setActiveStudents] = useState<StudentData[]>([]);
+  const [referrals, setReferrals] = useState<ReferralData[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -64,6 +88,7 @@ export default function TeacherDashboard() {
     if (res.success) {
       setUpcomingSessions(res.upcomingSessions || []);
       setActiveStudents(res.activeStudents || []);
+      setReferrals(res.referrals || []);
     } else {
       setError(res.error || "No autorizado.");
       router.push("/login");
@@ -303,6 +328,84 @@ export default function TeacherDashboard() {
                               ) : (
                                 <span className="text-xs text-white/30 italic">No realizado</span>
                               )}
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+
+            <Card className="bg-[#0f1729]/40 border-white/[0.08] backdrop-blur-xl rounded-2xl overflow-hidden">
+              <CardHeader className="pb-3">
+                <CardTitle className="text-lg font-bold flex items-center gap-2">
+                  <Gift className="size-5 text-blue-400" /> Referidos y recompensas
+                </CardTitle>
+                <CardDescription className="text-white/40 text-xs">
+                  Registro reciente de quién refirió a quién y qué bono se acreditó.
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                {referrals.length === 0 ? (
+                  <div className="text-center py-10 border border-dashed border-white/[0.06] rounded-xl bg-white/[0.01]">
+                    <Gift className="size-8 text-white/15 mx-auto mb-3" />
+                    <h5 className="text-sm font-semibold text-white/70">Todavía no hay referidos</h5>
+                    <p className="text-xs text-white/40 mt-1 max-w-xs mx-auto leading-relaxed">
+                      Los nuevos registros y pagos aparecerán aquí cuando los estudiantes compartan sus enlaces.
+                    </p>
+                  </div>
+                ) : (
+                  <div className="overflow-x-auto">
+                    <Table className="min-w-full">
+                      <TableHeader className="border-b border-white/[0.06] bg-white/[0.02]">
+                        <TableRow>
+                          <TableHead className="text-[10px] font-semibold text-white/40 uppercase tracking-wider">Referente</TableHead>
+                          <TableHead className="text-[10px] font-semibold text-white/40 uppercase tracking-wider">Nuevo estudiante</TableHead>
+                          <TableHead className="text-[10px] font-semibold text-white/40 uppercase tracking-wider">Estado</TableHead>
+                          <TableHead className="text-[10px] font-semibold text-white/40 uppercase tracking-wider">Bono</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {referrals.map((referral) => (
+                          <TableRow key={referral._id} className="border-b border-white/[0.04] hover:bg-white/[0.01]">
+                            <TableCell className="py-4">
+                              <span className="font-semibold text-white text-sm block">
+                                {referral.referrer?.name || "Desconocido"}
+                              </span>
+                              <span className="text-xs text-white/45 block mt-0.5">
+                                {referral.referrer?.email || "Sin correo"}
+                              </span>
+                            </TableCell>
+                            <TableCell className="py-4">
+                              <span className="font-semibold text-white text-sm block">
+                                {referral.referred?.name || "Pendiente"}
+                              </span>
+                              <span className="text-xs text-white/45 block mt-0.5">
+                                {referral.referred?.email || "Sin correo"}
+                              </span>
+                              <span className="text-[10px] text-white/25 block mt-1 uppercase tracking-wider">
+                                Código usado: {referral.referralCodeUsed}
+                              </span>
+                            </TableCell>
+                            <TableCell className="py-4">
+                              {referral.rewardGrantedAt ? (
+                                <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-semibold text-emerald-400 bg-emerald-500/10 border border-emerald-500/20">
+                                  <BadgeCheck className="size-3" />
+                                  Recompensado
+                                </span>
+                              ) : (
+                                <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-semibold text-amber-400 bg-amber-500/10 border border-amber-500/20">
+                                  Pendiente
+                                </span>
+                              )}
+                            </TableCell>
+                            <TableCell className="py-4">
+                              <span className="text-base font-extrabold text-white">{referral.rewardCredits}</span>
+                              <span className="block text-[10px] text-white/30 mt-1">
+                                {referral.rewardDescription || "Bono de referido"}
+                              </span>
                             </TableCell>
                           </TableRow>
                         ))}

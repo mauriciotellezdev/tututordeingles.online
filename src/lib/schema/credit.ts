@@ -9,7 +9,7 @@ export const creditSchemaValidation = {
       amount: { bsonType: "int", minimum: -9999, maximum: 9999 },
       source: {
         bsonType: "string",
-        enum: ["purchase", "bonus", "adjustment", "debit"],
+        enum: ["purchase", "bonus", "adjustment", "debit", "referral"],
       },
       description: { bsonType: "string", minLength: 1 },
       createdAt: { bsonType: "date" },

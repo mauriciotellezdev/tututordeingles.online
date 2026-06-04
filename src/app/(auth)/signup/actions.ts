@@ -3,15 +3,19 @@
 import { cookies } from "next/headers";
 import { getCollection } from "@/lib/db";
 import { createStudent, STUDENT_COLLECTION, Student, generateVerificationCode } from "@/lib/models/student";
+import { createReferral, REFERRAL_COLLECTION } from "@/lib/models/referral";
+import { generateUniqueReferralCode } from "@/lib/referrals";
 import { sendMail } from "@/lib/mail";
 
 /**
  * Action 1: Sign up a student and send a 6-digit verification code
  */
-export async function signupStudentAction(input: { name: string; email: string; phone: string }) {
+export async function signupStudentAction(input: { name: string; email: string; phone: string; referralCode?: string | null }) {
   try {
     const studentsCol = await getCollection<Student>(STUDENT_COLLECTION);
+    const referralsCol = await getCollection(REFERRAL_COLLECTION);
     const normalizedEmail = input.email.toLowerCase().trim();
+    const normalizedReferralCode = input.referralCode?.trim().toUpperCase() || "";
 
     const existing = await studentsCol.findOne({ email: normalizedEmail });
 
@@ -29,13 +33,29 @@ export async function signupStudentAction(input: { name: string; email: string; 
 
     // Create student document
     const studentData = createStudent(input);
+    const referralCode = await generateUniqueReferralCode(studentsCol);
     const newStudent = {
       ...studentData,
+      referralCode,
       verificationCode,
       verificationCodeExpires
     } as Student;
 
-    await studentsCol.insertOne(newStudent);
+    const { insertedId } = await studentsCol.insertOne(newStudent);
+
+    if (normalizedReferralCode) {
+      const referrer = await studentsCol.findOne({ referralCode: normalizedReferralCode });
+      if (referrer) {
+        await referralsCol.insertOne(
+          createReferral({
+            referrerStudentId: referrer._id.toString(),
+            referredStudentId: insertedId.toString(),
+            referralCodeUsed: normalizedReferralCode,
+            referredStudentEmail: normalizedEmail,
+          })
+        );
+      }
+    }
 
     // Send the verification code email
     const subject = "Tu código de verificación - Tu Tutor de Inglés 🔑";

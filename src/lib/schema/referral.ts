@@ -1,0 +1,23 @@
+export const referralSchemaValidation = {
+  $jsonSchema: {
+    bsonType: "object",
+    required: ["referrerStudentId", "referredStudentId", "referralCodeUsed", "referredStudentEmail", "createdAt"],
+    additionalProperties: false,
+    properties: {
+      _id: { bsonType: "objectId" },
+      referrerStudentId: { bsonType: "objectId" },
+      referredStudentId: { bsonType: "objectId" },
+      referralCodeUsed: { bsonType: "string", minLength: 4, maxLength: 16 },
+      referredStudentEmail: { bsonType: "string", minLength: 1 },
+      createdAt: { bsonType: "date" },
+      firstPaymentIntentId: { bsonType: "string", minLength: 1 },
+      firstPaymentAmount: { bsonType: "int", minimum: 1 },
+      convertedAt: { bsonType: "date" },
+      rewardProcessingAt: { bsonType: "date" },
+      rewardGrantedAt: { bsonType: "date" },
+      rewardCredits: { bsonType: "int", minimum: 1 },
+      rewardCreditId: { bsonType: "objectId" },
+      rewardDescription: { bsonType: "string", minLength: 1 },
+    },
+  },
+};

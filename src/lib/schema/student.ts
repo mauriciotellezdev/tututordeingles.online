@@ -10,6 +10,7 @@ export const studentSchemaValidation = {
       phone: { bsonType: "string", minLength: 1 },
       createdAt: { bsonType: "date" },
       updatedAt: { bsonType: "date" },
+      referralCode: { bsonType: "string", minLength: 6, maxLength: 16 },
       verificationCode: { bsonType: "string", minLength: 6, maxLength: 6 },
       verificationCodeExpires: { bsonType: "date" },
       stripeCustomerId: { bsonType: "string", minLength: 1 },

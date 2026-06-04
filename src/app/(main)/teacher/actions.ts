@@ -7,6 +7,7 @@ import { STUDENT_COLLECTION, Student } from "@/lib/models/student";
 import { SESSION_COLLECTION } from "@/lib/models/session";
 import { PAYMENT_COLLECTION } from "@/lib/models/payment";
 import { CREDIT_COLLECTION } from "@/lib/models/credit";
+import { REFERRAL_COLLECTION } from "@/lib/models/referral";
 
 /**
  * Action 1: Get teacher dashboard data (upcoming sessions & active students)
@@ -86,6 +87,53 @@ export async function getTeacherDashboardDataAction() {
     ]).toArray();
     const balanceMap = new Map(creditBalances.map(b => [b.studentId, b.total]));
 
+    const referralsCol = await getCollection(REFERRAL_COLLECTION);
+    const recentReferrals = await referralsCol.aggregate([
+      { $sort: { createdAt: -1 } },
+      { $limit: 12 },
+      {
+        $lookup: {
+          from: STUDENT_COLLECTION,
+          localField: "referrerStudentId",
+          foreignField: "_id",
+          as: "referrer"
+        }
+      },
+      { $unwind: { path: "$referrer", preserveNullAndEmptyArrays: true } },
+      {
+        $lookup: {
+          from: STUDENT_COLLECTION,
+          localField: "referredStudentId",
+          foreignField: "_id",
+          as: "referred"
+        }
+      },
+      { $unwind: { path: "$referred", preserveNullAndEmptyArrays: true } },
+      {
+        $project: {
+          _id: 1,
+          referralCodeUsed: 1,
+          createdAt: 1,
+          convertedAt: 1,
+          rewardGrantedAt: 1,
+          rewardCredits: 1,
+          rewardDescription: 1,
+          firstPaymentAmount: 1,
+          firstPaymentIntentId: 1,
+          referrer: {
+            _id: "$referrer._id",
+            name: "$referrer.name",
+            email: "$referrer.email",
+          },
+          referred: {
+            _id: "$referred._id",
+            name: "$referred.name",
+            email: "$referred.email",
+          }
+        }
+      }
+    ]).toArray();
+
     return {
       success: true,
       upcomingSessions: upcomingSessions.map(s => ({
@@ -110,6 +158,26 @@ export async function getTeacherDashboardDataAction() {
         phone: st.phone,
         credits: balanceMap.get(st._id.toString()) || 0,
         quizResult: st.quizResult
+      })),
+      referrals: recentReferrals.map(referral => ({
+        _id: referral._id.toString(),
+        referralCodeUsed: referral.referralCodeUsed,
+        createdAt: referral.createdAt.toISOString(),
+        convertedAt: referral.convertedAt ? referral.convertedAt.toISOString() : null,
+        rewardGrantedAt: referral.rewardGrantedAt ? referral.rewardGrantedAt.toISOString() : null,
+        rewardCredits: referral.rewardCredits || 0,
+        rewardDescription: referral.rewardDescription || "",
+        firstPaymentAmount: referral.firstPaymentAmount || 0,
+        referrer: referral.referrer?._id ? {
+          _id: referral.referrer._id.toString(),
+          name: referral.referrer.name,
+          email: referral.referrer.email,
+        } : null,
+        referred: referral.referred?._id ? {
+          _id: referral.referred._id.toString(),
+          name: referral.referred.name,
+          email: referral.referred.email,
+        } : null,
       }))
     };
   } catch (error: unknown) {

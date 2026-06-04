@@ -7,7 +7,7 @@ import {
   getStudentDashboardDataAction,
   verifyPaymentAction,
 } from "./actions";
-import { Mail } from "lucide-react";
+import { Mail, Copy, Link2, Send, Gift, Users, BadgeCheck } from "lucide-react";
 
 interface StudentData {
   _id: string;
@@ -22,14 +22,24 @@ interface StudentData {
   };
 }
 
+interface ReferralData {
+  referralCode: string;
+  referralLink: string;
+  totalInvites: number;
+  paidConversions: number;
+  creditsEarned: number;
+  pendingConversions: number;
+}
 
 function StudentDashboard() {
   const router = useRouter();
   const searchParams = useSearchParams();
 
   const [student, setStudent] = useState<StudentData | null>(null);
+  const [referral, setReferral] = useState<ReferralData | null>(null);
   const [loading, setLoading] = useState(true);
   const [statusMessage, setStatusMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
+  const [copied, setCopied] = useState(false);
 
   const verifiedSession = useRef<string | null>(null);
 
@@ -39,6 +49,7 @@ function StudentDashboard() {
     setLoading(false);
     if (res.success && res.student) {
       setStudent(res.student);
+      setReferral((res as { referral?: ReferralData }).referral ?? null);
     } else {
       router.push("/login");
     }
@@ -99,6 +110,13 @@ function StudentDashboard() {
     if (correct <= 12) return { name: "Intermedio (B1)", desc: "Puedes comunicarte pero falta fluidez. Enfocado en hablar." };
     if (correct <= 17) return { name: "Intermedio Alto (B2)", desc: "Relativamente fluido, corregiremos gramática y naturalidad." };
     return { name: "Avanzado (C1-C2)", desc: "Excelente dominio. Perfeccionaremos negocios y acento." };
+  };
+
+  const copyReferralLink = async () => {
+    if (!referral?.referralLink) return;
+    await navigator.clipboard.writeText(referral.referralLink);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
   };
 
   if (loading) {
@@ -180,6 +198,87 @@ function StudentDashboard() {
             </p>
           </CardContent>
         </Card>
+
+        {referral && (
+          <Card className="bg-[#0f1729]/40 border-white/[0.08] backdrop-blur-xl rounded-2xl mb-6 overflow-hidden">
+            <CardContent className="p-6 md:p-8 space-y-5">
+              <div className="flex items-start gap-4">
+                <div className="size-12 rounded-full bg-blue-500/10 border border-blue-500/20 flex items-center justify-center shrink-0">
+                  <Gift className="size-5 text-blue-400" />
+                </div>
+                <div className="min-w-0 flex-1">
+                  <p className="text-[10px] uppercase tracking-[0.3em] text-blue-400 font-semibold">Programa de referidos</p>
+                  <h2 className="text-xl font-bold text-white mt-1">Comparte tu enlace y gana clases gratis</h2>
+                  <p className="text-sm text-white/60 leading-relaxed mt-2">
+                    Cada estudiante nuevo que llegue por tu enlace y realice su primer pago te suma créditos para tus propias sesiones.
+                  </p>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                <div className="p-4 rounded-xl bg-white/[0.03] border border-white/[0.06]">
+                  <div className="flex items-center gap-2 text-white/45 text-[10px] uppercase tracking-[0.2em] font-semibold mb-2">
+                    <Link2 className="size-3.5" />
+                    Código
+                  </div>
+                  <p className="text-sm font-semibold text-white break-all">{referral.referralCode}</p>
+                </div>
+                <div className="p-4 rounded-xl bg-white/[0.03] border border-white/[0.06]">
+                  <div className="flex items-center gap-2 text-white/45 text-[10px] uppercase tracking-[0.2em] font-semibold mb-2">
+                    <Users className="size-3.5" />
+                    Invitaciones
+                  </div>
+                  <p className="text-2xl font-extrabold text-white">{referral.totalInvites}</p>
+                </div>
+                <div className="p-4 rounded-xl bg-white/[0.03] border border-white/[0.06]">
+                  <div className="flex items-center gap-2 text-white/45 text-[10px] uppercase tracking-[0.2em] font-semibold mb-2">
+                    <BadgeCheck className="size-3.5" />
+                    Pagados
+                  </div>
+                  <p className="text-2xl font-extrabold text-white">{referral.paidConversions}</p>
+                </div>
+                <div className="p-4 rounded-xl bg-white/[0.03] border border-white/[0.06]">
+                  <div className="flex items-center gap-2 text-white/45 text-[10px] uppercase tracking-[0.2em] font-semibold mb-2">
+                    <Gift className="size-3.5" />
+                    Créditos
+                  </div>
+                  <p className="text-2xl font-extrabold text-white">{referral.creditsEarned}</p>
+                </div>
+              </div>
+
+              <div className="space-y-3">
+                <div className="p-4 rounded-xl bg-[#0b1224] border border-white/[0.08]">
+                  <p className="text-[10px] uppercase tracking-[0.2em] text-white/35 font-semibold mb-2">Tu enlace</p>
+                  <p className="text-sm text-white/80 break-all">{referral.referralLink}</p>
+                </div>
+
+                <div className="flex flex-col sm:flex-row gap-3">
+                  <button
+                    type="button"
+                    onClick={copyReferralLink}
+                    className="inline-flex items-center justify-center gap-2 rounded-full bg-blue-500 hover:bg-blue-400 text-white px-5 py-3 text-sm font-semibold transition-colors"
+                  >
+                    <Copy className="size-4" />
+                    {copied ? "Enlace copiado" : "Copiar enlace"}
+                  </button>
+                  <a
+                    href={`https://wa.me/?text=${encodeURIComponent(`Te comparto mi enlace de práctica de inglés: ${referral.referralLink}`)}`}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="inline-flex items-center justify-center gap-2 rounded-full bg-white/[0.04] hover:bg-white/[0.07] border border-white/[0.08] text-white px-5 py-3 text-sm font-semibold transition-colors"
+                  >
+                    <Send className="size-4" />
+                    Compartir por WhatsApp
+                  </a>
+                </div>
+
+                <p className="text-xs text-white/35 leading-relaxed">
+                  Pendientes por convertir: {referral.pendingConversions}. Te acreditamos el bono cuando el estudiante nuevo complete su primer pago.
+                </p>
+              </div>
+            </CardContent>
+          </Card>
+        )}
 
         {student.quizResult && (
           <Card className="bg-[#0f1729]/40 border-white/[0.08] backdrop-blur-xl rounded-2xl mb-6">
