@@ -18,7 +18,6 @@ export default function Header() {
     { label: "Cómo funciona", href: "#como-funciona" },
     { label: "Tu tutor", href: "#tutor" },
     { label: "Precios", href: "#precios" },
-    { label: "Entrevistas", href: "/ingles-para-entrevistas-de-trabajo" },
     { label: "Blog", href: "/blog" },
   ];
 
