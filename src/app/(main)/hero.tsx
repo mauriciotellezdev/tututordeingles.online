@@ -22,22 +22,20 @@ export default function Hero() {
             className="text-4xl md:text-5xl lg:text-6xl font-bold text-white mb-6 leading-[1.1]"
             style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}
           >
-            Habla inglés de
+            Suena como un
             <br />
-            <span className="text-blue-400">forma natural</span>
+            <span className="text-blue-400">nativo.</span>
             <br />
-            con un tutor
-            <br />
-            nativo.
+            Sin acento.
           </h1>
 
           <p
             className="text-white/55 text-base leading-relaxed mb-8 max-w-md"
             style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}
           >
-            Conversaciones reales en inglés, sesión por sesión. Para
-            profesionales hispanohablantes que necesitan pasar de entender a
-            expresarse con confianza.
+            Soy estadounidense y hablo inglés sin acento. Te enseño a sonar
+            como un nativo — sin acento mexicano. Coaching uno a uno para
+            profesionales que quieren expresarse con claridad y confianza.
           </p>
 
           <div className="flex flex-wrap gap-3 mb-10">
@@ -72,7 +70,7 @@ export default function Hero() {
             style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}
           >
             {[
-              { value: "EE.UU.", label: "Tutor nativo" },
+              { value: "Sin acento", label: "Americano nativo" },
               { value: "MXN", label: "Pago en pesos" },
             ].map((stat) => (
               <div key={stat.label}>
