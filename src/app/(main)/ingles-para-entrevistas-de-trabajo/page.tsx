@@ -5,6 +5,7 @@ import { Button } from "@/shared/ui/button";
 import { Breadcrumbs } from "@/shared/seo/breadcrumbs";
 
 const BASE = process.env.NEXT_PUBLIC_APP_URL || "https://tututordeingles.online";
+const OG_IMAGE = "/og-interviews-es.svg";
 
 export const metadata: Metadata = {
   title: "Inglés para Entrevistas de Trabajo | Tu Tutor de Inglés",
@@ -28,12 +29,12 @@ export const metadata: Metadata = {
     locale: "es_MX",
     type: "website",
     images: [
-      {
-        url: "/og-default.svg",
-        width: 1200,
-        height: 630,
-        alt: "Inglés para Entrevistas de Trabajo | Tu Tutor de Inglés",
-      },
+        {
+          url: OG_IMAGE,
+          width: 1200,
+          height: 630,
+          alt: "Inglés para Entrevistas de Trabajo | Tu Tutor de Inglés",
+        },
     ],
   },
   twitter: {
@@ -41,7 +42,7 @@ export const metadata: Metadata = {
     title: "Inglés para Entrevistas de Trabajo | Tu Tutor de Inglés",
     description:
       "Preparate para entrevistas de trabajo en ingles con un tutor nativo de Estados Unidos. Practica preguntas reales, mejora tu fluidez y llega con mas confianza.",
-    images: ["/og-default.svg"],
+    images: [OG_IMAGE],
   },
 };
 

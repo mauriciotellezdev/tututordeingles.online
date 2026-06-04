@@ -4,6 +4,7 @@ import { blogPosts } from "@/lib/blog-posts";
 import { LandingPage } from "@/shared/seo/landing-page";
 
 const BASE = process.env.NEXT_PUBLIC_APP_URL || "https://tututordeingles.online";
+const OG_IMAGE = "/og-interviews-es.svg";
 const slug = "vocabulario-para-entrevistas-profesionales";
 const englishSlug = "interview-vocabulary-for-professionals";
 const hubSlug = "ingles-para-entrevistas-de-trabajo";
@@ -31,8 +32,8 @@ export const metadata: Metadata = post
         locale: "es_MX",
         type: "article",
         images: [
-          {
-            url: "/og-default.svg",
+        {
+            url: OG_IMAGE,
             width: 1200,
             height: 630,
             alt: post.title,
@@ -43,7 +44,7 @@ export const metadata: Metadata = post
         card: "summary_large_image",
         title: `${post.title} | Tu Tutor de Inglés`,
         description: post.description,
-        images: ["/og-default.svg"],
+        images: [OG_IMAGE],
       },
     }
   : {};
