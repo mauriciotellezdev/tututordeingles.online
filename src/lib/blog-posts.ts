@@ -6,6 +6,7 @@ export interface BlogPost {
   content: string[];
   category: string;
   relatedSlugs: string[];
+  kind: "blog" | "landing";
 }
 
 export function getReadingTime(content: string[]): number {
@@ -21,6 +22,7 @@ export const blogPosts: BlogPost[] = [
       "The most common English interview questions asked by US hiring managers, with sample answers and tips to sound confident and natural.",
     date: "2026-06-04",
     category: "Interviews",
+    kind: "blog",
     relatedSlugs: [
       "star-method-interview-answers",
       "interview-vocabulary-for-professionals",
@@ -161,9 +163,9 @@ export const blogPosts: BlogPost[] = [
       "---",
       "This guide is part of our comprehensive [English for Job Interviews](/english-for-job-interviews) resource. For more targeted preparation, check out these related guides:",
       "",
-      "- [STAR Method Interview Answers in English](/blog/star-method-interview-answers) — Learn how to structure behavioral responses that US recruiters expect.",
-      "- [Interview Vocabulary for Professionals](/blog/interview-vocabulary-for-professionals) — Key phrases to use naturally in your next interview.",
-      "- [How to Describe Work Experience in English](/blog/how-to-describe-work-experience) — Talk about your professional background with clarity and confidence.",
+      "- [STAR Method Interview Answers in English](/star-method-interview-answers) — Learn how to structure behavioral responses that US recruiters expect.",
+      "- [Interview Vocabulary for Professionals](/interview-vocabulary-for-professionals) — Key phrases to use naturally in your next interview.",
+      "- [How to Describe Work Experience in English](/how-to-describe-work-experience) — Talk about your professional background with clarity and confidence.",
       "",
       "If you'd like personalized practice, [book a private tutoring session](/signup) with a native English speaker who specializes in interview preparation for LATAM professionals.",
     ],
@@ -175,6 +177,7 @@ export const blogPosts: BlogPost[] = [
       "Learn how to structure behavioral interview answers using Situation, Task, Action, and Result.",
     date: "2026-06-03",
     category: "Interviews",
+    kind: "landing",
     relatedSlugs: [
       "25-common-interview-questions-in-english",
       "interview-vocabulary-for-professionals",
@@ -209,7 +212,7 @@ export const blogPosts: BlogPost[] = [
       "**Sample answer:** \"In that situation, I was responsible for X. I did Y and Z. As a result, we achieved A.\"",
       "**Why this works:** It keeps you focused and prevents you from drifting into vague storytelling.",
       "---",
-      "If you want more examples, read [25 Common Interview Questions in English](/blog/25-common-interview-questions-in-english) or explore [Interview Vocabulary for Professionals](/blog/interview-vocabulary-for-professionals).",
+      "If you want more examples, read [25 Common Interview Questions in English](/blog/25-common-interview-questions-in-english) or explore [Interview Vocabulary for Professionals](/interview-vocabulary-for-professionals).",
       "",
       "For live practice, [book a private tutoring session](/signup) and we can turn your own experience into polished STAR answers.",
     ],
@@ -221,6 +224,7 @@ export const blogPosts: BlogPost[] = [
       "Key phrases and vocabulary to sound natural, confident, and professional in English interviews.",
     date: "2026-06-02",
     category: "Business English",
+    kind: "landing",
     relatedSlugs: [
       "25-common-interview-questions-in-english",
       "star-method-interview-answers",
@@ -255,7 +259,7 @@ export const blogPosts: BlogPost[] = [
       "**Useful phrases:** to be honest, in my experience, what I found was, the main takeaway, that said, moving forward, at the end of the day.",
       "**Sample sentence:** \"In my experience, the best results come from clear communication and predictable follow-through.\"",
       "---",
-      "Use these phrases as building blocks, not scripts. For practice with real answers, review [STAR Method Interview Answers in English](/blog/star-method-interview-answers) and [How to Describe Work Experience in English](/blog/how-to-describe-work-experience).",
+      "Use these phrases as building blocks, not scripts. For practice with real answers, review [STAR Method Interview Answers in English](/star-method-interview-answers) and [How to Describe Work Experience in English](/how-to-describe-work-experience).",
       "",
       "If you want help sounding natural instead of translated, [book a private tutoring session](/signup).",
     ],
@@ -267,6 +271,7 @@ export const blogPosts: BlogPost[] = [
       "Talk about your professional background clearly and confidently during interviews.",
     date: "2026-06-01",
     category: "Business English",
+    kind: "landing",
     relatedSlugs: [
       "25-common-interview-questions-in-english",
       "star-method-interview-answers",
@@ -300,7 +305,7 @@ export const blogPosts: BlogPost[] = [
       "Most interview answers should be 45 to 90 seconds. Enough to sound complete, not so long that the interviewer loses the thread.",
       "**Simple structure:** role -> tools -> collaboration -> result.",
       "---",
-      "For more interview practice, read [25 Common Interview Questions in English](/blog/25-common-interview-questions-in-english) and [STAR Method Interview Answers in English](/blog/star-method-interview-answers).",
+      "For more interview practice, read [25 Common Interview Questions in English](/blog/25-common-interview-questions-in-english) and [STAR Method Interview Answers in English](/star-method-interview-answers).",
       "",
       "If you'd like help turning your own background into strong interview answers, [book a private tutoring session](/signup).",
     ],
@@ -312,6 +317,7 @@ export const blogPosts: BlogPost[] = [
       "Build a strong opening answer that sounds natural, professional, and easy to follow.",
     date: "2026-05-31",
     category: "Interviews",
+    kind: "landing",
     relatedSlugs: [
       "25-common-interview-questions-in-english",
       "star-method-interview-answers",

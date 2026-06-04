@@ -56,7 +56,7 @@ export default function BlogPage() {
 
         <div className="mt-14 grid gap-8">
           {categories.map((cat) => {
-            const posts = blogPosts.filter((p) => p.category === cat.id);
+            const posts = blogPosts.filter((p) => p.kind === "blog" && p.category === cat.id);
 
             if (!posts.length) return null;
 

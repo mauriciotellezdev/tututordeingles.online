@@ -25,12 +25,23 @@ export default function sitemap(): MetadataRoute.Sitemap {
     },
   ];
 
-  const blogEntries: MetadataRoute.Sitemap = blogPosts.map((post) => ({
-    url: `${BASE}/blog/${post.slug}`,
-    lastModified: new Date(post.date),
-    changeFrequency: "monthly" as const,
-    priority: 0.6,
-  }));
+  const landingEntries: MetadataRoute.Sitemap = blogPosts
+    .filter((post) => post.kind === "landing")
+    .map((post) => ({
+      url: `${BASE}/${post.slug}`,
+      lastModified: new Date(post.date),
+      changeFrequency: "monthly" as const,
+      priority: 0.75,
+    }));
 
-  return [...staticPages, ...blogEntries];
+  const blogEntries: MetadataRoute.Sitemap = blogPosts
+    .filter((post) => post.kind === "blog")
+    .map((post) => ({
+      url: `${BASE}/blog/${post.slug}`,
+      lastModified: new Date(post.date),
+      changeFrequency: "monthly" as const,
+      priority: 0.6,
+    }));
+
+  return [...staticPages, ...landingEntries, ...blogEntries];
 }

@@ -20,12 +20,12 @@ interface PageProps {
 }
 
 export async function generateStaticParams() {
-  return blogPosts.map((post) => ({ slug: post.slug }));
+  return blogPosts.filter((post) => post.kind === "blog").map((post) => ({ slug: post.slug }));
 }
 
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
   const { slug } = await params;
-  const post = blogPosts.find((p) => p.slug === slug);
+  const post = blogPosts.find((p) => p.slug === slug && p.kind === "blog");
   if (!post) return {};
 
   return {
@@ -114,16 +114,17 @@ function renderInlineMarkdown(text: string): ReactNode[] {
 
 export default async function BlogPostPage({ params }: PageProps) {
   const { slug } = await params;
-  const post = blogPosts.find((p) => p.slug === slug);
+  const post = blogPosts.find((p) => p.slug === slug && p.kind === "blog");
   if (!post) notFound();
 
   const readTime = getReadingTime(post.content);
   const toc = extractToc(post.content);
   const headings = post.content.filter((line) => line.startsWith("## "));
 
-  const currentIndex = blogPosts.findIndex((p) => p.slug === slug);
-  const prevPost = currentIndex > 0 ? blogPosts[currentIndex - 1] : null;
-  const nextPost = currentIndex < blogPosts.length - 1 ? blogPosts[currentIndex + 1] : null;
+  const blogOnly = blogPosts.filter((p) => p.kind === "blog");
+  const currentIndex = blogOnly.findIndex((p) => p.slug === slug);
+  const prevPost = currentIndex > 0 ? blogOnly[currentIndex - 1] : null;
+  const nextPost = currentIndex < blogOnly.length - 1 ? blogOnly[currentIndex + 1] : null;
 
   const related = post.relatedSlugs
     .map((relatedSlug) => blogPosts.find((p) => p.slug === relatedSlug))
@@ -433,7 +434,11 @@ export default async function BlogPostPage({ params }: PageProps) {
 
                 <div className="mt-6 grid gap-4 md:grid-cols-2">
                   {related.map((article) => (
-                    <Link key={article.slug} href={`/blog/${article.slug}`} className="group">
+                    <Link
+                      key={article.slug}
+                      href={article.kind === "blog" ? `/blog/${article.slug}` : `/${article.slug}`}
+                      className="group"
+                    >
                       <div className="h-full rounded-[1.5rem] border border-white/10 bg-white/[0.03] p-5 transition hover:border-blue-400/20 hover:bg-blue-500/5">
                         <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-white/45">
                           {article.category}

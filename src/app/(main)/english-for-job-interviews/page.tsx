@@ -223,7 +223,7 @@ export default function EnglishForJobInterviewsPage() {
             </p>
             <div className="mt-6 grid gap-4">
               {supportingArticles.map((article) => (
-                <Link key={article.slug} href={`/blog/${article.slug}`} className="group">
+                <Link key={article.slug} href={`/${article.slug}`} className="group">
                   <div className="rounded-[1.75rem] border border-white/10 bg-white/[0.04] p-5 transition hover:border-blue-400/20 hover:bg-blue-500/5">
                     <h3 className="font-heading text-lg font-medium tracking-tight text-white group-hover:text-blue-300">
                       {article.title}
