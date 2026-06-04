@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { Plus_Jakarta_Sans } from "next/font/google";
-import { Newsreader } from "next/font/google";
+import { Manrope } from "next/font/google";
 import { headers } from "next/headers";
 import "../globals.css";
 
@@ -13,10 +13,10 @@ const plusJakarta = Plus_Jakarta_Sans({
   weight: ["300", "400", "500", "600", "700", "800"],
 });
 
-const newsreader = Newsreader({
+const manrope = Manrope({
   subsets: ["latin"],
   variable: "--font-display",
-  weight: ["400", "500", "600", "700"],
+  weight: ["400", "500", "600", "700", "800"],
 });
 
 const BASE = process.env.NEXT_PUBLIC_APP_URL || "https://tututordeingles.online";
@@ -65,7 +65,7 @@ export default function RootLayout({
   return (
     <html lang="es" className="scroll-smooth" suppressHydrationWarning>
       <body
-        className={`${plusJakarta.variable} ${newsreader.variable} bg-[#0f1729] text-white antialiased`}
+        className={`${plusJakarta.variable} ${manrope.variable} bg-[#0f1729] text-white antialiased`}
       >
         <Header />
         {children}
