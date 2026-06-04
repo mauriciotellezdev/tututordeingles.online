@@ -5,7 +5,7 @@ import { Button } from "@/shared/ui/button";
 import { Breadcrumbs } from "@/shared/seo/breadcrumbs";
 
 const BASE = process.env.NEXT_PUBLIC_APP_URL || "https://tututordeingles.online";
-const OG_IMAGE = "/og-interviews-es.svg";
+const OG_IMAGE = "/og-interviews-es.png";
 
 export const metadata: Metadata = {
   title: "Inglés para Entrevistas de Trabajo | Tu Tutor de Inglés",

@@ -4,7 +4,7 @@ import { blogPosts } from "@/lib/blog-posts";
 import { LandingPage } from "@/shared/seo/landing-page";
 
 const BASE = process.env.NEXT_PUBLIC_APP_URL || "https://tututordeingles.online";
-const OG_IMAGE = "/og-interviews-es.svg";
+const OG_IMAGE = "/og-interviews-es.png";
 const slug = "metodo-star-para-entrevistas-en-ingles";
 const englishSlug = "star-method-interview-answers";
 const hubSlug = "ingles-para-entrevistas-de-trabajo";

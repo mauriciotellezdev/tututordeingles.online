@@ -4,7 +4,7 @@ import { blogPosts } from "@/lib/blog-posts";
 import { LandingPage } from "@/shared/seo/landing-page";
 
 const BASE = process.env.NEXT_PUBLIC_APP_URL || "https://tututordeingles.online";
-const OG_IMAGE = "/og-interviews-es.svg";
+const OG_IMAGE = "/og-interviews-es.png";
 const slug = "como-responder-tell-me-about-yourself-en-ingles";
 const englishSlug = "how-to-answer-tell-me-about-yourself";
 const hubSlug = "ingles-para-entrevistas-de-trabajo";
