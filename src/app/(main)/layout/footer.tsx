@@ -10,6 +10,12 @@ const links = {
     { label: "Precios", href: "#precios" },
     { label: "Blog", href: "/blog" },
   ],
+  entrevistas: [
+    { label: "Guía en español", href: "/ingles-para-entrevistas-de-trabajo" },
+    { label: "English version", href: "/english-for-job-interviews" },
+    { label: "Tell me about yourself", href: "/como-responder-tell-me-about-yourself-en-ingles" },
+    { label: "STAR method", href: "/metodo-star-para-entrevistas-en-ingles" },
+  ],
   cuenta: [
     { label: "Registrarse", href: "/signup" },
     { label: "Entrar", href: "/login" },
