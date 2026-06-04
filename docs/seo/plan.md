@@ -4,6 +4,34 @@ Focus on **low-competition, high-intent LATAM Spanish keywords** rather than bro
 
 **Target audience is exclusively LATAM Spanish speakers** (primarily Mexico). All Spanish copy, keywords, cultural references, and localization decisions must use Mexican/LATAM Spanish — not Castilian/European Spanish.
 
+## Current Site Audit
+
+### What is already working
+
+- Clean top-level URL structure for the main hub pages and supporting SEO pages.
+- Separate blog and SEO landing-page intent.
+- Unique `<title>` and meta description per page.
+- Canonical URLs in place.
+- Sitemap generation in place.
+- Strong internal hub-and-spoke linking on the interview cluster.
+- Good page readability on dark theme with improved typography.
+
+### Gaps to close next
+
+- Add breadcrumb structured data to hub pages, landing pages, and blog posts.
+- Add or expose stronger trust signals: About, author, and credentials context that search engines and users can verify.
+- Add `robots.txt` and keep sitemap submission current in Google Search Console and Bing Webmaster Tools.
+- Use IndexNow for faster Bing discovery of new or updated URLs.
+- Expand each landing page with more original examples, scenarios, and proof of expertise.
+- Keep title, H1, OG title, and anchor text aligned with the same intent on every page.
+
+### Interpretation rules
+
+- If a page is meant to rank for search intent, it should live at a top-level SEO URL, not under `/blog`.
+- Blog posts are supporting informational content.
+- Landing pages are hub or money-adjacent informational pages.
+- Do not create duplicate or near-duplicate versions of the same intent under different URLs.
+
 ---
 
 ## Primary Rule: Additive Content Only
@@ -80,6 +108,14 @@ Examples:
 - /english-for-job-interviews
 - /english-for-remote-workers
 - /business-english-for-professionals
+
+These pages are the primary SEO targets for commercial or high-intent informational queries. They should feel like complete answers to the searcher's query, not like repackaged blog posts.
+
+### Routing Rule
+
+- Blog content stays under `/blog/...`.
+- Landing pages stay at the root level, e.g. `/english-for-job-interviews`.
+- If two pages would answer the same query in nearly the same way, keep one canonical page and merge the others into it.
 
 These are informational content pages. They must not replace existing site pages.
 
@@ -234,9 +270,9 @@ At the end of each article, invite readers to book tutoring sessions. Link to ex
 
 ## On-Page SEO (for new pages only)
 
-### 1. Pick One Primary Keyword Per Page
+### 1. Pick One Primary Search Intent Per Page
 
-Each new page should target a single primary phrase.
+Each new page should target one intent and one primary phrase. Do not split the same intent across multiple URLs.
 
 **Page structure:**
 
@@ -246,88 +282,182 @@ Each new page should target a single primary phrase.
 <h1>English for Software Developers</h1>
 ```
 
-Mention the primary keyword naturally in the first 100 words.
+Mention the primary phrase naturally in the first 100 words, the H1, one early subheading, and the body copy where it fits.
 
-### 2. Add FAQ Schema
+### 2. Align Title, H1, and Snippet Signals
 
-Questions to include:
+Google and Bing both use the title element, the visible H1, prominent headings, anchor text, and on-page copy when deciding how to represent a page.
+
+Rules:
+
+- Make the title unique and descriptive.
+- Put the primary intent first.
+- Keep the H1 close to the title.
+- Write a unique meta description that mirrors the page value.
+- Avoid keyword stuffing and avoid vague titles like "Guide" or "Resources" alone.
+
+### 3. Control the Snippet
+
+The meta description should be a short, unique summary. Use the body copy to reinforce the same message so Google and Bing have enough clear text to generate a good snippet.
+
+### 4. Use Breadcrumbs
+
+Add visible breadcrumb navigation and `BreadcrumbList` structured data for:
+
+- Hub pages
+- Landing pages
+- Blog posts
+
+Breadcrumbs help users understand site hierarchy and give Google/Bing a cleaner topical map.
+
+### 5. Add FAQ Schema Only When the Questions Are Visible
+
+Questions to include on relevant pages:
 
 - ¿Cuánto cuesta una clase?
 - ¿Las clases son individuales?
 - ¿Necesito conocimientos previos?
 - ¿Utilizan Google Meet?
 
-Google often displays FAQ rich results.
+FAQ schema should match on-page text exactly. Do not use it on pages that do not visibly answer those questions.
 
-### 3. Add Real Testimonials
+### 6. Add Real Proof
 
-Google values unique content.
+Google values unique content and evidence of expertise.
 
 | ❌ Bad | ✅ Good |
 |--------|---------|
 | "Excelente profesor." | "Conseguí un empleo remoto después de mejorar mi inglés durante 6 meses." |
 
+Add:
+
+- Real examples
+- Real scenarios
+- Specific outcomes
+- Tutor credentials or About-page context
+- Clear links to conversion pages near the end
+
+### 7. Keep Pages Substantial
+
+Word count is not a ranking factor by itself, but thin pages usually fail to satisfy intent. Aim for complete coverage of the query rather than a fixed word count. The old 1200–2500 number is only a rough planning range.
+
+### 8. Optimize Media When Media Exists
+
+If you use images or video:
+
+- Use descriptive alt text.
+- Put media near relevant text.
+- Do not use decorative media just to fill space.
+- Make filenames, captions, and surrounding copy support the page topic.
+
+### 9. Prevent Duplicate Content
+
+Avoid:
+
+- Multiple pages targeting the same query with nearly identical structure
+- Copy-paste intros across landing pages
+- Blog duplicates of landing-page content
+- Repeated FAQ text across unrelated pages
+
+If a page is the hub for a topic, it should own that topic. Supporting pages should narrow the angle, not repeat the same page.
+
+### 10. Technical Checks for Every New Page
+
+- Canonical points to the preferred URL.
+- Page is indexable and not blocked by `robots.txt` or `noindex`.
+- Sitemap includes the URL.
+- Internal links use descriptive anchor text.
+- Open Graph and Twitter metadata are present.
+- Structured data validates cleanly.
+
 ---
 
 ## Off-Page SEO
 
-### 1. Google Business Profile
+### 1. Google Search Console
 
-Even if online-only, create:
+Set up Search Console, submit the sitemap, and monitor:
+
+- Index coverage
+- Search queries
+- Page experience
+- Rich result reports
+- Manual actions
+
+### 2. Bing Webmaster Tools + IndexNow
+
+Use Bing Webmaster Tools for crawl diagnostics and keyword data. Use IndexNow so Bing and participating search engines get notified when URLs are created or updated.
+
+### 3. Google Business Profile
+
+Even if the business is online-first, create and maintain a profile if the service area supports it.
+
+Include:
 
 - Business name
 - Website
 - Description
 - Service area
+- Contact method
 
-Get reviews. This is one of the highest ROI actions.
+Reviews are one of the highest-ROI trust signals.
 
-### 2. Local Directories
+### 4. Local and Niche Directories
 
-Free directories that often allow links:
+Use only directories that people would realistically trust:
 
 - Yelp Mexico
 - Hotfrog
 - Cylex
-- Directorio de empresas locales
+- Local business directories
 - Chamber of commerce directories
 
 Avoid spammy directories.
 
-### 3. LinkedIn
+### 5. LinkedIn
 
-Publish articles like:
+Publish content that maps to the site's real clusters:
 
-- How to improve English for tech jobs
-- English interview preparation
+- English for job interviews
+- English for software developers
+- English for remote workers
+- Business English for professionals
 
-Link back to your site.
+Link back to the relevant hub page, not to random pages.
 
-### 4. Medium
+### 6. Medium
 
-Rewrite your best articles and link back naturally.
+Rewrite your best educational pieces and link back naturally to the canonical page on the site. Do not syndicate exact copies without a canonical strategy.
 
-### 5. Guest Posts
+### 7. Guest Posts and Partnerships
 
-Target career blogs, remote work blogs, expat blogs, technology communities. Offer articles like "English for software engineers" or "Preparing for US job interviews." Include one link back.
+Target:
 
-### 6. Reddit (Indirectly)
+- Career blogs
+- Remote work blogs
+- Expat blogs
+- Technology communities
+- LATAM professional newsletters
 
-Answer questions naturally. Don't spam links.
+Offer tightly relevant pieces like "English for software engineers" or "Preparing for US job interviews." Include one contextual link back to the most relevant hub page.
 
-### 7. YouTube
+### 8. Reddit and Communities
 
-Massively underused. Create videos for:
+Answer questions naturally. Do not spam links. Build trust first; link only when it genuinely solves the problem.
+
+### 9. YouTube
+
+Create videos for:
 
 - English interview practice
 - Common business English mistakes
 - English for programmers
 
-Link to site in descriptions.
+Link to the relevant page in descriptions and pinned comments.
 
-### 8. Facebook Groups
+### 10. Facebook Groups and Community Channels
 
-Join groups for remote workers, programmers, job seekers, English learners. Be helpful first.
+Join groups for remote workers, programmers, job seekers, and English learners in Mexico/LATAM. Be helpful first.
 
 ---
 
@@ -355,10 +485,10 @@ Join groups for remote workers, programmers, job seekers, English learners. Be h
 
 | Phase | Content | Timeline |
 |-------|---------|----------|
-| **1** | 10 cornerstone articles | — |
-| **2** | 20 supporting articles | — |
-| **3** | Expand based on Search Console data | — |
-| **Total** | 30–50 high-quality content pages | — |
+| **1** | 5 hub pages + 10 supporting pages | — |
+| **2** | 10–20 more supporting pages | — |
+| **3** | Expand based on Search Console and Bing query data | — |
+| **Total** | 30–50 high-intent content pages | — |
 
 ---
 
@@ -366,11 +496,11 @@ Join groups for remote workers, programmers, job seekers, English learners. Be h
 
 | Week | Actions |
 |------|---------|
-| **1** | Set up Google Search Console, add FAQ section to new pages |
-| **2** | Create 2–3 cornerstone articles (Job Interviews + Software Dev clusters) |
-| **3** | Create 2–3 more articles (Remote Work + Speaking Fluency clusters) |
-| **4** | Get 5 Google reviews, 5 directory listings, 1 guest post |
+| **1** | Set up Google Search Console, Bing Webmaster Tools, sitemap submission, and IndexNow |
+| **2** | Add breadcrumb structured data and strengthen About/trust signals |
+| **3** | Publish 2–3 high-intent hub or landing pages for the strongest cluster |
+| **4** | Get 5 Google reviews, 3–5 legitimate directory listings, and 1 relevant guest mention |
 
 ---
 
-**Bottom line:** 10 quality backlinks and 30–50 well-targeted content pages will move the needle more than chasing hundreds of low-quality links. The biggest opportunity is to become the site that specifically serves **Mexican professionals seeking English for better jobs**.
+**Bottom line:** strong intent alignment, clear internal structure, unique content, and trustworthy external mentions will move the needle more than chasing volume. The biggest opportunity is to become the site that specifically serves **Mexican professionals seeking English for better jobs**.
