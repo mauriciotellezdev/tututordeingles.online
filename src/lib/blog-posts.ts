@@ -4,6 +4,13 @@ export interface BlogPost {
   description: string;
   date: string;
   content: string[];
+  category: string;
+  relatedSlugs: string[];
+}
+
+export function getReadingTime(content: string[]): number {
+  const words = content.join(" ").split(/\s+/).length;
+  return Math.max(1, Math.ceil(words / 200));
 }
 
 export const blogPosts: BlogPost[] = [
@@ -13,7 +20,16 @@ export const blogPosts: BlogPost[] = [
     description:
       "The most common English interview questions asked by US hiring managers, with sample answers and tips to sound confident and natural.",
     date: "2026-06-04",
+    category: "Interviews",
+    relatedSlugs: [
+      "star-method-interview-answers",
+      "interview-vocabulary-for-professionals",
+      "how-to-describe-work-experience",
+      "how-to-answer-tell-me-about-yourself",
+    ],
     content: [
+      "\u{1F4D8} Resumen en español: Estas son las 25 preguntas más comunes en entrevistas de trabajo en Estados Unidos. Incluye ejemplos de respuestas y estrategias para profesionistas mexicanos y LATAM que buscan trabajo en empresas estadounidenses. Si te has quedado en blanco durante una entrevista en inglés, esta guía te ayudará a prepararte con respuestas naturales y efectivas.",
+
       "If you're a Spanish-speaking professional preparing for a job interview in English, you've probably noticed the questions feel different. They're more behavioral. More open-ended. And the pressure of speaking in a second language makes it harder to think on your feet.",
       "This guide covers the 25 most common interview questions asked by US hiring managers, with sample answers and strategies to help you respond naturally — not like you memorized a script.",
 

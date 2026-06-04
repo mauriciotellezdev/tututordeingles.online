@@ -52,7 +52,9 @@ Reason:
 - Content quality is more important than translation quantity.
 - Educational content benefits from native-level English.
 
-Optional: include a short Spanish summary at the beginning of articles (100–200 words max) in **LATAM Spanish** (not Castilian). Remaining content in English.
+**Required:** include a short Spanish summary at the beginning of every article (100–200 words) in **LATAM Spanish** (not Castilian). Remaining content in English.
+
+The summary must be in LATAM Spanish because the target audience is Mexican and LATAM professionals. It serves both as a preview for Spanish-speaking readers and as a language signal to Google that the content targets this specific audience.
 
 ---
 

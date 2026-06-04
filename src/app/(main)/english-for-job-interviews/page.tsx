@@ -72,6 +72,20 @@ export default function EnglishForJobInterviewsPage() {
           with a native English speaker who understands US hiring culture.
         </p>
 
+        <div className="bg-[#0f1729]/40 border border-white/[0.08] rounded-xl p-6 mb-12 backdrop-blur-sm">
+          <p className="text-white/50 text-xs leading-relaxed">
+            <strong className="text-white font-semibold">Resumen en español:</strong>{' '}
+            ¿Te cuesta mantener una entrevista de trabajo en inglés? Como
+            profesionista mexicano o LATAM, sabes que tu inglés es funcional,
+            pero en una entrevista los nervios y la presión te juegan en
+            contra. Te ayudamos a prepararte con un tutor estadounidense nativo
+            que entiende el proceso de contratación en empresas de Estados
+            Unidos. Practicamos preguntas reales, trabajamos tu fluidez y
+            corregimos tu pronunciación para que llegues seguro a tu próxima
+            entrevista.
+          </p>
+        </div>
+
         <section className="mb-16">
           <p className="text-white/60 text-base leading-relaxed mb-6">
             Job interviews in English are different from interviews in Spanish.
