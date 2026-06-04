@@ -5,6 +5,8 @@ import { LandingPage } from "@/shared/seo/landing-page";
 
 const BASE = process.env.NEXT_PUBLIC_APP_URL || "https://tututordeingles.online";
 const slug = "interview-vocabulary-for-professionals";
+const spanishSlug = "vocabulario-para-entrevistas-profesionales";
+const spanishHub = "ingles-para-entrevistas-de-trabajo";
 
 const post = blogPosts.find((item) => item.slug === slug && item.kind === "landing");
 
@@ -15,6 +17,11 @@ export const metadata: Metadata = post
       metadataBase: new URL(BASE),
       alternates: {
         canonical: `${BASE}/${slug}`,
+        languages: {
+          "en-US": `${BASE}/${slug}`,
+          "es-MX": `${BASE}/${spanishSlug}`,
+          "x-default": `${BASE}/${spanishHub}`,
+        },
       },
       openGraph: {
         title: `${post.title} | Tu Tutor de Inglés`,
@@ -47,8 +54,11 @@ export default function Page() {
   return (
     <LandingPage
       post={post}
+      lang="en"
       hubHref="/english-for-job-interviews"
       hubLabel="English for Job Interviews"
+      alternateHref={`/${spanishSlug}`}
+      alternateLabel="Español"
       pageUrl={`${BASE}/${slug}`}
       breadcrumbs={[
         { label: "Home", href: "/" },

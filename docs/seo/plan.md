@@ -73,17 +73,26 @@ The purpose of content is:
 
 ## Language Strategy
 
-Content may be written primarily in **English**.
+The interview SEO cluster should be **Spanish-first for LATAM search intent**, with English alternates on their own URLs.
 
-Reason:
+Guidelines:
 
-- Site owner is a native English speaker.
-- Content quality is more important than translation quantity.
-- Educational content benefits from native-level English.
+- Use a Spanish primary page for each interview intent that matters for LATAM search.
+- Pair each Spanish page with a real English alternate when the English version adds value.
+- Use `hreflang` and `x-default` to connect the pair.
+- Keep the title, H1, meta description, summary, body copy, internal anchors, and social copy localized to the page language.
+- Do not mix languages on the same SEO landing page except where an English example is necessary for teaching English.
+- Blog posts can stay supporting content, but the money-adjacent or high-intent pages should exist in Spanish too.
 
-**Required:** include a short Spanish summary at the beginning of every article (100–200 words) in **LATAM Spanish** (not Castilian). Remaining content in English.
+The Spanish version should usually be the default for LATAM users. The English version should exist as a deliberate alternate, not as a duplicate clone.
 
-The summary must be in LATAM Spanish because the target audience is Mexican and LATAM professionals. It serves both as a preview for Spanish-speaking readers and as a language signal to Google that the content targets this specific audience.
+Examples:
+
+- `/ingles-para-entrevistas-de-trabajo` <-> `/english-for-job-interviews`
+- `/metodo-star-para-entrevistas-en-ingles` <-> `/star-method-interview-answers`
+- `/como-responder-tell-me-about-yourself-en-ingles` <-> `/how-to-answer-tell-me-about-yourself`
+- `/vocabulario-para-entrevistas-profesionales` <-> `/interview-vocabulary-for-professionals`
+- `/como-describir-experiencia-laboral-en-ingles` <-> `/how-to-describe-work-experience`
 
 ---
 
@@ -230,17 +239,17 @@ All supporting articles in its cluster, listed explicitly so Google understands 
 
 ---
 
-## 5 Planned Hubs
+## 5 Planned Hub Pairs
 
 ```text
-/english-for-job-interviews
-/english-for-software-developers
-/english-for-remote-workers
-/business-english-for-professionals
-/improve-english-speaking
+/ingles-para-entrevistas-de-trabajo <-> /english-for-job-interviews
+/ingles-para-desarrolladores-de-software <-> /english-for-software-developers
+/ingles-para-trabajo-remoto <-> /english-for-remote-workers
+/ingles-de-negocios-para-profesionales <-> /business-english-for-professionals
+/mejorar-hablar-ingles <-> /improve-english-speaking
 ```
 
-Build 5–10 supporting articles under each hub for ~30–50 pages total.
+Build 5–10 supporting articles under each hub pair for ~30–50 pages total, with the Spanish versions prioritized for LATAM discovery.
 
 ---
 

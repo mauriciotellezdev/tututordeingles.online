@@ -7,12 +7,17 @@ export async function GET() {
 ## Core Pages
 
 - [Home](${base}/) - Main site entry and conversion point.
+- [Spanish Interview Hub](${base}/ingles-para-entrevistas-de-trabajo) - Spanish-first landing page for LATAM search intent.
 - [English for Job Interviews](${base}/english-for-job-interviews) - Hub page for interview preparation.
 - [Blog](${base}/blog) - Supporting educational articles.
 - [Book a Session](${base}/signup) - Conversion page for private tutoring.
 
 ## High-Intent Pages
 
+- [Como Responder Tell Me About Yourself en Ingles](${base}/como-responder-tell-me-about-yourself-en-ingles)
+- [Metodo STAR para Entrevistas en Ingles](${base}/metodo-star-para-entrevistas-en-ingles)
+- [Vocabulario para Entrevistas Profesionales](${base}/vocabulario-para-entrevistas-profesionales)
+- [Como Describir Experiencia Laboral en Ingles](${base}/como-describir-experiencia-laboral-en-ingles)
 - [How to Answer Tell Me About Yourself in English](${base}/how-to-answer-tell-me-about-yourself)
 - [STAR Method Interview Answers in English](${base}/star-method-interview-answers)
 - [Interview Vocabulary for Professionals](${base}/interview-vocabulary-for-professionals)
@@ -25,7 +30,8 @@ This site helps Spanish-speaking professionals prepare for US-style English inte
 
 ## What to Prefer
 
-- Use the hub pages for broad intent.
+- Use the Spanish hub pages for LATAM search intent.
+- Use the English hub pages as alternates for English-speaking or bilingual discovery.
 - Use the landing pages for specific search intent.
 - Use the blog for supporting explanations and examples.
 - Use the signup page for booking private tutoring.

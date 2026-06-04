@@ -1,9 +1,11 @@
 import type { Metadata } from "next/types";
 import { Button } from "@/shared/ui/button";
 import Link from "next/link";
+import { ArrowRight } from "lucide-react";
 import { Breadcrumbs } from "@/shared/seo/breadcrumbs";
 
 const BASE = process.env.NEXT_PUBLIC_APP_URL || "https://tututordeingles.online";
+const SPANISH_HUB = "/ingles-para-entrevistas-de-trabajo";
 
 export const metadata: Metadata = {
   title: "English for Job Interviews | Tu Tutor de Inglés",
@@ -12,6 +14,11 @@ export const metadata: Metadata = {
   metadataBase: new URL(BASE),
   alternates: {
     canonical: `${BASE}/english-for-job-interviews`,
+    languages: {
+      "en-US": `${BASE}/english-for-job-interviews`,
+      "es-MX": `${BASE}${SPANISH_HUB}`,
+      "x-default": `${BASE}${SPANISH_HUB}`,
+    },
   },
   openGraph: {
     title: "English for Job Interviews | Tu Tutor de Inglés",
@@ -69,18 +76,27 @@ const supportingArticles = [
 
 export default function EnglishForJobInterviewsPage() {
   return (
-    <main className="relative isolate overflow-hidden bg-[#070b14] text-white">
+    <main lang="en" className="relative isolate overflow-hidden bg-[#070b14] text-white">
       <div className="pointer-events-none absolute inset-x-0 top-0 -z-10 h-[28rem] bg-[radial-gradient(circle_at_top,_rgba(59,130,246,0.16),_rgba(7,11,20,0.16)_52%,_rgba(7,11,20,0)_100%)]" />
       <div className="pointer-events-none absolute left-[-8rem] top-28 -z-10 h-[20rem] w-[20rem] rounded-full bg-blue-500/10 blur-3xl" />
       <div className="pointer-events-none absolute right-[-7rem] top-[32rem] -z-10 h-[18rem] w-[18rem] rounded-full bg-emerald-400/8 blur-3xl" />
 
       <div className="mx-auto max-w-5xl px-4 pb-24 pt-28 sm:px-6 lg:px-8">
-        <Breadcrumbs
-          items={[
-            { label: "Home", href: "/" },
-            { label: "English for Job Interviews", href: "/english-for-job-interviews" },
-          ]}
-        />
+        <div className="flex items-center justify-between gap-4">
+          <Breadcrumbs
+            items={[
+              { label: "Home", href: "/" },
+              { label: "English for Job Interviews", href: "/english-for-job-interviews" },
+            ]}
+          />
+          <Link
+            href={SPANISH_HUB}
+            className="hidden sm:inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.04] px-4 py-2 text-xs font-semibold uppercase tracking-[0.22em] text-white/65 shadow-sm backdrop-blur transition hover:border-white/20 hover:text-white"
+          >
+            Español
+            <ArrowRight className="h-3.5 w-3.5" />
+          </Link>
+        </div>
 
         <article className="rounded-[2.25rem] border border-white/10 bg-white/[0.04] px-6 py-8 shadow-[0_24px_80px_-45px_rgba(0,0,0,0.78)] backdrop-blur sm:px-8 sm:py-10 lg:px-10 lg:py-12">
           <div className="inline-flex items-center rounded-full border border-blue-400/15 bg-blue-500/10 px-4 py-2 text-[11px] font-semibold uppercase tracking-[0.24em] text-blue-300">
@@ -100,16 +116,9 @@ export default function EnglishForJobInterviewsPage() {
           <div className="mt-10 rounded-3xl border border-white/10 bg-white/[0.04] p-6">
             <p className="text-sm leading-8 text-white/74">
               <strong className="font-semibold text-white">
-                Resumen en español:
+                Quick summary in English:
               </strong>{" "}
-              ¿Te cuesta mantener una entrevista de trabajo en inglés? Como
-              profesionista mexicano o LATAM, sabes que tu inglés es funcional,
-              pero en una entrevista los nervios y la presión te juegan en
-              contra. Te ayudamos a prepararte con un tutor estadounidense
-              nativo que entiende el proceso de contratación en empresas de
-              Estados Unidos. Practico preguntas reales contigo, trabajo tu
-              fluidez y corrijo tu pronunciación para que llegues seguro a tu
-              próxima entrevista.
+              Job interviews in English are different from interviews in Spanish. US hiring managers expect behavioral answers, confident communication, and cultural fit - not just technical skills. If English isn't your first language, the interview is often the hardest part of the job search.
             </p>
           </div>
 
