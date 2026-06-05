@@ -3,8 +3,18 @@
 import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/shared/ui/button";
-import { AlertCircle, Calendar as CalendarIcon, Clock, ChevronRight, Award } from "lucide-react";
-import { getCurrentStudentAction, bookIntroCallAction, getBookedSlotsAction } from "@/app/(student)/placement-quiz/actions";
+import {
+  AlertCircle,
+  Calendar as CalendarIcon,
+  Clock,
+  ChevronRight,
+  Award,
+} from "lucide-react";
+import {
+  getCurrentStudentAction,
+  bookIntroCallAction,
+  getBookedSlotsAction,
+} from "@/app/(student)/placement-quiz/actions";
 
 interface StudentData {
   _id: string;
@@ -27,6 +37,7 @@ export default function BookingPage() {
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [selectedTimeSlot, setSelectedTimeSlot] = useState<string | null>(null);
   const [bookedSlots, setBookedSlots] = useState<string[]>([]);
+  const timeZone = Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC";
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -34,10 +45,13 @@ export default function BookingPage() {
   useEffect(() => {
     if (!selectedDate) return;
     (async () => {
-      const res = await getBookedSlotsAction({ dateIso: selectedDate.toISOString() });
+      const res = await getBookedSlotsAction({
+        dateIso: selectedDate.toISOString(),
+        timeZone,
+      });
       if (res.success) setBookedSlots(res.bookedSlots);
     })();
-  }, [selectedDate]);
+  }, [selectedDate, timeZone]);
 
   // Verify session on load
   useEffect(() => {
@@ -67,7 +81,7 @@ export default function BookingPage() {
 
   if (sessionLoading || !student || !student.quizResult) {
     return (
-      <main className="min-h-screen bg-[#0a0a0a] flex items-center justify-center text-white/50 text-sm">
+      <main className="flex min-h-screen items-center justify-center bg-[#0a0a0a] text-sm text-white/50">
         Cargando tus resultados...
       </main>
     );
@@ -88,7 +102,17 @@ export default function BookingPage() {
     return dates;
   };
 
-  const timeSlots = ["09:00", "10:00", "11:00", "13:00", "14:00", "15:00", "16:00", "17:00"];
+  const timeSlots = [
+    "09:00",
+    "10:00",
+    "11:00",
+    "12:00",
+    "13:00",
+    "14:00",
+    "15:00",
+    "16:00",
+    "17:00",
+  ];
 
   const handleBookingConfirm = async () => {
     if (!selectedDate || !selectedTimeSlot) {
@@ -104,7 +128,7 @@ export default function BookingPage() {
     bookingDateTime.setHours(hours, minutes, 0, 0);
 
     const res = await bookIntroCallAction({
-      dateTimeIso: bookingDateTime.toISOString()
+      dateTimeIso: bookingDateTime.toISOString(),
     });
 
     setLoading(false);
@@ -114,83 +138,116 @@ export default function BookingPage() {
       const timeStr = encodeURIComponent(selectedTimeSlot);
       router.push(`/quiz/placement/confirmed?date=${dateStr}&time=${timeStr}`);
     } else {
-      setError(res.error || "No se pudo agendar la sesión en este horario. Intenta con otro.");
+      setError(
+        res.error ||
+          "No se pudo agendar la sesión en este horario. Intenta con otro."
+      );
     }
   };
 
   const getProficiencyLevel = (correct: number) => {
-    if (correct <= 5) return { name: "Principiante (A1-A2)", desc: "Estás comenzando tu camino en el inglés. Trabajaremos en las bases de vocabulario y estructuras cotidianas básicas." };
-    if (correct <= 12) return { name: "Intermedio (B1)", desc: "Puedes comunicarte en situaciones familiares, pero te falta fluidez y vocabulario más especializado. Nos enfocaremos en soltar tu conversación." };
-    if (correct <= 17) return { name: "Intermedio Alto (B2)", desc: "Te expresas con relativa fluidez pero aún cometes errores en gramática compleja y expresiones idiomáticas. Perfeccionaremos tu naturalidad." };
-    return { name: "Avanzado (C1-C2)", desc: "Tienes un excelente dominio del inglés. Trabajaremos en matices, vocabulario de negocios de alto nivel y acento nativo." };
+    if (correct <= 5)
+      return {
+        name: "Principiante (A1-A2)",
+        desc: "Estás comenzando tu camino en el inglés. Trabajaremos en las bases de vocabulario y estructuras cotidianas básicas.",
+      };
+    if (correct <= 12)
+      return {
+        name: "Intermedio (B1)",
+        desc: "Puedes comunicarte en situaciones familiares, pero te falta fluidez y vocabulario más especializado. Nos enfocaremos en soltar tu conversación.",
+      };
+    if (correct <= 17)
+      return {
+        name: "Intermedio Alto (B2)",
+        desc: "Te expresas con relativa fluidez pero aún cometes errores en gramática compleja y expresiones idiomáticas. Perfeccionaremos tu naturalidad.",
+      };
+    return {
+      name: "Avanzado (C1-C2)",
+      desc: "Tienes un excelente dominio del inglés. Trabajaremos en matices, vocabulario de negocios de alto nivel y acento nativo.",
+    };
   };
 
   const score = student.quizResult.score;
   const totalQuestions = student.quizResult.totalQuestions;
 
   return (
-    <main className="min-h-screen bg-[#0a0a0a] pt-24 pb-16 flex flex-col items-center justify-center px-4 relative overflow-hidden text-white">
-      <div className="absolute left-[-10%] top-[-10%] w-[500px] h-[500px] bg-blue-600/5 rounded-full blur-[100px] pointer-events-none" />
-      <div className="absolute right-[-10%] bottom-[-10%] w-[500px] h-[500px] bg-blue-500/5 rounded-full blur-[100px] pointer-events-none" />
+    <main className="relative flex min-h-screen flex-col items-center justify-center overflow-hidden bg-[#0a0a0a] px-4 pt-24 pb-16 text-white">
+      <div className="pointer-events-none absolute top-[-10%] left-[-10%] h-[500px] w-[500px] rounded-full bg-blue-600/5 blur-[100px]" />
+      <div className="pointer-events-none absolute right-[-10%] bottom-[-10%] h-[500px] w-[500px] rounded-full bg-blue-500/5 blur-[100px]" />
 
-      <div className="w-full max-w-xl bg-[#0f1729]/40 border border-white/[0.08] backdrop-blur-xl rounded-2xl p-6 md:p-8 shadow-2xl relative z-10 animate-fadeIn">
-
-        <div className="mb-6 flex justify-between items-center text-xs text-white/40 font-medium uppercase tracking-wider">
+      <div className="animate-fadeIn relative z-10 w-full max-w-xl rounded-2xl border border-white/[0.08] bg-[#0f1729]/40 p-6 shadow-2xl backdrop-blur-xl md:p-8">
+        <div className="mb-6 flex items-center justify-between text-xs font-medium tracking-wider text-white/40 uppercase">
           <span>Paso 2 de 2</span>
           <span>Agenda tu Llamada Demo</span>
         </div>
 
         {error && (
-          <div className="mb-6 p-4 rounded-xl bg-destructive/10 border border-destructive/20 text-destructive text-sm flex items-center gap-3 animate-slideDown">
+          <div className="bg-destructive/10 border-destructive/20 text-destructive animate-slideDown mb-6 flex items-center gap-3 rounded-xl border p-4 text-sm">
             <AlertCircle className="size-5 shrink-0" />
             <p>{error}</p>
           </div>
         )}
 
-        <div className="p-5 rounded-2xl bg-blue-500/5 border border-blue-500/10 mb-8 flex flex-col md:flex-row items-center gap-5 animate-scaleUp">
-          <div className="size-20 shrink-0 rounded-full bg-blue-500/10 border-2 border-blue-500 flex flex-col items-center justify-center">
+        <div className="animate-scaleUp mb-8 flex flex-col items-center gap-5 rounded-2xl border border-blue-500/10 bg-blue-500/5 p-5 md:flex-row">
+          <div className="flex size-20 shrink-0 flex-col items-center justify-center rounded-full border-2 border-blue-500 bg-blue-500/10">
             <span className="text-2xl font-bold text-white">{score}</span>
-            <span className="text-[10px] text-white/40 uppercase font-semibold">de {totalQuestions}</span>
+            <span className="text-[10px] font-semibold text-white/40 uppercase">
+              de {totalQuestions}
+            </span>
           </div>
           <div className="text-center md:text-left">
-            <h4 className="text-base font-semibold text-white/90 mb-1 flex items-center gap-1.5 justify-center md:justify-start">
+            <h4 className="mb-1 flex items-center justify-center gap-1.5 text-base font-semibold text-white/90 md:justify-start">
               <Award className="size-4 text-blue-400" />
-              Nivel de Inglés: <span className="text-blue-400 font-bold">{getProficiencyLevel(score).name}</span>
+              Nivel de Inglés:{" "}
+              <span className="font-bold text-blue-400">
+                {getProficiencyLevel(score).name}
+              </span>
             </h4>
-            <p className="text-xs text-white/50 leading-relaxed">
+            <p className="text-xs leading-relaxed text-white/50">
               {getProficiencyLevel(score).desc}
             </p>
           </div>
         </div>
 
-        <h3 className="text-xl md:text-2xl font-bold text-white mb-2 leading-tight flex items-center gap-2">
-          <CalendarIcon className="size-5 text-blue-400" /> Agenda tu Clase Demo Gratis
+        <h3 className="mb-2 flex items-center gap-2 text-xl leading-tight font-bold text-white md:text-2xl">
+          <CalendarIcon className="size-5 text-blue-400" /> Agenda tu Clase Demo
+          Gratis
         </h3>
-        <p className="text-white/50 text-xs mb-6 leading-relaxed">
-          Hola <strong className="text-white">{student.name}</strong>, elige el día y la hora para tu sesión introductoria de 30 minutos por WhatsApp. Conversarás directamente con Mauricio para planificar tu curso.
+        <p className="mb-6 text-xs leading-relaxed text-white/50">
+          Hola <strong className="text-white">{student.name}</strong>, elige el
+          día y la hora para tu sesión introductoria de 30 minutos por WhatsApp.
+          Conversarás directamente con Mauricio para planificar tu curso.
         </p>
 
         <div className="mb-6">
-          <label className="block text-[10px] font-semibold text-white/50 uppercase tracking-wider mb-2 flex items-center gap-1.5">
+          <label className="mb-2 block flex items-center gap-1.5 text-[10px] font-semibold tracking-wider text-white/50 uppercase">
             <CalendarIcon className="size-3.5" /> 1. Elige el Día
           </label>
-          <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 max-h-40 overflow-y-auto pr-1">
+          <div className="grid max-h-40 grid-cols-2 gap-2 overflow-y-auto pr-1 sm:grid-cols-3">
             {getAvailableDates().map((date, idx) => {
-              const isSelected = selectedDate?.toDateString() === date.toDateString();
+              const isSelected =
+                selectedDate?.toDateString() === date.toDateString();
               return (
                 <button
                   key={idx}
-                  onClick={() => { setSelectedDate(date); setSelectedTimeSlot(null); }}
-                  className={`p-3 rounded-xl border text-[11px] font-semibold text-center transition-all ${isSelected
+                  onClick={() => {
+                    setSelectedDate(date);
+                    setSelectedTimeSlot(null);
+                  }}
+                  className={`rounded-xl border p-3 text-center text-[11px] font-semibold transition-all ${
+                    isSelected
                       ? "border-blue-500 bg-blue-500/10 text-white"
                       : "border-white/[0.06] bg-[#111827]/25 text-white/50 hover:border-white/15 hover:text-white"
-                    }`}
+                  }`}
                 >
                   <span className="block text-white capitalize">
                     {date.toLocaleDateString("es-ES", { weekday: "short" })}
                   </span>
-                  <span className="block text-xs font-bold mt-0.5">
-                    {date.toLocaleDateString("es-ES", { day: "numeric", month: "short" })}
+                  <span className="mt-0.5 block text-xs font-bold">
+                    {date.toLocaleDateString("es-ES", {
+                      day: "numeric",
+                      month: "short",
+                    })}
                   </span>
                 </button>
               );
@@ -199,9 +256,9 @@ export default function BookingPage() {
         </div>
 
         {selectedDate && (
-          <div className="mb-8 animate-slideDown">
-            <label className="block text-[10px] font-semibold text-white/50 uppercase tracking-wider mb-2 flex items-center gap-1.5">
-              <Clock className="size-3.5" /> 2. Elige la Hora (Zona CDMX)
+          <div className="animate-slideDown mb-8">
+            <label className="mb-2 block flex items-center gap-1.5 text-[10px] font-semibold tracking-wider text-white/50 uppercase">
+              <Clock className="size-3.5" /> 2. Elige la Hora (Tu zona horaria)
             </label>
             <div className="grid grid-cols-4 gap-2">
               {timeSlots.map((slot) => {
@@ -212,12 +269,13 @@ export default function BookingPage() {
                     key={slot}
                     disabled={isBooked}
                     onClick={() => setSelectedTimeSlot(slot)}
-                    className={`p-2.5 rounded-xl border text-xs font-bold text-center transition-all ${isBooked
-                        ? "border-white/[0.03] bg-white/[0.02] text-white/20 cursor-not-allowed line-through"
+                    className={`rounded-xl border p-2.5 text-center text-xs font-bold transition-all ${
+                      isBooked
+                        ? "cursor-not-allowed border-white/[0.03] bg-white/[0.02] text-white/20 line-through"
                         : isSelected
                           ? "border-blue-500 bg-blue-500/10 text-white"
                           : "border-white/[0.06] bg-[#111827]/25 text-white/60 hover:border-white/15 hover:text-white"
-                      }`}
+                    }`}
                   >
                     {slot}
                   </button>
@@ -229,13 +287,12 @@ export default function BookingPage() {
 
         <Button
           onClick={handleBookingConfirm}
-          className="w-full bg-blue-500 hover:bg-blue-400 text-white rounded-full py-6 mt-4 text-sm font-semibold tracking-wide transition-all shadow-lg shadow-blue-500/20 flex items-center justify-center gap-2"
+          className="mt-4 flex w-full items-center justify-center gap-2 rounded-full bg-blue-500 py-6 text-sm font-semibold tracking-wide text-white shadow-lg shadow-blue-500/20 transition-all hover:bg-blue-400"
           disabled={loading || !selectedDate || !selectedTimeSlot}
         >
           {loading ? "Confirmando..." : "Agendar Clase Demo Gratis"}
           <ChevronRight className="size-4" />
         </Button>
-
       </div>
     </main>
   );

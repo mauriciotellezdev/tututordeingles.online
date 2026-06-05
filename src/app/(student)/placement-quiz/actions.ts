@@ -8,6 +8,7 @@ import { QUIZ_COLLECTION, Quiz } from "@/lib/models/quiz";
 import { createSession, SESSION_COLLECTION } from "@/lib/models/session";
 import { getTeacherData } from "@/lib/models/teacher";
 import { sendMail } from "@/lib/mail";
+import { getTimeZoneDateKey, getTimeZoneHourLabel } from "@/lib/timezone";
 
 /**
  * Action 1: Get the currently authenticated student session
@@ -53,24 +54,26 @@ export async function getCurrentStudentAction() {
 /**
  * Action 2: Get booked hour-slots for a given date (across all students)
  */
-export async function getBookedSlotsAction(payload: { dateIso: string }) {
+export async function getBookedSlotsAction(payload: {
+  dateIso: string;
+  timeZone?: string;
+}) {
   try {
-    const { dateIso } = payload;
-    const start = new Date(dateIso);
-    start.setHours(0, 0, 0, 0);
-    const end = new Date(start);
-    end.setDate(end.getDate() + 1);
+    const { dateIso, timeZone = "UTC" } = payload;
+    const selectedDateKey = getTimeZoneDateKey(new Date(dateIso), timeZone);
 
     const sessionsCol = await getCollection(SESSION_COLLECTION);
     const booked = await sessionsCol
-      .find({ status: "booked", dateTime: { $gte: start, $lt: end } })
+      .find({ status: "booked" })
       .project({ dateTime: 1 })
       .toArray();
 
-    const bookedSlots = booked.map((s) => {
-      const h = String(s.dateTime.getHours()).padStart(2, "0");
-      return `${h}:00`;
-    });
+    const bookedSlots = booked
+      .filter(
+        (session) =>
+          getTimeZoneDateKey(session.dateTime, timeZone) === selectedDateKey
+      )
+      .map((session) => getTimeZoneHourLabel(session.dateTime, timeZone));
 
     return { success: true, bookedSlots };
   } catch (error: unknown) {

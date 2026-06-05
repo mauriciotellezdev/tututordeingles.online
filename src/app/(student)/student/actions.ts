@@ -7,10 +7,14 @@ import { STUDENT_COLLECTION, Student } from "@/lib/models/student";
 import { createSession, SESSION_COLLECTION } from "@/lib/models/session";
 import { getTeacherData } from "@/lib/models/teacher";
 import { createCredit, CREDIT_COLLECTION } from "@/lib/models/credit";
-import { processCompletedPayment, resolveCheckoutSessionPaymentContext } from "@/lib/stripe-verify";
+import {
+  processCompletedPayment,
+  resolveCheckoutSessionPaymentContext,
+} from "@/lib/stripe-verify";
 import { sendMail } from "@/lib/mail";
 import Stripe from "stripe";
 import { getReferralDashboardSummary } from "@/lib/referrals";
+import { getTimeZoneDateKey, getTimeZoneHourLabel } from "@/lib/timezone";
 
 /**
  * Action 1: Get data for student dashboard
@@ -25,21 +29,31 @@ export async function getStudentDashboardDataAction() {
     }
 
     const studentsCol = await getCollection<Student>(STUDENT_COLLECTION);
-    const student = await studentsCol.findOne({ _id: new ObjectId(studentIdStr) });
+    const student = await studentsCol.findOne({
+      _id: new ObjectId(studentIdStr),
+    });
 
     if (!student) {
       return { success: false, error: "Estudiante no encontrado." };
     }
 
-    const referralBaseUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:7777";
-    const referralSummary = await getReferralDashboardSummary(studentIdStr, referralBaseUrl);
+    const referralBaseUrl =
+      process.env.NEXT_PUBLIC_APP_URL || "http://localhost:7777";
+    const referralSummary = await getReferralDashboardSummary(
+      studentIdStr,
+      referralBaseUrl
+    );
 
     // Compute credit balance from the credits collection
     const creditsCol = await getCollection(CREDIT_COLLECTION);
-    const creditAgg = await creditsCol.aggregate<{ total: number }>([
-      { $match: { studentId: new ObjectId(studentIdStr) } },
-      { $group: { _id: null, total: { $sum: "$amount" } } },
-    ]).toArray();
+    const creditAgg = await creditsCol
+      .aggregate<{
+        total: number;
+      }>([
+        { $match: { studentId: new ObjectId(studentIdStr) } },
+        { $group: { _id: null, total: { $sum: "$amount" } } },
+      ])
+      .toArray();
     const credits = creditAgg.length > 0 ? creditAgg[0].total : 0;
 
     const sessionsCol = await getCollection(SESSION_COLLECTION);
@@ -50,7 +64,7 @@ export async function getStudentDashboardDataAction() {
       .find({
         studentId: student._id,
         status: "booked",
-        dateTime: { $gte: now }
+        dateTime: { $gte: now },
       })
       .sort({ dateTime: 1 })
       .toArray();
@@ -65,50 +79,58 @@ export async function getStudentDashboardDataAction() {
         email: student.email,
         phone: student.phone,
         credits,
-        quizResult: student.quizResult
+        quizResult: student.quizResult,
       },
       referral: referralSummary,
       teacher: {
         email: teacher.email,
         phone: teacher.phone,
       },
-      upcomingSessions: upcomingSessions.map(s => ({
+      upcomingSessions: upcomingSessions.map((s) => ({
         _id: s._id.toString(),
         type: s.type,
         dateTime: s.dateTime.toISOString(),
         duration: s.duration,
         meetingLink: s.meetingLink,
         status: s.status,
-        paid: s.paid
-      }))
+        paid: s.paid,
+      })),
     };
   } catch (error: unknown) {
     console.error("Error in getStudentDashboardDataAction:", error);
-    return { success: false, error: (error instanceof Error ? error.message : "Error al cargar los datos del panel.") };
+    return {
+      success: false,
+      error:
+        error instanceof Error
+          ? error.message
+          : "Error al cargar los datos del panel.",
+    };
   }
 }
 
 /**
  * Action 2: Get booked hour-slots for a given date (across all students)
  */
-export async function getBookedSlotsAction(payload: { dateIso: string }) {
+export async function getBookedSlotsAction(payload: {
+  dateIso: string;
+  timeZone?: string;
+}) {
   try {
-    const { dateIso } = payload;
-    const start = new Date(dateIso);
-    start.setHours(0, 0, 0, 0);
-    const end = new Date(start);
-    end.setDate(end.getDate() + 1);
+    const { dateIso, timeZone = "UTC" } = payload;
+    const selectedDateKey = getTimeZoneDateKey(new Date(dateIso), timeZone);
 
     const sessionsCol = await getCollection(SESSION_COLLECTION);
     const booked = await sessionsCol
-      .find({ status: "booked", dateTime: { $gte: start, $lt: end } })
+      .find({ status: "booked" })
       .project({ dateTime: 1 })
       .toArray();
 
-    const bookedSlots = booked.map(s => {
-      const h = String(s.dateTime.getHours()).padStart(2, "0");
-      return `${h}:00`;
-    });
+    const bookedSlots = booked
+      .filter(
+        (session) =>
+          getTimeZoneDateKey(session.dateTime, timeZone) === selectedDateKey
+      )
+      .map((session) => getTimeZoneHourLabel(session.dateTime, timeZone));
 
     return { success: true, bookedSlots };
   } catch (error: unknown) {
@@ -152,11 +174,14 @@ export async function bookSessionAction(payload: {
 
     const existingSlot = await sessionsCol.findOne({
       status: "booked",
-      dateTime: { $gte: hourStart, $lt: hourEnd }
+      dateTime: { $gte: hourStart, $lt: hourEnd },
     });
 
     if (existingSlot) {
-      return { success: false, error: "Este horario ya está ocupado. Por favor elige otro." };
+      return {
+        success: false,
+        error: "Este horario ya está ocupado. Por favor elige otro.",
+      };
     }
 
     const teacher = await getTeacherData();
@@ -165,7 +190,11 @@ export async function bookSessionAction(payload: {
     const minimumTime = new Date();
     minimumTime.setHours(minimumTime.getHours() + 24);
     if (dateTime < minimumTime) {
-      return { success: false, error: "Las clases deben agendarse con al menos 24 horas de anticipación." };
+      return {
+        success: false,
+        error:
+          "Las clases deben agendarse con al menos 24 horas de anticipación.",
+      };
     }
 
     // 2. Enforce credits for tutoring sessions, create session
@@ -173,14 +202,21 @@ export async function bookSessionAction(payload: {
     let sessionId: string;
 
     if (type === "tutoring") {
-      const creditAgg = await creditsCol.aggregate<{ total: number }>([
-        { $match: { studentId: studentOid } },
-        { $group: { _id: null, total: { $sum: "$amount" } } },
-      ]).toArray();
+      const creditAgg = await creditsCol
+        .aggregate<{
+          total: number;
+        }>([
+          { $match: { studentId: studentOid } },
+          { $group: { _id: null, total: { $sum: "$amount" } } },
+        ])
+        .toArray();
       const currentCredits = creditAgg.length > 0 ? creditAgg[0].total : 0;
 
       if (currentCredits < 1) {
-        return { success: false, error: "No tienes suficientes créditos. Compra créditos primero." };
+        return {
+          success: false,
+          error: "No tienes suficientes créditos. Compra créditos primero.",
+        };
       }
 
       const { insertedId: creditId } = await creditsCol.insertOne(
@@ -197,7 +233,7 @@ export async function bookSessionAction(payload: {
         type,
         dateTime,
         duration: 60,
-        meetingLink: `https://wa.me/${student.phone.replace(/\D/g, '')}`,
+        meetingLink: `https://wa.me/${student.phone.replace(/\D/g, "")}`,
         creditId: creditId as ObjectId,
       });
       const result = await sessionsCol.insertOne(sessionData);
@@ -209,13 +245,15 @@ export async function bookSessionAction(payload: {
         type,
         dateTime,
         duration: 30,
-        meetingLink: `https://wa.me/${student.phone.replace(/\D/g, '')}`,
+        meetingLink: `https://wa.me/${student.phone.replace(/\D/g, "")}`,
       });
       const result = await sessionsCol.insertOne(sessionData);
       sessionId = result.insertedId.toString();
     }
 
-    const sessionData = await sessionsCol.findOne({ _id: new ObjectId(sessionId) });
+    const sessionData = await sessionsCol.findOne({
+      _id: new ObjectId(sessionId),
+    });
     if (!sessionData) {
       return { success: false, error: "Error al crear la sesión." };
     }
@@ -224,33 +262,35 @@ export async function bookSessionAction(payload: {
     const endDateTime = new Date(dateTime);
     endDateTime.setMinutes(dateTime.getMinutes() + sessionData.duration);
 
-    const formatIcsDate = (date: Date) => date.toISOString().replace(/[-:]/g, "").split(".")[0] + "Z";
+    const formatIcsDate = (date: Date) =>
+      date.toISOString().replace(/[-:]/g, "").split(".")[0] + "Z";
     const nowStr = formatIcsDate(new Date());
     const startStr = formatIcsDate(dateTime);
     const endStr = formatIcsDate(endDateTime);
 
-    const titleText = type === "intro" ? "Clase Demo de Inglés" : "Clase Privada de Inglés";
+    const titleText =
+      type === "intro" ? "Clase Demo de Inglés" : "Clase Privada de Inglés";
     const durationText = type === "intro" ? "30 minutos" : "60 minutos";
 
-      const icsContent = [
-        "BEGIN:VCALENDAR",
-        "VERSION:2.0",
-        "PRODID:-//Tu Tutor de Ingles//EN",
-        "CALSCALE:GREGORIAN",
-        "METHOD:REQUEST",
-        "BEGIN:VEVENT",
-        `UID:${sessionId}@tututordeingles.online`,
-        `DTSTAMP:${nowStr}`,
-        `DTSTART:${startStr}`,
-        `DTEND:${endStr}`,
-        `SUMMARY:${titleText} - Tu Tutor de Inglés`,
-        `DESCRIPTION:Clase de inglés de ${durationText} con Mauricio.\nWhatsApp: ${teacher.phone}\nEmail: ${teacher.email}`,
-        "LOCATION:WhatsApp",
-        "STATUS:CONFIRMED",
-        "SEQUENCE:0",
-        "END:VEVENT",
-        "END:VCALENDAR"
-      ].join("\r\n");
+    const icsContent = [
+      "BEGIN:VCALENDAR",
+      "VERSION:2.0",
+      "PRODID:-//Tu Tutor de Ingles//EN",
+      "CALSCALE:GREGORIAN",
+      "METHOD:REQUEST",
+      "BEGIN:VEVENT",
+      `UID:${sessionId}@tututordeingles.online`,
+      `DTSTAMP:${nowStr}`,
+      `DTSTART:${startStr}`,
+      `DTEND:${endStr}`,
+      `SUMMARY:${titleText} - Tu Tutor de Inglés`,
+      `DESCRIPTION:Clase de inglés de ${durationText} con Mauricio.\nWhatsApp: ${teacher.phone}\nEmail: ${teacher.email}`,
+      "LOCATION:WhatsApp",
+      "STATUS:CONFIRMED",
+      "SEQUENCE:0",
+      "END:VEVENT",
+      "END:VCALENDAR",
+    ].join("\r\n");
 
     const emailSubject = `Confirmación: ${titleText} Agendada 🎉`;
     const emailText = `¡Hola ${student.name}!\n\nTu clase de inglés ha sido agendada con éxito.\n\nDetalles:\n- Tipo: ${titleText}\n- Fecha y Hora: ${dateTime.toLocaleString("es-MX", { timeZone: "America/Mexico_City" })}\n- Duración: ${durationText}\n- Plataforma: WhatsApp\n- Número: ${teacher.phone}\n- Email: ${teacher.email}\n- Teléfono: ${student.phone}\n\nTe adjuntamos una invitación de calendario (.ics) para que la agregues a tu agenda.\n\n¡Nos vemos en clase!\nMauricio Tellez\nTu Tutor de Inglés`;
@@ -262,8 +302,8 @@ export async function bookSessionAction(payload: {
       text: emailText,
       icalEvent: {
         filename: "clase-ingles.ics",
-        content: icsContent
-      }
+        content: icsContent,
+      },
     });
 
     // Also notify teacher
@@ -277,17 +317,21 @@ export async function bookSessionAction(payload: {
       text: teacherText,
       icalEvent: {
         filename: "clase-ingles.ics",
-        content: icsContent
-      }
+        content: icsContent,
+      },
     });
 
     return {
       success: true,
-      sessionId
+      sessionId,
     };
   } catch (error: unknown) {
     console.error("Error in bookSessionAction:", error);
-    return { success: false, error: (error instanceof Error ? error.message : "Error al agendar la sesión.") };
+    return {
+      success: false,
+      error:
+        error instanceof Error ? error.message : "Error al agendar la sesión.",
+    };
   }
 }
 
@@ -319,11 +363,16 @@ export async function createCheckoutSessionAction(payload: {
     const appUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:7777";
 
     if (!stripeSecretKey) {
-      return { success: false, error: "Stripe API key not configured. Please contact support." };
+      return {
+        success: false,
+        error: "Stripe API key not configured. Please contact support.",
+      };
     }
 
     const studentsCol = await getCollection<Student>(STUDENT_COLLECTION);
-    const student = await studentsCol.findOne({ _id: new ObjectId(studentIdStr) });
+    const student = await studentsCol.findOne({
+      _id: new ObjectId(studentIdStr),
+    });
     if (!student) {
       return { success: false, error: "Estudiante no encontrado." };
     }
@@ -350,15 +399,17 @@ export async function createCheckoutSessionAction(payload: {
         price_data: {
           currency: "mxn",
           product_data: {
-            name: isSingle ? "Clase Individual (1 Crédito)" : "Paquete 10 Clases (8 Pagadas + 2 Gratis)",
+            name: isSingle
+              ? "Clase Individual (1 Crédito)"
+              : "Paquete 10 Clases (8 Pagadas + 2 Gratis)",
             description: isSingle
               ? "1 sesión privada de inglés (60 minutos) con Mauricio Tellez."
-              : "Paquete de 10 sesiones privadas de inglés — 8 pagadas + 2 gratis (60 minutos cada una) con Mauricio Tellez."
+              : "Paquete de 10 sesiones privadas de inglés — 8 pagadas + 2 gratis (60 minutos cada una) con Mauricio Tellez.",
           },
-          unit_amount: isSingle ? 30000 : 240000 // In cents: $300 MXN vs $2400 MXN
+          unit_amount: isSingle ? 30000 : 240000, // In cents: $300 MXN vs $2400 MXN
         },
-        quantity: 1
-      }
+        quantity: 1,
+      },
     ];
 
     const session = await stripe.checkout.sessions.create({
@@ -370,17 +421,23 @@ export async function createCheckoutSessionAction(payload: {
       cancel_url: `${appUrl}/student?checkout_cancel=true`,
       metadata: {
         studentId: studentIdStr,
-        planType
-      }
+        planType,
+      },
     });
 
     return {
       success: true,
-      url: session.url
+      url: session.url,
     };
   } catch (error: unknown) {
     console.error("Error in createCheckoutSessionAction:", error);
-    return { success: false, error: (error instanceof Error ? error.message : "Error al iniciar Stripe checkout.") };
+    return {
+      success: false,
+      error:
+        error instanceof Error
+          ? error.message
+          : "Error al iniciar Stripe checkout.",
+    };
   }
 }
 
@@ -408,10 +465,18 @@ export async function verifyPaymentAction(payload: {
     }
 
     if (session.payment_status !== "paid") {
-      return { success: false, error: "El pago aún no se ha completado. Por favor, espera unos segundos." };
+      return {
+        success: false,
+        error:
+          "El pago aún no se ha completado. Por favor, espera unos segundos.",
+      };
     }
 
-    const verifiedPaymentContext = resolveCheckoutSessionPaymentContext(session, studentId, planType);
+    const verifiedPaymentContext = resolveCheckoutSessionPaymentContext(
+      session,
+      studentId,
+      planType
+    );
     if (!verifiedPaymentContext.ok) {
       return { success: false, error: verifiedPaymentContext.error };
     }
@@ -423,7 +488,7 @@ export async function verifyPaymentAction(payload: {
       verifiedPaymentContext.studentId,
       paymentIntentId,
       stripeCustomerId,
-      verifiedPaymentContext.planType,
+      verifiedPaymentContext.planType
     );
 
     return {
@@ -433,6 +498,10 @@ export async function verifyPaymentAction(payload: {
     };
   } catch (error: unknown) {
     console.error("Error in verifyPaymentAction:", error);
-    return { success: false, error: (error instanceof Error ? error.message : "Error al verificar el pago.") };
+    return {
+      success: false,
+      error:
+        error instanceof Error ? error.message : "Error al verificar el pago.",
+    };
   }
 }

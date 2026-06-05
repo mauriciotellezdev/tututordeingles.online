@@ -124,3 +124,26 @@ test("bookIntroCallAction still succeeds when the owner notification fails", asy
   expect(sendMail).toHaveBeenCalledTimes(2);
   expect(consoleWarnSpy).toHaveBeenCalledTimes(1);
 });
+
+test("getBookedSlotsAction maps booked UTC sessions to the browser timezone", async () => {
+  const { getBookedSlotsAction } = await bookingModulePromise;
+  const bookedDate = new Date("2026-06-06T19:00:00.000Z");
+  await collections.sessions.insertOne({
+    _id: new ObjectId(),
+    studentId: collections.studentId,
+    type: "intro",
+    dateTime: bookedDate,
+    duration: 30,
+    status: "booked",
+    createdAt: bookedDate,
+    updatedAt: bookedDate,
+  });
+
+  const result = await getBookedSlotsAction({
+    dateIso: "2026-06-06T06:00:00.000Z",
+    timeZone: "America/Mexico_City",
+  });
+
+  expect(result.success).toBe(true);
+  expect(result.bookedSlots).toContain("13:00");
+});

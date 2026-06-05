@@ -147,6 +147,18 @@ export function createMemoryCollection<T extends AnyRecord>(initial: T[] = []) {
         upsertedId: null,
       };
     },
+    find(filter: AnyRecord) {
+      const current = docs.filter((doc) => matchesFilter(doc, filter));
+
+      return {
+        project() {
+          return {
+            toArray: async () => [...current],
+          };
+        },
+        toArray: async () => [...current],
+      };
+    },
     async deleteOne(filter: AnyRecord) {
       const index = docs.findIndex((doc) => matchesFilter(doc, filter));
       if (index === -1) {
