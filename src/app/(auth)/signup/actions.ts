@@ -190,6 +190,37 @@ export async function signupStudentAction(input: {
           subject,
           text,
         });
+
+        const teacherEmail = process.env.TEACHER_EMAIL?.trim();
+        if (teacherEmail) {
+          const teacherSubject = `Nuevo registro de estudiante: ${input.name}`;
+          const teacherText = [
+            "Hola Mauricio,",
+            "",
+            "Tienes un nuevo registro de estudiante en Tu Tutor de Inglés.",
+            "",
+            `Nombre: ${input.name}`,
+            `Correo: ${normalizedEmail}`,
+            `Teléfono: ${input.phone}`,
+            `Código de referido: ${referralCode}`,
+            `Verificación pendiente: sí`,
+            "",
+            "Este aviso se envía automáticamente para que puedas dar seguimiento al estudiante.",
+          ].join("\n");
+
+          try {
+            await sendMail({
+              to: teacherEmail,
+              subject: teacherSubject,
+              text: teacherText,
+            });
+          } catch (ownerMailError) {
+            console.warn(
+              "Failed to send owner signup notification:",
+              ownerMailError
+            );
+          }
+        }
       }
     } catch (mailError) {
       if (createdStudent && insertedId) {
