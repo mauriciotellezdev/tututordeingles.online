@@ -44,6 +44,9 @@ export async function signupStudentAction(input: {
     const userAgentHash = hashAbuseSignal(
       requestHeaders.get("user-agent") || "unknown"
     );
+    const isE2ERequest =
+      Boolean(process.env.E2E_TEST_SECRET) &&
+      requestHeaders.get("x-e2e-secret") === process.env.E2E_TEST_SECRET;
 
     cookieStore.set("tu_browser_id", browserId, {
       httpOnly: true,
@@ -181,11 +184,13 @@ export async function signupStudentAction(input: {
       const subject = "Tu código de verificación - Tu Tutor de Inglés 🔑";
       const text = `¡Hola ${input.name}!\n\nGracias por registrarte en Tu Tutor de Inglés.\n\nTu código de verificación es: ${verificationCode}\n\nEste código vencerá en 15 minutos.\n\nSi no solicitaste este registro, puedes ignorar este mensaje.\n\nSaludos,\nMauricio Tellez\nTu Tutor de Inglés`;
 
-      await sendMail({
-        to: normalizedEmail,
-        subject,
-        text,
-      });
+      if (!isE2ERequest) {
+        await sendMail({
+          to: normalizedEmail,
+          subject,
+          text,
+        });
+      }
     } catch (mailError) {
       if (createdStudent && insertedId) {
         await studentsCol.deleteOne({ _id: insertedId });

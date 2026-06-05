@@ -14,6 +14,7 @@
     "test:integration": "bun test tests/integration",
     "test:e2e": "playwright test",
     "test:e2e:staging": "bash .githooks/test-e2e-staging.sh",
+    "test:e2e:prod": "bash .githooks/test-e2e-prod.sh",
     "test:all": "bash .githooks/run-all-tests.sh",
     "audit:run": "bun run tools/audit-run.ts",
     "test": "bun run test:all",

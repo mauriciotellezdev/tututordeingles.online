@@ -12,6 +12,7 @@ const isLocalHost = (() => {
   }
 })();
 const automationBypassSecret = process.env.VERCEL_AUTOMATION_BYPASS_SECRET;
+const e2eSecret = process.env.E2E_TEST_SECRET;
 const remoteProtectionHeaders =
   !isLocalHost && automationBypassSecret
     ? {
@@ -19,6 +20,10 @@ const remoteProtectionHeaders =
         "x-vercel-set-bypass-cookie": "true",
       }
     : undefined;
+const extraHTTPHeaders = {
+  ...(remoteProtectionHeaders ?? {}),
+  ...(e2eSecret ? { "x-e2e-secret": e2eSecret } : {}),
+};
 
 const webServer = isLocalHost
   ? {
@@ -38,9 +43,7 @@ export default defineConfig({
   use: {
     baseURL,
     trace: "on-first-retry",
-    ...(remoteProtectionHeaders
-      ? { extraHTTPHeaders: remoteProtectionHeaders }
-      : {}),
+    ...(Object.keys(extraHTTPHeaders).length > 0 ? { extraHTTPHeaders } : {}),
   },
   ...(webServer ? { webServer } : {}),
 });

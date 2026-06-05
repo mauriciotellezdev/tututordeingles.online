@@ -3,9 +3,18 @@
 import React, { useState, useEffect, use } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/shared/ui/button";
-import { Progress, ProgressTrack, ProgressIndicator } from "@/shared/ui/progress";
+import {
+  Progress,
+  ProgressTrack,
+  ProgressIndicator,
+} from "@/shared/ui/progress";
 import { AlertCircle, BookOpen, ChevronRight, ChevronLeft } from "lucide-react";
-import { getCurrentStudentAction, getQuizAction, submitQuizAction, saveQuizProgressAction } from "@/app/(student)/placement-quiz/actions";
+import {
+  getCurrentStudentAction,
+  getQuizAction,
+  submitQuizAction,
+  saveQuizProgressAction,
+} from "@/app/(student)/placement-quiz/actions";
 
 interface QuizQuestionAnswer {
   _id: string;
@@ -42,7 +51,11 @@ interface StudentData {
   };
 }
 
-export default function QuestionPage({ params }: { params: Promise<{ id: string }> }) {
+export default function QuestionPage({
+  params,
+}: {
+  params: Promise<{ id: string }>;
+}) {
   const router = useRouter();
   const unwrappedParams = use(params);
   const stepId = unwrappedParams.id;
@@ -54,7 +67,9 @@ export default function QuestionPage({ params }: { params: Promise<{ id: string 
 
   // Quiz State
   const [quiz, setQuiz] = useState<QuizData | null>(null);
-  const [selectedAnswers, setSelectedAnswers] = useState<Record<string, string>>({}); // questionId -> answerId
+  const [selectedAnswers, setSelectedAnswers] = useState<
+    Record<string, string>
+  >({}); // questionId -> answerId
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -103,7 +118,7 @@ export default function QuestionPage({ params }: { params: Promise<{ id: string 
 
   if (sessionLoading || !quiz || !student) {
     return (
-      <main className="min-h-screen bg-[#0a0a0a] flex items-center justify-center text-white/50 text-sm">
+      <main className="flex min-h-screen items-center justify-center bg-[#0a0a0a] text-sm text-white/50">
         Cargando pregunta...
       </main>
     );
@@ -126,11 +141,14 @@ export default function QuestionPage({ params }: { params: Promise<{ id: string 
   const handleAnswerSelect = (answerId: string) => {
     const updatedAnswers = {
       ...selectedAnswers,
-      [currentQuestion._id]: answerId
+      [currentQuestion._id]: answerId,
     };
     setSelectedAnswers(updatedAnswers);
     // Persist in localStorage
-    localStorage.setItem("placement_quiz_answers", JSON.stringify(updatedAnswers));
+    localStorage.setItem(
+      "placement_quiz_answers",
+      JSON.stringify(updatedAnswers)
+    );
     setError(null);
   };
 
@@ -152,10 +170,12 @@ export default function QuestionPage({ params }: { params: Promise<{ id: string 
       setLoading(true);
       setError(null);
 
-      const answersPayload = Object.entries(selectedAnswers).map(([qId, aId]) => ({
-        questionId: qId,
-        answerId: aId
-      }));
+      const answersPayload = Object.entries(selectedAnswers).map(
+        ([qId, aId]) => ({
+          questionId: qId,
+          answerId: aId,
+        })
+      );
 
       const res = await submitQuizAction({ answers: answersPayload });
       setLoading(false);
@@ -172,8 +192,14 @@ export default function QuestionPage({ params }: { params: Promise<{ id: string 
 
   // Save progress to database
   const saveProgress = async (currentQuestionId: string) => {
-    localStorage.setItem("placement_quiz_answers", JSON.stringify(selectedAnswers));
-    await saveQuizProgressAction({ questionId: currentQuestionId, answers: selectedAnswers });
+    localStorage.setItem(
+      "placement_quiz_answers",
+      JSON.stringify(selectedAnswers)
+    );
+    await saveQuizProgressAction({
+      questionId: currentQuestionId,
+      answers: selectedAnswers,
+    });
   };
 
   // Back button handler
@@ -184,26 +210,32 @@ export default function QuestionPage({ params }: { params: Promise<{ id: string 
     }
   };
 
-  const progressPercentage = Math.round((questionNumber / totalQuestions) * 100);
+  const progressPercentage = Math.round(
+    (questionNumber / totalQuestions) * 100
+  );
 
   return (
-    <main className="min-h-screen bg-[#0a0a0a] pt-24 pb-16 flex flex-col items-center justify-center px-4 relative overflow-hidden text-white">
+    <main className="relative flex min-h-screen flex-col items-center justify-center overflow-hidden bg-[#0a0a0a] px-4 pt-24 pb-16 text-white">
       {/* Background glow decorations */}
-      <div className="absolute left-[-10%] top-[-10%] w-[500px] h-[500px] bg-blue-600/5 rounded-full blur-[100px] pointer-events-none" />
-      <div className="absolute right-[-10%] bottom-[-10%] w-[500px] h-[500px] bg-blue-500/5 rounded-full blur-[100px] pointer-events-none" />
+      <div className="pointer-events-none absolute top-[-10%] left-[-10%] h-[500px] w-[500px] rounded-full bg-blue-600/5 blur-[100px]" />
+      <div className="pointer-events-none absolute right-[-10%] bottom-[-10%] h-[500px] w-[500px] rounded-full bg-blue-500/5 blur-[100px]" />
 
       {/* Card Container */}
-      <div className="w-full max-w-xl bg-[#0f1729]/40 border border-white/[0.08] backdrop-blur-xl rounded-2xl p-6 md:p-8 shadow-2xl relative z-10 animate-fadeIn">
-
+      <div
+        data-testid="quiz-question-page"
+        className="animate-fadeIn relative z-10 w-full max-w-xl rounded-2xl border border-white/[0.08] bg-[#0f1729]/40 p-6 shadow-2xl backdrop-blur-xl md:p-8"
+      >
         {/* Step tracker */}
-        <div className="mb-6 flex justify-between items-center text-xs text-white/40 font-medium uppercase tracking-wider">
-          <span>Pregunta {questionNumber} de {totalQuestions}</span>
+        <div className="mb-6 flex items-center justify-between text-xs font-medium tracking-wider text-white/40 uppercase">
+          <span>
+            Pregunta {questionNumber} de {totalQuestions}
+          </span>
           <span>{progressPercentage}%</span>
         </div>
 
         {/* Errors */}
         {error && (
-          <div className="mb-6 p-4 rounded-xl bg-destructive/10 border border-destructive/20 text-destructive text-sm flex items-center gap-3 animate-slideDown">
+          <div className="bg-destructive/10 border-destructive/20 text-destructive animate-slideDown mb-6 flex items-center gap-3 rounded-xl border p-4 text-sm">
             <AlertCircle className="size-5 shrink-0" />
             <p>{error}</p>
           </div>
@@ -220,31 +252,43 @@ export default function QuestionPage({ params }: { params: Promise<{ id: string 
 
         {/* Question Text */}
         <div className="mb-8">
-          <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] tracking-wider uppercase font-semibold text-blue-400 bg-blue-500/10 border border-blue-500/20 mb-4">
+          <span className="mb-4 inline-flex items-center gap-1.5 rounded-full border border-blue-500/20 bg-blue-500/10 px-3 py-1 text-[10px] font-semibold tracking-wider text-blue-400 uppercase">
             <BookOpen className="size-3" /> Examen de Ubicación
           </span>
-          <h3 className="text-xl md:text-2xl font-bold text-white leading-tight">
+          <h3
+            data-testid="quiz-question-text"
+            className="text-xl leading-tight font-bold text-white md:text-2xl"
+          >
             {currentQuestion.question}
           </h3>
         </div>
 
         {/* Answer Options */}
-        <div className="space-y-3 mb-8">
+        <div className="mb-8 space-y-3">
           {currentQuestion.answers.map((answer) => {
             const isSelected = selectedAnswerId === answer._id;
             return (
               <button
+                data-testid="quiz-answer-option"
                 key={answer._id}
                 onClick={() => handleAnswerSelect(answer._id)}
-                className={`w-full text-left p-4 rounded-xl border text-sm font-medium transition-all duration-200 flex items-center justify-between ${isSelected
-                  ? "border-blue-500 bg-blue-500/10 text-white shadow-lg shadow-blue-500/5"
-                  : "border-white/[0.06] bg-[#111827]/25 text-white/60 hover:border-white/15 hover:text-white"
-                  }`}
+                className={`flex w-full items-center justify-between rounded-xl border p-4 text-left text-sm font-medium transition-all duration-200 ${
+                  isSelected
+                    ? "border-blue-500 bg-blue-500/10 text-white shadow-lg shadow-blue-500/5"
+                    : "border-white/[0.06] bg-[#111827]/25 text-white/60 hover:border-white/15 hover:text-white"
+                }`}
               >
                 <span>{answer.answer}</span>
-                <div className={`size-4 rounded-full border flex items-center justify-center shrink-0 ${isSelected ? "border-blue-400 bg-blue-500" : "border-white/20"
-                  }`}>
-                  {isSelected && <div className="size-2 rounded-full bg-white" />}
+                <div
+                  className={`flex size-4 shrink-0 items-center justify-center rounded-full border ${
+                    isSelected
+                      ? "border-blue-400 bg-blue-500"
+                      : "border-white/20"
+                  }`}
+                >
+                  {isSelected && (
+                    <div className="size-2 rounded-full bg-white" />
+                  )}
                 </div>
               </button>
             );
@@ -252,11 +296,12 @@ export default function QuestionPage({ params }: { params: Promise<{ id: string 
         </div>
 
         {/* Navigation Buttons */}
-        <div className="flex justify-between items-center gap-4">
+        <div className="flex items-center justify-between gap-4">
           <Button
+            data-testid="quiz-back-button"
             variant="ghost"
             onClick={handleBack}
-            className="rounded-full px-5 py-5 text-white/50 hover:text-white hover:bg-white/5 text-xs font-semibold flex items-center gap-1.5"
+            className="flex items-center gap-1.5 rounded-full px-5 py-5 text-xs font-semibold text-white/50 hover:bg-white/5 hover:text-white"
             disabled={questionNumber === 1 || loading}
           >
             <ChevronLeft className="size-4" />
@@ -264,12 +309,17 @@ export default function QuestionPage({ params }: { params: Promise<{ id: string 
           </Button>
 
           <Button
+            data-testid="quiz-next-button"
             onClick={handleNext}
-            className="bg-blue-500 hover:bg-blue-400 text-white rounded-full px-6 py-5 text-xs font-semibold tracking-wide transition-all shadow-lg shadow-blue-500/20 flex items-center gap-1.5"
+            className="flex items-center gap-1.5 rounded-full bg-blue-500 px-6 py-5 text-xs font-semibold tracking-wide text-white shadow-lg shadow-blue-500/20 transition-all hover:bg-blue-400"
             disabled={loading}
           >
             {questionNumber === totalQuestions ? (
-              loading ? "Enviando..." : "Finalizar y Ver Resultados"
+              loading ? (
+                "Enviando..."
+              ) : (
+                "Finalizar y Ver Resultados"
+              )
             ) : (
               <>
                 Siguiente
@@ -278,7 +328,6 @@ export default function QuestionPage({ params }: { params: Promise<{ id: string 
             )}
           </Button>
         </div>
-
       </div>
     </main>
   );

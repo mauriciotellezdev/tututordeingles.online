@@ -4,7 +4,15 @@ import React, { Suspense, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Button } from "@/shared/ui/button";
 import { Input } from "@/shared/ui/input";
-import { AlertCircle, User, Mail, Phone, Lock, ChevronRight, CheckCircle2 } from "lucide-react";
+import {
+  AlertCircle,
+  User,
+  Mail,
+  Phone,
+  Lock,
+  ChevronRight,
+  CheckCircle2,
+} from "lucide-react";
 import { signupStudentAction, verifyCodeAndLoginAction } from "./actions";
 
 function SignupForm() {
@@ -44,7 +52,9 @@ function SignupForm() {
 
     if (res.success && res.email) {
       setEmail(res.email);
-      setSuccessMessage("¡Código enviado! Revisa tu bandeja de entrada o tu servidor local de correos (Maildev).");
+      setSuccessMessage(
+        "¡Código enviado! Revisa tu bandeja de entrada o tu servidor local de correos (Maildev)."
+      );
       setStep(2);
     } else {
       setError(res.error || "Ocurrió un error al registrar tus datos.");
@@ -67,7 +77,9 @@ function SignupForm() {
     setLoading(false);
 
     if (res.success) {
-      setSuccessMessage("¡Email verificado correctamente! Redirigiendo al examen de ubicación...");
+      setSuccessMessage(
+        "¡Email verificado correctamente! Redirigiendo al examen de ubicación..."
+      );
       setTimeout(() => {
         router.push("/placement-quiz");
       }, 1500);
@@ -77,34 +89,34 @@ function SignupForm() {
   };
 
   return (
-    <main className="min-h-screen bg-[#0a0a0a] pt-24 pb-16 flex flex-col items-center justify-center px-4 relative overflow-hidden">
+    <main className="relative flex min-h-screen flex-col items-center justify-center overflow-hidden bg-[#0a0a0a] px-4 pt-24 pb-16">
       {/* Background glow decorations */}
-      <div className="absolute left-[-10%] top-[-10%] w-[500px] h-[500px] bg-blue-600/5 rounded-full blur-[100px] pointer-events-none" />
-      <div className="absolute right-[-10%] bottom-[-10%] w-[500px] h-[500px] bg-blue-500/5 rounded-full blur-[100px] pointer-events-none" />
+      <div className="pointer-events-none absolute top-[-10%] left-[-10%] h-[500px] w-[500px] rounded-full bg-blue-600/5 blur-[100px]" />
+      <div className="pointer-events-none absolute right-[-10%] bottom-[-10%] h-[500px] w-[500px] rounded-full bg-blue-500/5 blur-[100px]" />
 
       {/* Main Container */}
-      <div className="w-full max-w-md bg-[#0f1729]/40 border border-white/[0.08] backdrop-blur-xl rounded-2xl p-6 md:p-8 shadow-2xl relative z-10">
-        
+      <div className="relative z-10 w-full max-w-md rounded-2xl border border-white/[0.08] bg-[#0f1729]/40 p-6 shadow-2xl backdrop-blur-xl md:p-8">
         {/* Title */}
-        <div className="text-center mb-6">
-          <h1 className="text-2xl md:text-3xl font-bold text-white tracking-tight">
-            Regístrate en <span className="text-blue-400 font-light">Tu Tutor</span>
+        <div className="mb-6 text-center">
+          <h1 className="text-2xl font-bold tracking-tight text-white md:text-3xl">
+            Regístrate en{" "}
+            <span className="font-light text-blue-400">Tu Tutor</span>
           </h1>
-          <p className="text-white/40 text-xs mt-1.5">
+          <p className="mt-1.5 text-xs text-white/40">
             Crea tu cuenta de estudiante en menos de un minuto
           </p>
         </div>
 
         {/* Global Messages */}
         {error && (
-          <div className="mb-6 p-4 rounded-xl bg-destructive/10 border border-destructive/20 text-destructive text-sm flex items-center gap-3">
+          <div className="bg-destructive/10 border-destructive/20 text-destructive mb-6 flex items-center gap-3 rounded-xl border p-4 text-sm">
             <AlertCircle className="size-5 shrink-0" />
             <p>{error}</p>
           </div>
         )}
 
         {successMessage && (
-          <div className="mb-6 p-4 rounded-xl bg-green-500/10 border border-green-500/20 text-green-400 text-sm flex items-center gap-3">
+          <div className="mb-6 flex items-center gap-3 rounded-xl border border-green-500/20 bg-green-500/10 p-4 text-sm text-green-400">
             <CheckCircle2 className="size-5 shrink-0" />
             <p>{successMessage}</p>
           </div>
@@ -112,52 +124,60 @@ function SignupForm() {
 
         {/* ================= STEP 1: Account Registration ================= */}
         {step === 1 && (
-          <form onSubmit={handleRegisterSubmit} className="space-y-4">
+          <form
+            data-testid="signup-form"
+            onSubmit={handleRegisterSubmit}
+            className="space-y-4"
+          >
             <div>
-              <label className="block text-[10px] font-semibold text-white/50 uppercase tracking-wider mb-2 flex items-center gap-1.5">
+              <label className="mb-2 block flex items-center gap-1.5 text-[10px] font-semibold tracking-wider text-white/50 uppercase">
                 <User className="size-3.5" /> Nombre Completo
               </label>
               <Input
+                data-testid="signup-name-input"
                 type="text"
                 placeholder="Ej. Juan Pérez"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
-                className="bg-[#111827]/40 border-white/[0.08] text-white placeholder:text-white/20 focus:border-blue-500/50 py-5 rounded-full"
+                className="rounded-full border-white/[0.08] bg-[#111827]/40 py-5 text-white placeholder:text-white/20 focus:border-blue-500/50"
                 disabled={loading}
               />
             </div>
 
             <div>
-              <label className="block text-[10px] font-semibold text-white/50 uppercase tracking-wider mb-2 flex items-center gap-1.5">
+              <label className="mb-2 block flex items-center gap-1.5 text-[10px] font-semibold tracking-wider text-white/50 uppercase">
                 <Mail className="size-3.5" /> Correo Electrónico
               </label>
               <Input
+                data-testid="signup-email-input"
                 type="email"
                 placeholder="Ej. juan@example.com"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                className="bg-[#111827]/40 border-white/[0.08] text-white placeholder:text-white/20 focus:border-blue-500/50 py-5 rounded-full"
+                className="rounded-full border-white/[0.08] bg-[#111827]/40 py-5 text-white placeholder:text-white/20 focus:border-blue-500/50"
                 disabled={loading}
               />
             </div>
 
             <div>
-              <label className="block text-[10px] font-semibold text-white/50 uppercase tracking-wider mb-2 flex items-center gap-1.5">
+              <label className="mb-2 block flex items-center gap-1.5 text-[10px] font-semibold tracking-wider text-white/50 uppercase">
                 <Phone className="size-3.5" /> Teléfono / WhatsApp
               </label>
               <Input
+                data-testid="signup-phone-input"
                 type="tel"
                 placeholder="Ej. +52 55 1234 5678"
                 value={phone}
                 onChange={(e) => setPhone(e.target.value)}
-                className="bg-[#111827]/40 border-white/[0.08] text-white placeholder:text-white/20 focus:border-blue-500/50 py-5 rounded-full"
+                className="rounded-full border-white/[0.08] bg-[#111827]/40 py-5 text-white placeholder:text-white/20 focus:border-blue-500/50"
                 disabled={loading}
               />
             </div>
 
             <Button
+              data-testid="signup-submit-button"
               type="submit"
-              className="w-full bg-blue-500 hover:bg-blue-400 text-white rounded-full py-6 mt-6 text-sm font-semibold tracking-wide transition-all shadow-lg shadow-blue-500/20 flex items-center justify-center gap-2"
+              className="mt-6 flex w-full items-center justify-center gap-2 rounded-full bg-blue-500 py-6 text-sm font-semibold tracking-wide text-white shadow-lg shadow-blue-500/20 transition-all hover:bg-blue-400"
               disabled={loading}
             >
               {loading ? "Creando Cuenta..." : "Registrarme y Recibir Código"}
@@ -168,29 +188,37 @@ function SignupForm() {
 
         {/* ================= STEP 2: Code Verification ================= */}
         {step === 2 && (
-          <form onSubmit={handleVerifySubmit} className="space-y-4">
-            <p className="text-white/50 text-xs leading-relaxed text-center mb-4">
-              Hemos enviado un código de seguridad de 6 dígitos a <strong className="text-white">{email}</strong>. Por favor, ingrésalo para verificar tu cuenta.
+          <form
+            data-testid="signup-verify-form"
+            onSubmit={handleVerifySubmit}
+            className="space-y-4"
+          >
+            <p className="mb-4 text-center text-xs leading-relaxed text-white/50">
+              Hemos enviado un código de seguridad de 6 dígitos a{" "}
+              <strong className="text-white">{email}</strong>. Por favor,
+              ingrésalo para verificar tu cuenta.
             </p>
 
             <div>
-              <label className="block text-[10px] font-semibold text-white/50 uppercase tracking-wider mb-2 flex items-center gap-1.5 justify-center">
+              <label className="mb-2 block flex items-center justify-center gap-1.5 text-[10px] font-semibold tracking-wider text-white/50 uppercase">
                 <Lock className="size-3.5 text-blue-400" /> Código de Seguridad
               </label>
               <Input
+                data-testid="signup-code-input"
                 type="text"
                 maxLength={6}
                 placeholder="000000"
                 value={code}
                 onChange={(e) => setCode(e.target.value.replace(/\D/g, ""))}
-                className="bg-[#111827]/40 border-white/[0.08] text-white text-center tracking-widest text-lg font-bold placeholder:text-white/20 focus:border-blue-500/50 py-6 rounded-full"
+                className="rounded-full border-white/[0.08] bg-[#111827]/40 py-6 text-center text-lg font-bold tracking-widest text-white placeholder:text-white/20 focus:border-blue-500/50"
                 disabled={loading}
               />
             </div>
 
             <Button
+              data-testid="signup-verify-button"
               type="submit"
-              className="w-full bg-blue-500 hover:bg-blue-400 text-white rounded-full py-6 mt-6 text-sm font-semibold tracking-wide transition-all shadow-lg shadow-blue-500/20 flex items-center justify-center gap-2"
+              className="mt-6 flex w-full items-center justify-center gap-2 rounded-full bg-blue-500 py-6 text-sm font-semibold tracking-wide text-white shadow-lg shadow-blue-500/20 transition-all hover:bg-blue-400"
               disabled={loading || code.length !== 6}
             >
               {loading ? "Verificando..." : "Verificar Código e Ingresar"}
@@ -200,14 +228,13 @@ function SignupForm() {
             <button
               type="button"
               onClick={() => setStep(1)}
-              className="w-full text-center text-white/40 hover:text-white text-xs mt-4 transition-colors underline underline-offset-4"
+              className="mt-4 w-full text-center text-xs text-white/40 underline underline-offset-4 transition-colors hover:text-white"
               disabled={loading}
             >
               Volver a editar mis datos
             </button>
           </form>
         )}
-
       </div>
     </main>
   );
@@ -217,8 +244,10 @@ export default function SignupPage() {
   return (
     <Suspense
       fallback={
-        <main className="min-h-screen bg-[#0a0a0a] pt-24 pb-16 flex flex-col items-center justify-center px-4 relative overflow-hidden">
-          <div className="text-white/50 text-sm">Cargando formulario de registro...</div>
+        <main className="relative flex min-h-screen flex-col items-center justify-center overflow-hidden bg-[#0a0a0a] px-4 pt-24 pb-16">
+          <div className="text-sm text-white/50">
+            Cargando formulario de registro...
+          </div>
         </main>
       }
     >
