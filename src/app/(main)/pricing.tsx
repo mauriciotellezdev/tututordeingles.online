@@ -42,24 +42,27 @@ const plans = [
 
 export default function Pricing() {
   return (
-    <section className="bg-[#0d1425] py-28 px-6 border-t border-white/[0.05]" id="precios">
-      <div className="max-w-6xl mx-auto">
-        <div className="text-center mb-16">
+    <section
+      className="border-t border-white/[0.05] bg-[#0d1425] px-6 py-28"
+      id="precios"
+    >
+      <div className="mx-auto max-w-6xl">
+        <div className="mb-16 text-center">
           <p
-            className="text-blue-400 text-[11px] tracking-[0.3em] uppercase mb-4 font-medium"
+            className="mb-4 text-[11px] font-medium tracking-[0.3em] text-blue-400 uppercase"
             style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}
           >
             Precios
           </p>
           <h2
-            className="text-3xl md:text-4xl font-bold text-white"
+            className="text-3xl font-bold text-white md:text-4xl"
             style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}
           >
             Inversión clara,{" "}
             <span className="text-blue-400">sin sorpresas.</span>
           </h2>
           <p
-            className="text-white/40 text-sm mt-4 max-w-sm mx-auto"
+            className="mx-auto mt-4 max-w-sm text-sm text-white/40"
             style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}
           >
             Todos los precios en MXN. Pago seguro con tarjeta a través de
@@ -67,72 +70,74 @@ export default function Pricing() {
           </p>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-3xl mx-auto">
+        <div className="mx-auto grid max-w-3xl grid-cols-1 gap-6 md:grid-cols-2">
           {plans.map((plan) => (
             <div
               key={plan.name}
-              className={`relative rounded-2xl border p-8 flex flex-col transition-transform duration-300 hover:-translate-y-1 ${
+              className={`relative flex flex-col rounded-2xl border p-8 transition-transform duration-300 hover:-translate-y-1 ${
                 plan.highlight
-                  ? "bg-blue-500/10 border-blue-500/30"
-                  : "bg-[#1a2a50]/40 border-white/[0.08]"
+                  ? "border-blue-500/30 bg-blue-500/10"
+                  : "border-white/[0.08] bg-[#1a2a50]/40"
               }`}
             >
               {plan.badge && (
-                <Badge className="self-start mb-5 bg-blue-500/20 text-blue-300 border border-blue-500/30 rounded-full px-3 py-1 text-[10px] tracking-widest uppercase font-medium">
+                <Badge className="mb-5 self-start rounded-full border border-blue-500/30 bg-blue-500/20 px-3 py-1 text-[10px] font-medium tracking-widest text-blue-300 uppercase">
                   {plan.badge}
                 </Badge>
               )}
 
               <p
-                className="text-white/40 text-xs tracking-widest uppercase mb-3"
+                className="mb-3 text-xs tracking-widest text-white/40 uppercase"
                 style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}
               >
                 {plan.name}
               </p>
 
-              <div className="flex items-end gap-2 mb-1">
+              <div className="mb-1 flex items-end gap-2">
                 <span
-                  className="text-white text-5xl font-bold"
+                  className="text-5xl font-bold text-white"
                   style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}
                 >
                   {plan.price}
                 </span>
                 <span
-                  className="text-white/30 text-sm mb-2"
+                  className="mb-2 text-sm text-white/30"
                   style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}
                 >
                   {plan.currency}
                 </span>
               </div>
               <p
-                className="text-white/25 text-xs mb-5"
+                className="mb-5 text-xs text-white/25"
                 style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}
               >
                 {plan.unit}
               </p>
 
               <p
-                className="text-white/45 text-sm leading-relaxed mb-7"
+                className="mb-7 text-sm leading-relaxed text-white/45"
                 style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}
               >
                 {plan.description}
               </p>
 
-              <ul className="space-y-2.5 mb-8 flex-1">
+              <ul className="mb-8 flex-1 space-y-2.5">
                 {plan.features.map((f) => {
                   const hasCorreo = /correo/i.test(f);
                   return (
                     <li
                       key={f}
-                      className="flex items-center gap-2.5 text-white/50 text-xs"
+                      className="flex items-center gap-2.5 text-xs text-white/50"
                       style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}
                     >
-                      <span className="text-blue-400 text-base leading-none">✓</span>
+                      <span className="text-base leading-none text-blue-400">
+                        ✓
+                      </span>
                       {hasCorreo ? (
                         <>
                           {f.replace(/correo/i, "")}
                           <a
-                            href={`mailto:mauriciotellezdev@gmail.com`}
+                            href={`mailto:mauricio@tututordeingles.online`}
                             className="text-white/60 underline"
                           >
                             {f.match(/correo/i)?.[0] ?? "correo"}
@@ -146,12 +151,14 @@ export default function Pricing() {
                 })}
               </ul>
 
-              <a href={`mailto:mauriciotellezdev@gmail.com?subject=${encodeURIComponent(plan.name)}`}>
+              <a
+                href={`mailto:mauricio@tututordeingles.online?subject=${encodeURIComponent(plan.name)}`}
+              >
                 <Button
                   className={
                     plan.highlight
-                      ? "bg-blue-500 hover:bg-blue-400 text-white rounded-full py-6 text-sm font-semibold tracking-wide transition-all duration-300 hover:scale-[1.01] shadow-lg shadow-blue-500/25"
-                      : "bg-white/5 hover:bg-white/10 text-white border border-white/10 rounded-full py-6 text-sm font-medium tracking-wide transition-all duration-300"
+                      ? "rounded-full bg-blue-500 py-6 text-sm font-semibold tracking-wide text-white shadow-lg shadow-blue-500/25 transition-all duration-300 hover:scale-[1.01] hover:bg-blue-400"
+                      : "rounded-full border border-white/10 bg-white/5 py-6 text-sm font-medium tracking-wide text-white transition-all duration-300 hover:bg-white/10"
                   }
                   style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}
                 >
@@ -163,10 +170,13 @@ export default function Pricing() {
         </div>
 
         <p
-          className="text-center text-white/20 text-xs mt-8"
+          className="mt-8 text-center text-xs text-white/20"
           style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}
         >
-          <a href="mailto:mauriciotellezdev@gmail.com" className="underline text-white/20 hover:text-white/40">
+          <a
+            href="mailto:mauricio@tututordeingles.online"
+            className="text-white/20 underline hover:text-white/40"
+          >
             ¿Tienes preguntas? Escríbeme por correo antes de comprar.
           </a>
         </p>

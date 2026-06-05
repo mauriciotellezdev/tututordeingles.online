@@ -80,7 +80,7 @@ beforeEach(() => {
   sendMail.mockResolvedValue(undefined);
   consoleErrorSpy = spyOn(console, "error").mockImplementation(() => undefined);
   consoleWarnSpy = spyOn(console, "warn").mockImplementation(() => undefined);
-  process.env.TEACHER_EMAIL = "mauricio@example.com";
+  process.env.TEACHER_EMAIL = "mauricio@tututordeingles.online";
 });
 
 afterEach(() => {
@@ -109,7 +109,9 @@ test("signupStudentAction stores the referral relationship and sends verificatio
   expect(collections.referrals.docs).toHaveLength(1);
   expect(sendMail).toHaveBeenCalledTimes(2);
   expect(sendMail.mock.calls[0]?.[0]?.to).toBe("student@example.com");
-  expect(sendMail.mock.calls[1]?.[0]?.to).toBe("mauricio@example.com");
+  expect(sendMail.mock.calls[1]?.[0]?.to).toBe(
+    "mauricio@tututordeingles.online"
+  );
 
   const referredStudent = collections.students.docs.find(
     (student) => student.email === "student@example.com"

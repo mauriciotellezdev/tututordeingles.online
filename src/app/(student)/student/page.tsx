@@ -370,10 +370,10 @@ function StudentDashboard() {
           <p className="text-xs text-white/30">
             ¿Tienes preguntas? Escríbenos a{" "}
             <a
-              href="mailto:mauriciotellezdev@gmail.com"
+              href="mailto:mauricio@tututordeingles.online"
               className="text-blue-400 underline hover:text-blue-300"
             >
-              mauriciotellezdev@gmail.com
+              mauricio@tututordeingles.online
             </a>
           </p>
         </div>

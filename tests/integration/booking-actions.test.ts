@@ -26,7 +26,7 @@ function buildCollections() {
       {
         _id: teacherId,
         name: "Mauricio Tellez",
-        email: "mauriciotellezdev@gmail.com",
+        email: "mauricio@tututordeingles.online",
         phone: "522225118581",
         createdAt: now,
         updatedAt: now,
@@ -104,7 +104,9 @@ test("bookIntroCallAction sends both student and owner booking emails", async ()
   expect(collections.sessions.docs).toHaveLength(1);
   expect(sendMail).toHaveBeenCalledTimes(2);
   expect(sendMail.mock.calls[0]?.[0]?.to).toBe("gaviy1987@gmail.com");
-  expect(sendMail.mock.calls[1]?.[0]?.to).toBe("mauriciotellezdev@gmail.com");
+  expect(sendMail.mock.calls[1]?.[0]?.to).toBe(
+    "mauricio@tututordeingles.online"
+  );
 });
 
 test("bookIntroCallAction still succeeds when the owner notification fails", async () => {

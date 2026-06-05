@@ -18,6 +18,23 @@ interface MailOptions {
   alternatives?: { contentType: string; content: string | Buffer }[];
 }
 
+function resolveMailSender() {
+  const mailFrom = process.env.MAIL_FROM?.trim();
+  const email =
+    (mailFrom
+      ? mailFrom.match(/<([^>]+)>/)?.[1]?.trim() || mailFrom
+      : undefined) || "noreply@tututordeingles.online";
+  const name =
+    (mailFrom ? mailFrom.match(/^(.*?)</)?.[1]?.trim() : undefined) ||
+    "Mauricio Tellez";
+
+  return {
+    name,
+    email,
+    formatted: `${name} <${email}>`,
+  };
+}
+
 async function sendViaBrevoApi(options: {
   to: string;
   subject: string;
@@ -27,9 +44,10 @@ async function sendViaBrevoApi(options: {
 }) {
   const apiKey = process.env.BREVO_API_KEY;
   if (!apiKey) throw new Error("BREVO_API_KEY not set");
+  const sender = resolveMailSender();
 
   const payload: Record<string, unknown> = {
-    sender: { name: "Tu Tutor de Inglés", email: "noreply@tututordeingles.online" },
+    sender: { name: sender.name, email: sender.email },
     to: [{ email: options.to }],
     subject: options.subject,
     textContent: options.text,
@@ -87,7 +105,7 @@ async function sendViaSmtp(options: {
   html?: string;
   icalEvent?: { filename: string; content: string | Buffer };
 }) {
-  const from = process.env.MAIL_FROM || "Tu Tutor de Inglés <noreply@tututordeingles.online>";
+  const from = resolveMailSender().formatted;
 
   const transporter = getTransporter();
 
@@ -126,7 +144,11 @@ export async function sendMail(options: {
     return sendViaBrevoApi(options);
   }
 
-  if (process.env.MAIL_HOST && process.env.MAIL_HOST !== "127.0.0.1" && process.env.MAIL_HOST !== "localhost") {
+  if (
+    process.env.MAIL_HOST &&
+    process.env.MAIL_HOST !== "127.0.0.1" &&
+    process.env.MAIL_HOST !== "localhost"
+  ) {
     return sendViaSmtp(options);
   }
 
