@@ -22,7 +22,9 @@ export async function getCurrentStudentAction() {
     }
 
     const studentsCol = await getCollection<Student>(STUDENT_COLLECTION);
-    const student = await studentsCol.findOne({ _id: new ObjectId(studentIdStr) });
+    const student = await studentsCol.findOne({
+      _id: new ObjectId(studentIdStr),
+    });
 
     if (!student) {
       return { success: false, error: "Estudiante no encontrado." };
@@ -36,12 +38,15 @@ export async function getCurrentStudentAction() {
         email: student.email,
         phone: student.phone,
         quizResult: student.quizResult,
-        quizProgress: student.quizProgress
-      }
+        quizProgress: student.quizProgress,
+      },
     };
   } catch (error: unknown) {
     console.error("Error in getCurrentStudentAction:", error);
-    return { success: false, error: (error instanceof Error ? error.message : "Error de autenticación.") };
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : "Error de autenticación.",
+    };
   }
 }
 
@@ -62,7 +67,7 @@ export async function getBookedSlotsAction(payload: { dateIso: string }) {
       .project({ dateTime: 1 })
       .toArray();
 
-    const bookedSlots = booked.map(s => {
+    const bookedSlots = booked.map((s) => {
       const h = String(s.dateTime.getHours()).padStart(2, "0");
       return `${h}:00`;
     });
@@ -86,13 +91,13 @@ export async function getQuizAction() {
       throw new Error("No se encontró el examen de ubicación.");
     }
 
-    const sanitizedQuestions = quiz.questions.map(q => ({
+    const sanitizedQuestions = quiz.questions.map((q) => ({
       _id: q._id.toString(),
       question: q.question,
-      answers: q.answers.map(a => ({
+      answers: q.answers.map((a) => ({
         _id: a._id.toString(),
-        answer: a.answer
-      }))
+        answer: a.answer,
+      })),
     }));
 
     return {
@@ -101,12 +106,16 @@ export async function getQuizAction() {
         _id: quiz._id.toString(),
         title: quiz.title,
         description: quiz.description,
-        questions: sanitizedQuestions
-      }
+        questions: sanitizedQuestions,
+      },
     };
   } catch (error: unknown) {
     console.error("Error in getQuizAction:", error);
-    return { success: false, error: (error instanceof Error ? error.message : "Error al cargar el examen.") };
+    return {
+      success: false,
+      error:
+        error instanceof Error ? error.message : "Error al cargar el examen.",
+    };
   }
 }
 
@@ -143,8 +152,8 @@ export async function submitQuizAction(payload: {
     let score = 0;
     const totalQuestions = quiz.questions.length;
 
-    quiz.questions.forEach(q => {
-      const submitted = answers.find(a => a.questionId === q._id.toString());
+    quiz.questions.forEach((q) => {
+      const submitted = answers.find((a) => a.questionId === q._id.toString());
       if (submitted) {
         if (q.correctAnswerId.toString() === submitted.answerId) {
           score += 1;
@@ -159,33 +168,37 @@ export async function submitQuizAction(payload: {
           quizResult: {
             score,
             totalQuestions,
-            completedAt: new Date()
+            completedAt: new Date(),
           },
-          updatedAt: new Date()
+          updatedAt: new Date(),
         },
         $unset: {
-          quizProgress: ""
-        }
+          quizProgress: "",
+        },
       }
     );
 
     return {
       success: true,
       score,
-      totalQuestions
+      totalQuestions,
     };
   } catch (error: unknown) {
     console.error("Error in submitQuizAction:", error);
-    return { success: false, error: (error instanceof Error ? error.message : "Error al calificar el examen.") };
+    return {
+      success: false,
+      error:
+        error instanceof Error
+          ? error.message
+          : "Error al calificar el examen.",
+    };
   }
 }
 
 /**
  * Action 4: Book the free Intro Call (Google Meet) and send ics confirmation email
  */
-export async function bookIntroCallAction(payload: {
-  dateTimeIso: string;
-}) {
+export async function bookIntroCallAction(payload: { dateTimeIso: string }) {
   try {
     const { dateTimeIso } = payload;
     const cookieStore = await cookies();
@@ -215,11 +228,14 @@ export async function bookIntroCallAction(payload: {
 
     const existingSlot = await sessionsCol.findOne({
       status: "booked",
-      dateTime: { $gte: hourStart, $lt: hourEnd }
+      dateTime: { $gte: hourStart, $lt: hourEnd },
     });
 
     if (existingSlot) {
-      return { success: false, error: "Este horario ya está ocupado. Por favor elige otro." };
+      return {
+        success: false,
+        error: "Este horario ya está ocupado. Por favor elige otro.",
+      };
     }
 
     const teacher = await getTeacherData();
@@ -238,7 +254,8 @@ export async function bookIntroCallAction(payload: {
     const endDateTime = new Date(dateTime);
     endDateTime.setMinutes(dateTime.getMinutes() + 30);
 
-    const formatIcsDate = (date: Date) => date.toISOString().replace(/[-:]/g, "").split(".")[0] + "Z";
+    const formatIcsDate = (date: Date) =>
+      date.toISOString().replace(/[-:]/g, "").split(".")[0] + "Z";
     const nowStr = formatIcsDate(new Date());
     const startStr = formatIcsDate(dateTime);
     const endStr = formatIcsDate(endDateTime);
@@ -260,7 +277,7 @@ export async function bookIntroCallAction(payload: {
       "STATUS:CONFIRMED",
       "SEQUENCE:0",
       "END:VEVENT",
-      "END:VCALENDAR"
+      "END:VCALENDAR",
     ].join("\r\n");
 
     const emailSubject = "Tu Clase Demo de Inglés está Confirmada! 🎉";
@@ -272,19 +289,43 @@ export async function bookIntroCallAction(payload: {
       text: emailText,
       icalEvent: {
         filename: "clase-demo.ics",
-        content: icsContent
-      }
+        content: icsContent,
+      },
     });
+
+    const ownerSubject = `Nueva clase demo agendada: ${student.name} 📅`;
+    const ownerText = `Hola Mauricio,\n\nSe ha agendado una nueva clase demo.\n\nEstudiante: ${student.name}\nEmail: ${student.email}\nTeléfono: ${student.phone}\nFecha y Hora: ${dateTime.toLocaleString("es-MX", { timeZone: "America/Mexico_City" })}\nPlataforma: WhatsApp\nNúmero: ${teacher.phone}\nEmail de la estudiante: ${student.email}\n\nTe adjuntamos la invitación de calendario (.ics) para tu agenda.\n\nEste es un aviso automático del sistema.`;
+
+    try {
+      await sendMail({
+        to: teacher.email,
+        subject: ownerSubject,
+        text: ownerText,
+        icalEvent: {
+          filename: "clase-demo.ics",
+          content: icsContent,
+        },
+      });
+    } catch (ownerMailError) {
+      console.warn(
+        "Failed to send owner booking notification:",
+        ownerMailError
+      );
+    }
 
     return {
       success: true,
       sessionId,
       meetingLink: sessionData.meetingLink,
-      dateTime: sessionData.dateTime.toISOString()
+      dateTime: sessionData.dateTime.toISOString(),
     };
   } catch (error: unknown) {
     console.error("Error in bookIntroCallAction:", error);
-    return { success: false, error: (error instanceof Error ? error.message : "Error al agendar la llamada.") };
+    return {
+      success: false,
+      error:
+        error instanceof Error ? error.message : "Error al agendar la llamada.",
+    };
   }
 }
 
@@ -305,10 +346,10 @@ export async function saveQuizProgressAction(payload: {
           quizProgress: {
             lastQuestionId: payload.questionId,
             answeredQuestions: Object.keys(payload.answers),
-            updatedAt: new Date()
+            updatedAt: new Date(),
           },
-          updatedAt: new Date()
-        }
+          updatedAt: new Date(),
+        },
       }
     );
     return { success: true };

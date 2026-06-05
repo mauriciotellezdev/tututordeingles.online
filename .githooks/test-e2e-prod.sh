@@ -8,4 +8,4 @@ if [[ -z "${E2E_TEST_SECRET:-}" ]]; then
   exit 1
 fi
 
-bunx playwright test tests/prod-e2e/prod-smoke.spec.ts
+bunx playwright test --config=playwright.prod.config.ts
