@@ -178,61 +178,34 @@ function StudentDashboard() {
           </p>
         </div>
 
-        <Card className="mb-6 rounded-2xl border-blue-500/20 bg-gradient-to-br from-blue-500/5 to-purple-500/5 backdrop-blur-xl">
-          <CardContent className="space-y-4 p-6 md:p-8">
-            <div className="flex size-12 items-center justify-center rounded-full border border-blue-500/30 bg-blue-500/10">
-              <Mail className="size-6 text-blue-400" />
-            </div>
-            <h2 className="text-xl font-bold text-white">
-              Lanzamiento en aproximadamente 1 semana
-            </h2>
-            <p className="text-sm leading-relaxed text-white/60">
-              Estamos ultimando los detalles para ofrecerte la mejor experiencia
-              de aprendizaje. Recibirás un correo electrónico cuando el servicio
-              esté oficialmente en vivo con instrucciones para agendar tu
-              primera clase.
-            </p>
-          </CardContent>
-        </Card>
-
-        <Card className="mb-6 rounded-2xl border-emerald-500/20 bg-gradient-to-br from-emerald-500/5 to-teal-500/5 backdrop-blur-xl">
-          <CardContent className="space-y-4 p-6 md:p-8">
-            <div className="flex size-12 items-center justify-center rounded-full border border-emerald-500/30 bg-emerald-500/10">
-              <span className="text-xl">🤝</span>
-            </div>
-            <h2 className="text-xl font-bold text-white">
-              Reunión grupal en Tehuacán — ¡Próximamente!
-            </h2>
-            <p className="text-sm leading-relaxed text-white/60">
-              La próxima semana estaremos organizando encuentros públicos en
-              Tehuacán para que conozcas a tu instructor en persona, así como a
-              otros estudiantes. Es una excelente oportunidad para practicar y
-              crear comunidad.
-            </p>
-            <div className="grid grid-cols-1 gap-3 pt-2 sm:grid-cols-2">
-              <div className="rounded-xl border border-white/[0.06] bg-white/[0.03] p-4">
-                <h4 className="mb-1 text-xs font-bold tracking-wider text-white uppercase">
-                  ☕ Starbucks
+        {student.quizResult && (
+          <Card
+            data-testid="quiz-result-card"
+            className="mb-6 rounded-2xl border-white/[0.08] bg-[#0f1729]/40 backdrop-blur-xl"
+          >
+            <CardContent className="flex items-center gap-4 p-6 md:p-8">
+              <div className="flex size-14 shrink-0 flex-col items-center justify-center rounded-full border border-blue-500/30 bg-blue-500/10">
+                <span className="text-lg font-bold text-white">
+                  {student.quizResult.score}
+                </span>
+                <span className="text-[8px] font-semibold text-white/40 uppercase">
+                  de {student.quizResult.totalQuestions}
+                </span>
+              </div>
+              <div>
+                <h4 className="text-xs font-bold tracking-wider text-blue-400 uppercase">
+                  Tu nivel de inglés
                 </h4>
-                <p className="text-[11px] text-white/40">
-                  Ubicación céntrica — ideal para café y conversación.
+                <p className="mt-0.5 text-sm font-bold text-white">
+                  {getProficiencyLevel(student.quizResult.score).name}
+                </p>
+                <p className="mt-1 text-xs text-white/50">
+                  {getProficiencyLevel(student.quizResult.score).desc}
                 </p>
               </div>
-              <div className="rounded-xl border border-white/[0.06] bg-white/[0.03] p-4">
-                <h4 className="mb-1 text-xs font-bold tracking-wider text-white uppercase">
-                  🌳 Parque Morelos
-                </h4>
-                <p className="text-[11px] text-white/40">
-                  En el centro de Tehuacán — espacio abierto y accesible.
-                </p>
-              </div>
-            </div>
-            <p className="border-t border-white/[0.05] pt-3 text-xs leading-relaxed text-white/40">
-              Recibirás un correo con los detalles (día, hora y lugar exacto) en
-              los próximos días. ¡Estamos emocionados de conocerte!
-            </p>
-          </CardContent>
-        </Card>
+            </CardContent>
+          </Card>
+        )}
 
         {referral && (
           <Card
@@ -331,35 +304,6 @@ function StudentDashboard() {
                   Pendientes por convertir: {referral.pendingConversions}. Te
                   acreditamos el bono cuando el estudiante nuevo complete su
                   primer pago.
-                </p>
-              </div>
-            </CardContent>
-          </Card>
-        )}
-
-        {student.quizResult && (
-          <Card
-            data-testid="quiz-result-card"
-            className="mb-6 rounded-2xl border-white/[0.08] bg-[#0f1729]/40 backdrop-blur-xl"
-          >
-            <CardContent className="flex items-center gap-4 p-6 md:p-8">
-              <div className="flex size-14 shrink-0 flex-col items-center justify-center rounded-full border border-blue-500/30 bg-blue-500/10">
-                <span className="text-lg font-bold text-white">
-                  {student.quizResult.score}
-                </span>
-                <span className="text-[8px] font-semibold text-white/40 uppercase">
-                  de {student.quizResult.totalQuestions}
-                </span>
-              </div>
-              <div>
-                <h4 className="text-xs font-bold tracking-wider text-blue-400 uppercase">
-                  Tu nivel de inglés
-                </h4>
-                <p className="mt-0.5 text-sm font-bold text-white">
-                  {getProficiencyLevel(student.quizResult.score).name}
-                </p>
-                <p className="mt-1 text-xs text-white/50">
-                  {getProficiencyLevel(student.quizResult.score).desc}
                 </p>
               </div>
             </CardContent>
