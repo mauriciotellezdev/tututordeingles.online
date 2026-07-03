@@ -144,18 +144,25 @@ export async function processCompletedPayment(
     };
   }
 
+  // Stripe can deliver sessions without a customer (e.g. guest/fixture
+  // sessions). Never $set null/empty — the strict student validator rejects it
+  // and would abort the credit grant, leaving the webhook in a 500 retry loop.
   const studentsCol = await getCollection<Student>(STUDENT_COLLECTION);
-  await studentsCol.updateOne(
-    { _id: studentOid, stripeCustomerId: { $exists: false } },
-    { $set: { stripeCustomerId } }
-  );
+  if (stripeCustomerId) {
+    await studentsCol.updateOne(
+      { _id: studentOid, stripeCustomerId: { $exists: false } },
+      { $set: { stripeCustomerId } }
+    );
+  }
 
   try {
     await paymentsCol.insertOne({
       ...createPayment({
         studentId: studentOid,
         stripePaymentIntentId: paymentIntentId,
-        stripeCustomerId,
+        // Payment validator requires a non-empty string; keep the record (and
+        // the credit grant) alive even if Stripe sent no customer.
+        stripeCustomerId: stripeCustomerId || "unknown",
         amount,
         currency: "mxn",
         description:
