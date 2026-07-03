@@ -6,6 +6,7 @@ import "../globals.css";
 
 import Header from "./layout/header";
 import Footer from "./layout/footer";
+import { AnalyticsAndConsent } from "@/shared/analytics/analytics-and-consent";
 
 const plusJakarta = Plus_Jakarta_Sans({
   subsets: ["latin"],
@@ -89,6 +90,7 @@ export default function RootLayout({
         <Header />
         {children}
         <Footer />
+        <AnalyticsAndConsent />
       </body>
     </html>
   );

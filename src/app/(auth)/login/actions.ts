@@ -3,9 +3,19 @@
 import { cookies } from "next/headers";
 import { getCollection } from "@/lib/db";
 import { ObjectId } from "mongodb";
-import { STUDENT_COLLECTION, Student, generateVerificationCode } from "@/lib/models/student";
+import {
+  STUDENT_COLLECTION,
+  Student,
+  generateVerificationCode,
+} from "@/lib/models/student";
 import { getTeacherData } from "@/lib/models/teacher";
 import { sendMail } from "@/lib/mail";
+import {
+  checkAndRecordSend,
+  checkVerifyAllowed,
+  recordFailedVerify,
+  clearOtpGuard,
+} from "@/lib/otp-guard";
 
 const TEACHER_AUTH_COLLECTION = "teacher_auth";
 
@@ -30,11 +40,21 @@ export async function requestLoginCodeAction(email: string) {
       if (!student) {
         return {
           success: false,
-          error: "Este correo electrónico no está registrado. Si eres un nuevo estudiante, regístrate primero."
+          error:
+            "Este correo electrónico no está registrado. Si eres un nuevo estudiante, regístrate primero.",
         };
       }
       studentId = student._id;
       name = student.name;
+    }
+
+    // Throttle code requests (anti email-bombing / cost).
+    const sendGuard = await checkAndRecordSend(normalizedEmail);
+    if (!sendGuard.allowed) {
+      return {
+        success: false,
+        error: `Espera ${sendGuard.retryAfterSec ?? 60} segundos antes de solicitar otro código.`,
+      };
     }
 
     // Generate login code and expiry (15 mins)
@@ -52,8 +72,8 @@ export async function requestLoginCodeAction(email: string) {
             email: normalizedEmail,
             code: verificationCode,
             expiresAt,
-            updatedAt: new Date()
-          }
+            updatedAt: new Date(),
+          },
         },
         { upsert: true }
       );
@@ -65,8 +85,8 @@ export async function requestLoginCodeAction(email: string) {
           $set: {
             verificationCode,
             verificationCodeExpires: expiresAt,
-            updatedAt: new Date()
-          }
+            updatedAt: new Date(),
+          },
         }
       );
     }
@@ -78,23 +98,32 @@ export async function requestLoginCodeAction(email: string) {
     await sendMail({
       to: normalizedEmail,
       subject,
-      text
+      text,
     });
 
     return {
       success: true,
-      email: normalizedEmail
+      email: normalizedEmail,
     };
   } catch (error: unknown) {
     console.error("Error in requestLoginCodeAction:", error);
-    return { success: false, error: (error instanceof Error ? error.message : "Error al solicitar el código de acceso.") };
+    return {
+      success: false,
+      error:
+        error instanceof Error
+          ? error.message
+          : "Error al solicitar el código de acceso.",
+    };
   }
 }
 
 /**
  * Action 2: Verify login code and log in the user (student or teacher)
  */
-export async function verifyLoginCodeAction(payload: { email: string; code: string }) {
+export async function verifyLoginCodeAction(payload: {
+  email: string;
+  code: string;
+}) {
   try {
     const { email, code } = payload;
     const normalizedEmail = email.toLowerCase().trim();
@@ -105,13 +134,31 @@ export async function verifyLoginCodeAction(payload: { email: string; code: stri
     const isTeacher = normalizedEmail === teacherEmail;
     const now = new Date();
 
+    // Brute-force lockout on the 6-digit code.
+    const verifyGuard = await checkVerifyAllowed(normalizedEmail);
+    if (!verifyGuard.allowed) {
+      return {
+        success: false,
+        error: `Demasiados intentos. Intenta de nuevo en ${Math.ceil((verifyGuard.retryAfterSec ?? 900) / 60)} minutos.`,
+      };
+    }
+
     if (isTeacher) {
       const teacherAuthCol = await getCollection(TEACHER_AUTH_COLLECTION);
-      const authRecord = await teacherAuthCol.findOne({ email: normalizedEmail });
+      const authRecord = await teacherAuthCol.findOne({
+        email: normalizedEmail,
+      });
 
-      if (!authRecord || authRecord.code !== cleanCode || authRecord.expiresAt < now) {
+      if (
+        !authRecord ||
+        authRecord.code !== cleanCode ||
+        authRecord.expiresAt < now
+      ) {
+        await recordFailedVerify(normalizedEmail);
         return { success: false, error: "Código incorrecto o expirado." };
       }
+
+      await clearOtpGuard(normalizedEmail);
 
       // Clear teacher code
       await teacherAuthCol.deleteOne({ email: normalizedEmail });
@@ -122,12 +169,12 @@ export async function verifyLoginCodeAction(payload: { email: string; code: stri
         httpOnly: true,
         secure: process.env.NODE_ENV === "production",
         maxAge: 60 * 60 * 24, // 24 hours
-        path: "/"
+        path: "/",
       });
 
       return {
         success: true,
-        role: "teacher"
+        role: "teacher",
       };
     } else {
       const studentsCol = await getCollection<Student>(STUDENT_COLLECTION);
@@ -137,25 +184,34 @@ export async function verifyLoginCodeAction(payload: { email: string; code: stri
         return { success: false, error: "Usuario no encontrado." };
       }
 
-      if (!student.verificationCodeExpires || student.verificationCodeExpires < now) {
-        return { success: false, error: "Código expirado. Solicita uno nuevo." };
+      if (
+        !student.verificationCodeExpires ||
+        student.verificationCodeExpires < now
+      ) {
+        return {
+          success: false,
+          error: "Código expirado. Solicita uno nuevo.",
+        };
       }
 
       if (student.verificationCode !== cleanCode) {
+        await recordFailedVerify(normalizedEmail);
         return { success: false, error: "Código incorrecto." };
       }
+
+      await clearOtpGuard(normalizedEmail);
 
       // Verify email if it wasn't verified, and clear code
       await studentsCol.updateOne(
         { _id: student._id },
         {
           $set: {
-            updatedAt: new Date()
+            updatedAt: new Date(),
           },
           $unset: {
             verificationCode: "",
-            verificationCodeExpires: ""
-          }
+            verificationCodeExpires: "",
+          },
         }
       );
 
@@ -165,17 +221,23 @@ export async function verifyLoginCodeAction(payload: { email: string; code: stri
         httpOnly: true,
         secure: process.env.NODE_ENV === "production",
         maxAge: 60 * 60 * 24 * 7, // 7 days
-        path: "/"
+        path: "/",
       });
 
       return {
         success: true,
         role: "student",
-        quizCompleted: !!student.quizResult
+        quizCompleted: !!student.quizResult,
       };
     }
   } catch (error: unknown) {
     console.error("Error in verifyLoginCodeAction:", error);
-    return { success: false, error: (error instanceof Error ? error.message : "Error al verificar el código de acceso.") };
+    return {
+      success: false,
+      error:
+        error instanceof Error
+          ? error.message
+          : "Error al verificar el código de acceso.",
+    };
   }
 }

@@ -20,6 +20,11 @@ import {
   generateUniqueReferralCode,
 } from "@/lib/referrals";
 import { recordSignupAttribution } from "@/lib/campaigns";
+import {
+  checkVerifyAllowed,
+  recordFailedVerify,
+  clearOtpGuard,
+} from "@/lib/otp-guard";
 import { sendMail } from "@/lib/mail";
 
 /**
@@ -296,6 +301,15 @@ export async function verifyCodeAndLoginAction(payload: {
       return { success: false, error: "Usuario no encontrado." };
     }
 
+    // Brute-force lockout on the 6-digit code.
+    const verifyGuard = await checkVerifyAllowed(normalizedEmail);
+    if (!verifyGuard.allowed) {
+      return {
+        success: false,
+        error: `Demasiados intentos. Intenta de nuevo en ${Math.ceil((verifyGuard.retryAfterSec ?? 900) / 60)} minutos.`,
+      };
+    }
+
     // Verify code expiration and match
     const now = new Date();
     if (
@@ -310,11 +324,14 @@ export async function verifyCodeAndLoginAction(payload: {
     }
 
     if (student.verificationCode !== code.trim()) {
+      await recordFailedVerify(normalizedEmail);
       return {
         success: false,
         error: "El código de verificación es incorrecto.",
       };
     }
+
+    await clearOtpGuard(normalizedEmail);
 
     // Update student as verified and clear temporary code
     await studentsCol.updateOne(

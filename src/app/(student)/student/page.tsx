@@ -12,6 +12,11 @@ import {
   getBookedSlotsAction,
 } from "./actions";
 import {
+  trackBeginCheckout,
+  trackBooking,
+  trackPurchase,
+} from "@/shared/analytics/track";
+import {
   Copy,
   Link2,
   Send,
@@ -159,6 +164,7 @@ function StudentDashboard() {
           planType: plan as "single" | "package",
         });
         if (verifyRes.success) {
+          trackPurchase(plan as "single" | "package");
           setStatusMessage({
             type: "success",
             text:
@@ -210,6 +216,7 @@ function StudentDashboard() {
   const handleBuy = async (planType: "single" | "package") => {
     setBuying(planType);
     setStatusMessage(null);
+    trackBeginCheckout(planType);
     const res = await createCheckoutSessionAction({ planType });
     if (res.success && res.url) {
       window.location.href = res.url;
@@ -248,6 +255,7 @@ function StudentDashboard() {
     });
     setBooking(false);
     if (res.success) {
+      trackBooking("tutoring");
       setSelectedDate(null);
       setSelectedTimeSlot(null);
       setStatusMessage({

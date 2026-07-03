@@ -15,6 +15,7 @@ import {
   CheckCircle2,
 } from "lucide-react";
 import { signupStudentAction, verifyCodeAndLoginAction } from "./actions";
+import { trackSignup } from "@/shared/analytics/track";
 
 function SignupForm() {
   const router = useRouter();
@@ -86,6 +87,7 @@ function SignupForm() {
     setLoading(false);
 
     if (res.success) {
+      trackSignup();
       setSuccessMessage(
         "¡Email verificado correctamente! Redirigiendo al examen de ubicación..."
       );
