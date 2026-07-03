@@ -232,7 +232,7 @@ export async function bookSessionAction(payload: {
         })
       );
 
-      const sessionData = createSession({
+      const sessionData = await createSession({
         studentId: studentOid,
         type,
         dateTime,
@@ -244,7 +244,7 @@ export async function bookSessionAction(payload: {
       sessionId = result.insertedId.toString();
     } else {
       // Intro session — free, no credit needed
-      const sessionData = createSession({
+      const sessionData = await createSession({
         studentId: studentOid,
         type,
         dateTime,

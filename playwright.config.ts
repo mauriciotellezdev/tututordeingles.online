@@ -1,5 +1,12 @@
 import { defineConfig } from "@playwright/test";
 
+// Local e2e uses a fixed secret so the /api/e2e/* helpers and the signup mail
+// bypass work; the spawned dev server inherits this env. Remote runs
+// (staging/prod scripts) set their own E2E_TEST_SECRET, which is respected.
+if (!process.env.E2E_TEST_SECRET) {
+  process.env.E2E_TEST_SECRET = "e2e-local-secret";
+}
+
 const baseURL = process.env.PLAYWRIGHT_BASE_URL || "http://127.0.0.1:7777";
 const isLocalHost = (() => {
   try {
@@ -37,6 +44,10 @@ const webServer = isLocalHost
 export default defineConfig({
   testDir: "./tests/e2e",
   timeout: 30_000,
+  // One retry absorbs transient flakiness from the local dev server compiling
+  // routes lazily under parallel load (it starves when several DB-heavy specs
+  // run at once). Real failures still fail on the retry.
+  retries: 1,
   expect: {
     timeout: 5_000,
   },

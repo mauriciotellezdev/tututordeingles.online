@@ -21,12 +21,16 @@ export interface CreditPurchaseInput {
 export const CREDIT_COLLECTION = "credits";
 
 export function createCredit(input: CreditPurchaseInput): Omit<Credit, "_id"> {
-  return {
+  // Omit optional fields when empty — the strict $jsonSchema validator rejects
+  // `null` for description/stripeChargeId (must be a non-empty string or
+  // absent), and the driver serializes `undefined` as `null`.
+  const doc: Omit<Credit, "_id"> = {
     studentId: new ObjectId(input.studentId),
     amount: input.amount,
     source: input.source,
-    description: input.description,
     createdAt: new Date(),
-    stripeChargeId: input.stripeChargeId
   };
+  if (input.description) doc.description = input.description;
+  if (input.stripeChargeId) doc.stripeChargeId = input.stripeChargeId;
+  return doc;
 }
