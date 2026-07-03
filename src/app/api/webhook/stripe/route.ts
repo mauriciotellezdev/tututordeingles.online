@@ -1,7 +1,10 @@
 import { NextResponse } from "next/server";
 import { headers } from "next/headers";
 import Stripe from "stripe";
-import { processCompletedPayment } from "@/lib/stripe-verify";
+import {
+  processCompletedPayment,
+  reverseRefundedPayment,
+} from "@/lib/stripe-verify";
 
 export async function POST(req: Request) {
   const body = await req.text();
@@ -36,6 +39,34 @@ export async function POST(req: Request) {
       { error: `Webhook Error: ${(err as Error).message}` },
       { status: 400 }
     );
+  }
+
+  // Refund → claw back the granted credits so a refunded student can't keep
+  // paid classes. Idempotent + ledger-based.
+  if (event.type === "charge.refunded") {
+    const charge = event.data.object as Stripe.Charge;
+    const paymentIntentId =
+      typeof charge.payment_intent === "string"
+        ? charge.payment_intent
+        : (charge.payment_intent?.id ?? null);
+    if (paymentIntentId) {
+      try {
+        const result = await reverseRefundedPayment(paymentIntentId);
+        console.log(
+          `Webhook: refund for PI ${paymentIntentId} — reversed ${result.creditsReversed} credits`
+        );
+      } catch (err: Error | unknown) {
+        console.error(
+          "Webhook: error reversing refund:",
+          (err as Error).message
+        );
+        return NextResponse.json(
+          { error: (err as Error).message },
+          { status: 500 }
+        );
+      }
+    }
+    return NextResponse.json({ received: true, refunded: true });
   }
 
   // OXXO voucher expired unpaid / SPEI transfer never arrived — log it so a
