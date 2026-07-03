@@ -1,5 +1,12 @@
 import { defineConfig } from "@playwright/test";
 
+// Local e2e uses a fixed secret so the /api/e2e/* helpers and the signup mail
+// bypass work; the spawned dev server inherits this env. Remote runs
+// (staging/prod scripts) set their own E2E_TEST_SECRET, which is respected.
+if (!process.env.E2E_TEST_SECRET) {
+  process.env.E2E_TEST_SECRET = "e2e-local-secret";
+}
+
 const baseURL = process.env.PLAYWRIGHT_BASE_URL || "http://127.0.0.1:7777";
 const isLocalHost = (() => {
   try {
