@@ -10,6 +10,8 @@ import {
   createCheckoutSessionAction,
   bookSessionAction,
   getBookedSlotsAction,
+  cancelSessionAction,
+  rescheduleSessionAction,
 } from "./actions";
 import {
   trackBeginCheckout,
@@ -74,6 +76,18 @@ const TIME_SLOTS = [
   "16:00",
   "17:00",
 ];
+
+function getAvailableDates(): Date[] {
+  const dates: Date[] = [];
+  const start = new Date();
+  start.setDate(start.getDate() + 1);
+  for (let i = 0; i < 10; i++) {
+    const d = new Date(start);
+    d.setDate(start.getDate() + i);
+    if (d.getDay() !== 0) dates.push(d);
+  }
+  return dates;
+}
 
 function StudentDashboard() {
   const router = useRouter();
@@ -227,18 +241,6 @@ function StudentDashboard() {
         text: res.error || "No se pudo iniciar el pago. Intenta de nuevo.",
       });
     }
-  };
-
-  const getAvailableDates = () => {
-    const dates: Date[] = [];
-    const start = new Date();
-    start.setDate(start.getDate() + 1);
-    for (let i = 0; i < 10; i++) {
-      const d = new Date(start);
-      d.setDate(start.getDate() + i);
-      if (d.getDay() !== 0) dates.push(d);
-    }
-    return dates;
   };
 
   const confirmBooking = async () => {
@@ -518,40 +520,51 @@ function StudentDashboard() {
                   return (
                     <div
                       key={s._id}
-                      className="flex items-center justify-between rounded-xl border border-white/[0.06] bg-white/[0.02] p-4"
+                      className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-4"
                     >
-                      <div>
-                        <p className="text-sm font-semibold text-white capitalize">
-                          {d.toLocaleDateString("es-MX", {
-                            weekday: "long",
-                            day: "numeric",
-                            month: "long",
-                            timeZone: "America/Mexico_City",
-                          })}
-                        </p>
-                        <p className="mt-0.5 text-xs text-white/50">
-                          {d.toLocaleTimeString("es-MX", {
-                            hour: "2-digit",
-                            minute: "2-digit",
-                            hour12: false,
-                            timeZone: "America/Mexico_City",
-                          })}{" "}
-                          hrs (CDMX) ·{" "}
-                          {s.type === "intro" ? "Clase demo" : "Clase privada"}{" "}
-                          · {s.duration} min
-                        </p>
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <p className="text-sm font-semibold text-white capitalize">
+                            {d.toLocaleDateString("es-MX", {
+                              weekday: "long",
+                              day: "numeric",
+                              month: "long",
+                              timeZone: "America/Mexico_City",
+                            })}
+                          </p>
+                          <p className="mt-0.5 text-xs text-white/50">
+                            {d.toLocaleTimeString("es-MX", {
+                              hour: "2-digit",
+                              minute: "2-digit",
+                              hour12: false,
+                              timeZone: "America/Mexico_City",
+                            })}{" "}
+                            hrs (CDMX) ·{" "}
+                            {s.type === "intro"
+                              ? "Clase demo"
+                              : "Clase privada"}{" "}
+                            · {s.duration} min
+                          </p>
+                        </div>
+                        {teacherPhone && (
+                          <a
+                            href={`https://wa.me/${teacherPhone.replace(/\D/g, "")}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex items-center gap-1.5 rounded-full border border-[#25d366]/30 bg-[#25d366]/10 px-3 py-2 text-xs font-semibold text-[#25d366] transition-colors hover:bg-[#25d366]/20"
+                          >
+                            <MessageSquare className="size-3.5" />
+                            WhatsApp
+                          </a>
+                        )}
                       </div>
-                      {teacherPhone && (
-                        <a
-                          href={`https://wa.me/${teacherPhone.replace(/\D/g, "")}`}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="inline-flex items-center gap-1.5 rounded-full border border-[#25d366]/30 bg-[#25d366]/10 px-3 py-2 text-xs font-semibold text-[#25d366] transition-colors hover:bg-[#25d366]/20"
-                        >
-                          <MessageSquare className="size-3.5" />
-                          WhatsApp
-                        </a>
-                      )}
+                      <SessionActions
+                        sessionId={s._id}
+                        onChanged={(msg) => {
+                          setStatusMessage(msg);
+                          loadDashboardData();
+                        }}
+                      />
                     </div>
                   );
                 })}
@@ -705,6 +718,153 @@ function StudentDashboard() {
         </div>
       </div>
     </main>
+  );
+}
+
+function SessionActions({
+  sessionId,
+  onChanged,
+}: {
+  sessionId: string;
+  onChanged: (msg: { type: "success" | "error"; text: string }) => void;
+}) {
+  const [mode, setMode] = useState<"idle" | "reschedule">("idle");
+  const [busy, setBusy] = useState(false);
+  const [date, setDate] = useState<Date | null>(null);
+  const [slot, setSlot] = useState<string | null>(null);
+  const [booked, setBooked] = useState<string[]>([]);
+  const tz = Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC";
+
+  useEffect(() => {
+    if (!date) return;
+    (async () => {
+      const r = await getBookedSlotsAction({
+        dateIso: date.toISOString(),
+        timeZone: tz,
+      });
+      if (r.success) setBooked(r.bookedSlots);
+    })();
+  }, [date, tz]);
+
+  const cancel = async () => {
+    if (!window.confirm("¿Seguro que quieres cancelar esta clase?")) return;
+    setBusy(true);
+    const res = await cancelSessionAction({ sessionId });
+    setBusy(false);
+    onChanged(
+      res.success
+        ? {
+            type: "success",
+            text: res.refunded
+              ? "Clase cancelada. Tu crédito fue reembolsado."
+              : "Clase cancelada.",
+          }
+        : { type: "error", text: res.error || "No se pudo cancelar." }
+    );
+  };
+
+  const confirmReschedule = async () => {
+    if (!date || !slot) return;
+    setBusy(true);
+    const dt = new Date(date);
+    const [h, m] = slot.split(":").map(Number);
+    dt.setHours(h, m, 0, 0);
+    const res = await rescheduleSessionAction({
+      sessionId,
+      newDateTimeIso: dt.toISOString(),
+    });
+    setBusy(false);
+    onChanged(
+      res.success
+        ? { type: "success", text: "Clase reprogramada." }
+        : { type: "error", text: res.error || "No se pudo reprogramar." }
+    );
+  };
+
+  return (
+    <div className="mt-3 border-t border-white/[0.05] pt-3">
+      {mode === "idle" ? (
+        <div className="flex gap-2">
+          <button
+            onClick={() => setMode("reschedule")}
+            disabled={busy}
+            className="rounded-full border border-white/10 px-3 py-1.5 text-[11px] font-semibold text-white/60 hover:bg-white/5 hover:text-white"
+          >
+            Reprogramar
+          </button>
+          <button
+            onClick={cancel}
+            disabled={busy}
+            className="rounded-full border border-red-500/20 px-3 py-1.5 text-[11px] font-semibold text-red-400 hover:bg-red-500/10"
+          >
+            {busy ? "…" : "Cancelar"}
+          </button>
+        </div>
+      ) : (
+        <div>
+          <div className="mb-2 grid grid-cols-4 gap-1.5 sm:grid-cols-6">
+            {getAvailableDates()
+              .slice(0, 8)
+              .map((dd, i) => {
+                const sel = date?.toDateString() === dd.toDateString();
+                return (
+                  <button
+                    key={i}
+                    onClick={() => {
+                      setDate(dd);
+                      setSlot(null);
+                    }}
+                    className={`rounded-lg border p-1.5 text-[10px] font-semibold ${sel ? "border-blue-500 bg-blue-500/10 text-white" : "border-white/[0.06] text-white/50 hover:text-white"}`}
+                  >
+                    {dd.toLocaleDateString("es-ES", {
+                      weekday: "short",
+                      day: "numeric",
+                    })}
+                  </button>
+                );
+              })}
+          </div>
+          {date && (
+            <div className="mb-2 grid grid-cols-5 gap-1.5">
+              {TIME_SLOTS.map((sl) => {
+                const isB = booked.includes(sl);
+                const sel = slot === sl;
+                return (
+                  <button
+                    key={sl}
+                    disabled={isB}
+                    onClick={() => setSlot(sl)}
+                    className={`rounded-lg border p-1.5 text-[10px] font-bold ${isB ? "cursor-not-allowed border-white/[0.03] text-white/20 line-through" : sel ? "border-blue-500 bg-blue-500/10 text-white" : "border-white/[0.06] text-white/60 hover:text-white"}`}
+                  >
+                    {sl}
+                  </button>
+                );
+              })}
+            </div>
+          )}
+          <div className="flex gap-2">
+            <button
+              onClick={confirmReschedule}
+              disabled={busy || !date || !slot}
+              className="rounded-full bg-blue-500 px-4 py-1.5 text-[11px] font-semibold text-white hover:bg-blue-400 disabled:opacity-50"
+            >
+              {busy ? "…" : "Confirmar"}
+            </button>
+            <button
+              onClick={() => {
+                setMode("idle");
+                setDate(null);
+                setSlot(null);
+              }}
+              disabled={busy}
+              className="rounded-full border border-white/10 px-4 py-1.5 text-[11px] text-white/50 hover:text-white"
+            >
+              Volver
+            </button>
+          </div>
+        </div>
+      )}
+    </div>
   );
 }
 
