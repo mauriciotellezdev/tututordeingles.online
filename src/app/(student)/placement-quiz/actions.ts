@@ -9,6 +9,7 @@ import { createSession, SESSION_COLLECTION } from "@/lib/models/session";
 import { getTeacherData } from "@/lib/models/teacher";
 import { sendMail } from "@/lib/mail";
 import { getTimeZoneDateKey, getTimeZoneHourLabel } from "@/lib/timezone";
+import { findConflictingSession } from "@/lib/bookings";
 
 /**
  * Action 1: Get the currently authenticated student session
@@ -223,16 +224,9 @@ export async function bookIntroCallAction(payload: { dateTimeIso: string }) {
 
     const dateTime = new Date(dateTimeIso);
 
-    // Check for existing booking in the same hour slot
-    const hourStart = new Date(dateTime);
-    hourStart.setMinutes(0, 0, 0);
-    const hourEnd = new Date(hourStart);
-    hourEnd.setHours(hourEnd.getHours() + 1);
-
-    const existingSlot = await sessionsCol.findOne({
-      status: "booked",
-      dateTime: { $gte: hourStart, $lt: hourEnd },
-    });
+    // Reject any booking overlapping this one (absolute-time window, so
+    // half-hour-offset timezones can't slip past an hour-truncated check).
+    const existingSlot = await findConflictingSession(sessionsCol, dateTime);
 
     if (existingSlot) {
       return {
