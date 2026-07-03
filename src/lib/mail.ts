@@ -1,4 +1,5 @@
 import nodemailer from "nodemailer";
+import { recordMailSendAndCheck } from "@/lib/mail-limits";
 
 const BREVO_API = "https://api.brevo.com/v3/smtp/email";
 
@@ -139,31 +140,52 @@ export async function sendMail(options: {
     filename: string;
     content: string | Buffer;
   };
+  // Internal: the limit-warning email itself sets this so it doesn't recurse
+  // or count against the daily quota check.
+  skipTracking?: boolean;
 }) {
+  let realSend = false;
   if (process.env.BREVO_API_KEY) {
-    return sendViaBrevoApi(options);
-  }
-
-  if (process.env.MAIL_HOST) {
-    return sendViaSmtp(options);
-  }
-
-  // Fail loud in production: transactional mail (OTP login/signup, booking
-  // confirmations) is critical. Never silently drop it — a missing transport
-  // must surface as an error so signup/login/booking fail visibly, not silently
-  // lock users out.
-  if (process.env.NODE_ENV === "production") {
+    await sendViaBrevoApi(options);
+    realSend = true;
+  } else if (process.env.MAIL_HOST) {
+    await sendViaSmtp(options);
+    realSend = true;
+  } else if (process.env.NODE_ENV === "production") {
+    // Fail loud in production: transactional mail (OTP login/signup, booking
+    // confirmations) is critical. Never silently drop it — a missing transport
+    // must surface as an error so signup/login/booking fail visibly.
     throw new Error(
       "No email transport configured (set BREVO_API_KEY or MAIL_HOST). Refusing to silently drop transactional email in production."
     );
+  } else {
+    console.log("\n=== MOCK EMAIL ===");
+    console.log(`To: ${options.to}`);
+    console.log(`Subject: ${options.subject}`);
+    console.log(`Body: ${options.text}`);
+    if (options.icalEvent) {
+      console.log(`Calendar: ${options.icalEvent.filename}`);
+    }
+    console.log("==================\n");
   }
 
-  console.log("\n=== MOCK EMAIL ===");
-  console.log(`To: ${options.to}`);
-  console.log(`Subject: ${options.subject}`);
-  console.log(`Body: ${options.text}`);
-  if (options.icalEvent) {
-    console.log(`Calendar: ${options.icalEvent.filename}`);
+  // Quota monitoring — warn the owner before the daily email cap trips (which
+  // would silently break OTP/booking mail). Best-effort; never fails the send.
+  if (realSend && !options.skipTracking) {
+    try {
+      const { count, cap, shouldAlert } = await recordMailSendAndCheck();
+      const owner = process.env.TEACHER_EMAIL?.trim();
+      if (shouldAlert && owner) {
+        const day = new Date().toISOString().slice(0, 10);
+        await sendMail({
+          to: owner,
+          subject: "⚠️ Cerca del límite diario de correos",
+          text: `Aviso automático de Tu Tutor de Inglés.\n\nHoy (${day}) se han enviado ${count} de ${cap} correos permitidos por día.\n\nAl alcanzar el límite, los correos de código de acceso y confirmación dejan de enviarse y los registros / inicios de sesión fallan.\n\nAcción: sube tu plan de correo (Brevo) o ajusta la variable MAIL_DAILY_CAP si tu límite cambió.`,
+          skipTracking: true,
+        });
+      }
+    } catch (error) {
+      console.warn("Mail limit tracking failed:", error);
+    }
   }
-  console.log("==================\n");
 }
