@@ -173,14 +173,19 @@ export async function sendMail(options: {
   // would silently break OTP/booking mail). Best-effort; never fails the send.
   if (realSend && !options.skipTracking) {
     try {
-      const { count, cap, shouldAlert } = await recordMailSendAndCheck();
+      const { count, cap, alertLevel } = await recordMailSendAndCheck();
       const owner = process.env.TEACHER_EMAIL?.trim();
-      if (shouldAlert && owner) {
+      if (alertLevel !== null && owner) {
         const day = new Date().toISOString().slice(0, 10);
+        const pct = Math.round(alertLevel * 100);
+        const urgent = alertLevel >= 0.8;
+        const advice = urgent
+          ? "Estás cerca del límite. Al alcanzarlo, los códigos de acceso y las confirmaciones dejan de enviarse y los registros / inicios de sesión fallan. Sube tu plan de correo (Brevo) pronto."
+          : "Vas a buen ritmo; te avisamos a la mitad para que no te tome por sorpresa. Si el ritmo continúa, considera subir tu plan de correo (Brevo).";
         await sendMail({
           to: owner,
-          subject: "⚠️ Cerca del límite diario de correos",
-          text: `Aviso automático de Tu Tutor de Inglés.\n\nHoy (${day}) se han enviado ${count} de ${cap} correos permitidos por día.\n\nAl alcanzar el límite, los correos de código de acceso y confirmación dejan de enviarse y los registros / inicios de sesión fallan.\n\nAcción: sube tu plan de correo (Brevo) o ajusta la variable MAIL_DAILY_CAP si tu límite cambió.`,
+          subject: `${urgent ? "⚠️" : "📈"} Correos: ${pct}% del límite diario`,
+          text: `Aviso automático de Tu Tutor de Inglés.\n\nHoy (${day}) llevas ${count} de ${cap} correos permitidos por día (${pct}%).\n\n${advice}\n\n(Ajusta la variable MAIL_DAILY_CAP si tu límite de Brevo cambió.)`,
           skipTracking: true,
         });
       }
