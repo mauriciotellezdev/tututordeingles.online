@@ -23,11 +23,14 @@ import {
 import {
   listCampaignsAction,
   createCampaignAction,
+  createCampaignsBulkAction,
   setCampaignActiveAction,
   updateCampaignAction,
   generateCampaignQrAction,
+  getCampaignSignupsAction,
   type CampaignRow,
 } from "./actions";
+import type { CampaignSignupRow } from "@/lib/campaigns";
 import {
   QrCode,
   Plus,
@@ -38,6 +41,11 @@ import {
   UserPlus,
   ArrowLeft,
   Power,
+  Printer,
+  DollarSign,
+  BadgeCheck,
+  Layers,
+  Users,
 } from "lucide-react";
 
 const MEDIA = [
@@ -66,8 +74,12 @@ export default function CampaignsPage() {
     url: string;
   } | null>(null);
   const [editing, setEditing] = useState<string | null>(null);
+  const [viewing, setViewing] = useState<string | null>(null);
+  const [signups, setSignups] = useState<Record<string, CampaignSignupRow[]>>(
+    {}
+  );
 
-  // Create form
+  // Single create form
   const [form, setForm] = useState({
     code: "",
     label: "",
@@ -79,6 +91,16 @@ export default function CampaignsPage() {
   });
   const [creating, setCreating] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
+
+  // Bulk create
+  const [bulkOpen, setBulkOpen] = useState(false);
+  const [bulkText, setBulkText] = useState("");
+  const [bulkMedium, setBulkMedium] = useState("combi");
+  const [bulkCreating, setBulkCreating] = useState(false);
+  const [bulkResult, setBulkResult] = useState<{
+    created: number;
+    skipped: { line: string; reason: string }[];
+  } | null>(null);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -120,6 +142,23 @@ export default function CampaignsPage() {
     }
   };
 
+  const handleBulk = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setBulkCreating(true);
+    setBulkResult(null);
+    const res = await createCampaignsBulkAction(bulkText, {
+      medium: bulkMedium,
+    });
+    setBulkCreating(false);
+    if (res.success) {
+      setBulkResult({ created: res.created.length, skipped: res.skipped });
+      setBulkText("");
+      await load();
+    } else {
+      setBulkResult({ created: 0, skipped: [{ line: "", reason: res.error }] });
+    }
+  };
+
   const toggleActive = async (row: CampaignRow) => {
     await setCampaignActiveAction(row.code, !row.active);
     await load();
@@ -140,13 +179,28 @@ export default function CampaignsPage() {
     if (res.success) setQr({ code, dataUrl: res.dataUrl, url: res.url });
   };
 
+  const toggleSignups = async (code: string) => {
+    setEditing(null);
+    if (viewing === code) {
+      setViewing(null);
+      return;
+    }
+    setViewing(code);
+    if (!signups[code]) {
+      const res = await getCampaignSignupsAction(code);
+      if (res.success) setSignups((prev) => ({ ...prev, [code]: res.signups }));
+    }
+  };
+
   const totals = campaigns.reduce(
     (acc, c) => {
       acc.scans += c.scanCount;
       acc.signups += c.signupCount;
+      acc.paid += c.paidCount;
+      acc.revenue += c.revenuePesos;
       return acc;
     },
-    { scans: 0, signups: 0 }
+    { scans: 0, signups: 0, paid: 0, revenue: 0 }
   );
 
   return (
@@ -159,28 +213,38 @@ export default function CampaignsPage() {
               <span className="text-blue-400">QR</span>
             </h1>
             <p className="mt-1 text-xs text-white/40">
-              Rastrea qué anuncios (combis, flyers, tiendas) traen más
-              registros.
+              Rastrea qué anuncios (combis, flyers, tiendas) traen clientes que
+              pagan.
             </p>
           </div>
-          <Link href="/teacher">
-            <Button
-              variant="ghost"
-              className="flex items-center gap-1.5 rounded-full px-5 py-2.5 text-xs font-semibold text-white/50 hover:bg-white/5 hover:text-white"
-            >
-              <ArrowLeft className="size-4" /> Volver al panel
-            </Button>
-          </Link>
+          <div className="flex items-center gap-2">
+            <Link href="/teacher/campaigns/sheet">
+              <Button
+                variant="ghost"
+                className="flex items-center gap-1.5 rounded-full px-4 py-2.5 text-xs font-semibold text-blue-400 hover:bg-blue-500/5 hover:text-blue-300"
+              >
+                <Printer className="size-4" /> Hoja para imprimir
+              </Button>
+            </Link>
+            <Link href="/teacher">
+              <Button
+                variant="ghost"
+                className="flex items-center gap-1.5 rounded-full px-4 py-2.5 text-xs font-semibold text-white/50 hover:bg-white/5 hover:text-white"
+              >
+                <ArrowLeft className="size-4" /> Panel
+              </Button>
+            </Link>
+          </div>
         </div>
 
         {error && (
-          <Card className="bg-destructive/10 border-destructive/20 text-destructive mb-6 rounded-xl p-4">
+          <Card className="border-destructive/20 bg-destructive/10 text-destructive mb-6 rounded-xl p-4">
             <p className="text-sm font-semibold">{error}</p>
           </Card>
         )}
 
         {/* Summary */}
-        <div className="mb-8 grid grid-cols-3 gap-4">
+        <div className="mb-8 grid grid-cols-2 gap-4 md:grid-cols-5">
           <SummaryCard
             icon={<QrCode className="size-4 text-blue-400" />}
             label="Campañas"
@@ -196,9 +260,19 @@ export default function CampaignsPage() {
             label="Registros"
             value={totals.signups}
           />
+          <SummaryCard
+            icon={<BadgeCheck className="size-4 text-emerald-400" />}
+            label="Pagan"
+            value={totals.paid}
+          />
+          <SummaryCard
+            icon={<DollarSign className="size-4 text-emerald-400" />}
+            label="Ingresos"
+            value={`$${totals.revenue.toLocaleString("es-MX")}`}
+          />
         </div>
 
-        {/* Create form */}
+        {/* Create */}
         <Card className="mb-8 rounded-2xl border-white/[0.08] bg-[#0f1729]/40 backdrop-blur-xl">
           <CardHeader className="pb-3">
             <CardTitle className="flex items-center gap-2 text-lg font-bold">
@@ -215,10 +289,7 @@ export default function CampaignsPage() {
               onSubmit={handleCreate}
               className="grid grid-cols-1 gap-4 md:grid-cols-2"
             >
-              <div>
-                <label className="mb-1.5 block text-[10px] tracking-wider text-white/40 uppercase">
-                  Código *
-                </label>
+              <Field label="Código *">
                 <input
                   className={inputClass}
                   placeholder="combi-01"
@@ -226,22 +297,16 @@ export default function CampaignsPage() {
                   onChange={(e) => setForm({ ...form, code: e.target.value })}
                   required
                 />
-              </div>
-              <div>
-                <label className="mb-1.5 block text-[10px] tracking-wider text-white/40 uppercase">
-                  Nombre
-                </label>
+              </Field>
+              <Field label="Nombre">
                 <input
                   className={inputClass}
                   placeholder="Combi ruta 3"
                   value={form.label}
                   onChange={(e) => setForm({ ...form, label: e.target.value })}
                 />
-              </div>
-              <div>
-                <label className="mb-1.5 block text-[10px] tracking-wider text-white/40 uppercase">
-                  Medio
-                </label>
+              </Field>
+              <Field label="Medio">
                 <select
                   className={inputClass}
                   value={form.medium}
@@ -253,22 +318,16 @@ export default function CampaignsPage() {
                     </option>
                   ))}
                 </select>
-              </div>
-              <div>
-                <label className="mb-1.5 block text-[10px] tracking-wider text-white/40 uppercase">
-                  Destino
-                </label>
+              </Field>
+              <Field label="Destino">
                 <input
                   className={inputClass}
                   placeholder={DEFAULT_TARGET}
                   value={form.target}
                   onChange={(e) => setForm({ ...form, target: e.target.value })}
                 />
-              </div>
-              <div>
-                <label className="mb-1.5 block text-[10px] tracking-wider text-white/40 uppercase">
-                  Fallback (al desactivar)
-                </label>
+              </Field>
+              <Field label="Fallback (al desactivar)">
                 <input
                   className={inputClass}
                   placeholder="otro-código (opcional)"
@@ -277,7 +336,7 @@ export default function CampaignsPage() {
                     setForm({ ...form, fallbackCode: e.target.value })
                   }
                 />
-              </div>
+              </Field>
               <div className="flex items-end gap-4">
                 <label className="flex cursor-pointer items-center gap-2 pb-2.5 text-xs text-white/60 select-none">
                   <input
@@ -295,9 +354,16 @@ export default function CampaignsPage() {
                 {formError ? (
                   <p className="text-xs text-red-400">{formError}</p>
                 ) : (
-                  <span className="text-[11px] text-white/25">
-                    El código se normaliza a minúsculas y guiones.
-                  </span>
+                  <button
+                    type="button"
+                    onClick={() => setBulkOpen((v) => !v)}
+                    className="inline-flex items-center gap-1.5 text-[11px] font-semibold text-white/40 hover:text-white"
+                  >
+                    <Layers className="size-3.5" />{" "}
+                    {bulkOpen
+                      ? "Ocultar creación en lote"
+                      : "Crear varias a la vez"}
+                  </button>
                 )}
                 <Button
                   type="submit"
@@ -308,6 +374,71 @@ export default function CampaignsPage() {
                 </Button>
               </div>
             </form>
+
+            {bulkOpen && (
+              <form
+                onSubmit={handleBulk}
+                className="mt-5 border-t border-white/[0.06] pt-5"
+              >
+                <p className="mb-2 text-[10px] tracking-wider text-white/40 uppercase">
+                  Una por línea:{" "}
+                  <span className="font-mono text-white/60">
+                    código | nombre | medio
+                  </span>{" "}
+                  (nombre y medio opcionales)
+                </p>
+                <textarea
+                  className={`${inputClass} h-28 font-mono`}
+                  placeholder={
+                    "combi-01 | Combi ruta 3 | combi\nflyer-oxxo-centro | Flyer OXXO centro | flyer\nbarda-norte"
+                  }
+                  value={bulkText}
+                  onChange={(e) => setBulkText(e.target.value)}
+                />
+                <div className="mt-3 flex items-center justify-between gap-4">
+                  <label className="flex items-center gap-2 text-xs text-white/60">
+                    Medio por defecto:
+                    <select
+                      className="rounded-lg border border-white/10 bg-white/[0.03] px-2 py-1 text-xs"
+                      value={bulkMedium}
+                      onChange={(e) => setBulkMedium(e.target.value)}
+                    >
+                      {MEDIA.map((m) => (
+                        <option key={m} value={m} className="bg-[#0f1729]">
+                          {m}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                  <Button
+                    type="submit"
+                    disabled={bulkCreating || !bulkText.trim()}
+                    className="rounded-full bg-white/10 px-5 py-2 text-xs font-semibold text-white hover:bg-white/20"
+                  >
+                    {bulkCreating ? "Creando…" : "Crear en lote"}
+                  </Button>
+                </div>
+                {bulkResult && (
+                  <div className="mt-3 text-xs">
+                    <p className="font-semibold text-emerald-400">
+                      {bulkResult.created} creadas
+                    </p>
+                    {bulkResult.skipped.length > 0 && (
+                      <ul className="mt-1 space-y-0.5 text-white/40">
+                        {bulkResult.skipped.map((s, i) => (
+                          <li key={i}>
+                            {s.line ? (
+                              <span className="font-mono">{s.line}</span>
+                            ) : null}{" "}
+                            — {s.reason}
+                          </li>
+                        ))}
+                      </ul>
+                    )}
+                  </div>
+                )}
+              </form>
+            )}
           </CardContent>
         </Card>
 
@@ -315,10 +446,14 @@ export default function CampaignsPage() {
         <Card className="overflow-hidden rounded-2xl border-white/[0.08] bg-[#0f1729]/40 backdrop-blur-xl">
           <CardHeader className="pb-3">
             <CardTitle className="text-lg font-bold">
-              Campañas activas y retiradas
+              Rendimiento por campaña
             </CardTitle>
             <CardDescription className="text-xs text-white/40">
-              Ordena mentalmente por conversión para ver qué canal rinde más.
+              La conversión es{" "}
+              <span className="text-white/60">
+                clientes que pagan ÷ escaneos
+              </span>
+              . Abre “registros” para ver quién llegó por cada código.
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -345,7 +480,9 @@ export default function CampaignsPage() {
                       <Th>Medio</Th>
                       <Th className="text-center">Escaneos</Th>
                       <Th className="text-center">Registros</Th>
-                      <Th className="text-center">Conversión</Th>
+                      <Th className="text-center">Pagan</Th>
+                      <Th className="text-center">Ingresos</Th>
+                      <Th className="text-center">Conv.</Th>
                       <Th>Estado</Th>
                       <Th>Acciones</Th>
                     </TableRow>
@@ -381,11 +518,22 @@ export default function CampaignsPage() {
                               {c.medium}
                             </Badge>
                           </TableCell>
-                          <TableCell className="py-4 text-center font-bold text-white">
-                            {c.scanCount}
+                          <TableCell className="py-4 text-center">
+                            <span className="font-bold text-white">
+                              {c.scanCount}
+                            </span>
+                            <span className="mt-0.5 block text-[10px] text-white/35">
+                              7d {c.scan7d} · 30d {c.scan30d}
+                            </span>
                           </TableCell>
                           <TableCell className="py-4 text-center font-bold text-white">
                             {c.signupCount}
+                          </TableCell>
+                          <TableCell className="py-4 text-center font-bold text-emerald-400">
+                            {c.paidCount}
+                          </TableCell>
+                          <TableCell className="py-4 text-center font-bold text-emerald-400">
+                            ${c.revenuePesos.toLocaleString("es-MX")}
                           </TableCell>
                           <TableCell className="py-4 text-center">
                             <span className="font-bold text-blue-400">
@@ -412,6 +560,12 @@ export default function CampaignsPage() {
                                 <QrCode className="size-3.5" />
                               </IconBtn>
                               <IconBtn
+                                title="Registros"
+                                onClick={() => toggleSignups(c.code)}
+                              >
+                                <Users className="size-3.5" />
+                              </IconBtn>
+                              <IconBtn
                                 title={c.active ? "Desactivar" : "Reactivar"}
                                 onClick={() => toggleActive(c)}
                               >
@@ -420,9 +574,12 @@ export default function CampaignsPage() {
                                 />
                               </IconBtn>
                               <button
-                                onClick={() =>
-                                  setEditing(editing === c.code ? null : c.code)
-                                }
+                                onClick={() => {
+                                  setViewing(null);
+                                  setEditing(
+                                    editing === c.code ? null : c.code
+                                  );
+                                }}
                                 className="px-1 text-[11px] text-white/45 hover:text-white"
                               >
                                 editar
@@ -430,9 +587,10 @@ export default function CampaignsPage() {
                             </div>
                           </TableCell>
                         </TableRow>
+
                         {editing === c.code && (
                           <TableRow className="bg-white/[0.02]">
-                            <TableCell colSpan={7} className="py-4">
+                            <TableCell colSpan={9} className="py-4">
                               <EditRow
                                 row={c}
                                 onSaved={async () => {
@@ -440,6 +598,14 @@ export default function CampaignsPage() {
                                   await load();
                                 }}
                               />
+                            </TableCell>
+                          </TableRow>
+                        )}
+
+                        {viewing === c.code && (
+                          <TableRow className="bg-white/[0.02]">
+                            <TableCell colSpan={9} className="py-4">
+                              <SignupList rows={signups[c.code]} />
                             </TableCell>
                           </TableRow>
                         )}
@@ -496,6 +662,23 @@ export default function CampaignsPage() {
   );
 }
 
+function Field({
+  label,
+  children,
+}: {
+  label: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <div>
+      <label className="mb-1.5 block text-[10px] tracking-wider text-white/40 uppercase">
+        {label}
+      </label>
+      {children}
+    </div>
+  );
+}
+
 function SummaryCard({
   icon,
   label,
@@ -503,7 +686,7 @@ function SummaryCard({
 }: {
   icon: React.ReactNode;
   label: string;
-  value: number;
+  value: number | string;
 }) {
   return (
     <Card className="rounded-2xl border-white/[0.08] bg-[#0f1729]/40 p-5">
@@ -551,6 +734,49 @@ function IconBtn({
   );
 }
 
+function SignupList({ rows }: { rows: CampaignSignupRow[] | undefined }) {
+  if (rows === undefined)
+    return <p className="text-xs text-white/40">Cargando registros…</p>;
+  if (rows.length === 0)
+    return (
+      <p className="text-xs text-white/40">
+        Aún no hay registros desde este código.
+      </p>
+    );
+  return (
+    <div className="space-y-1.5">
+      {rows.map((r) => (
+        <div
+          key={r.studentId + r.email}
+          className="flex items-center justify-between rounded-lg bg-white/[0.02] px-3 py-2 text-xs"
+        >
+          <div>
+            <span className="font-semibold text-white">{r.name}</span>
+            <span className="ml-2 text-white/40">{r.email}</span>
+          </div>
+          <div className="flex items-center gap-3">
+            <span className="text-white/30">
+              {new Date(r.createdAt).toLocaleDateString("es-MX", {
+                day: "numeric",
+                month: "short",
+              })}
+            </span>
+            {r.paid ? (
+              <span className="rounded-full border border-emerald-500/20 bg-emerald-500/10 px-2 py-0.5 font-semibold text-emerald-400">
+                pagó ${Math.round(r.revenueCents / 100).toLocaleString("es-MX")}
+              </span>
+            ) : (
+              <span className="rounded-full border border-white/10 bg-white/5 px-2 py-0.5 text-white/40">
+                sin pago
+              </span>
+            )}
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
 function EditRow({ row, onSaved }: { row: CampaignRow; onSaved: () => void }) {
   const [target, setTarget] = useState(row.target);
   const [fallbackCode, setFallbackCode] = useState(row.fallbackCode ?? "");
@@ -575,7 +801,7 @@ function EditRow({ row, onSaved }: { row: CampaignRow; onSaved: () => void }) {
 
   return (
     <div className="grid grid-cols-1 items-end gap-3 md:grid-cols-4">
-      <div className="md:col-span-1">
+      <div>
         <label className="mb-1 block text-[10px] tracking-wider text-white/40 uppercase">
           Nombre
         </label>
@@ -585,7 +811,7 @@ function EditRow({ row, onSaved }: { row: CampaignRow; onSaved: () => void }) {
           onChange={(e) => setLabel(e.target.value)}
         />
       </div>
-      <div className="md:col-span-1">
+      <div>
         <label className="mb-1 block text-[10px] tracking-wider text-white/40 uppercase">
           Destino
         </label>
@@ -595,7 +821,7 @@ function EditRow({ row, onSaved }: { row: CampaignRow; onSaved: () => void }) {
           onChange={(e) => setTarget(e.target.value)}
         />
       </div>
-      <div className="md:col-span-1">
+      <div>
         <label className="mb-1 block text-[10px] tracking-wider text-white/40 uppercase">
           Fallback
         </label>

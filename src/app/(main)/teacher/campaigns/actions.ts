@@ -4,7 +4,13 @@ import { cookies } from "next/headers";
 import QRCode from "qrcode";
 import { MongoServerError, type UpdateFilter } from "mongodb";
 import { getCollection } from "@/lib/db";
-import { ensureCampaignIndexes } from "@/lib/campaigns";
+import {
+  ensureCampaignIndexes,
+  getCampaignStats,
+  getCampaignSignups,
+  type CampaignStat,
+  type CampaignSignupRow,
+} from "@/lib/campaigns";
 import {
   CAMPAIGN_COLLECTION,
   createCampaign,
@@ -12,6 +18,14 @@ import {
   normalizeCampaignTarget,
   type Campaign,
 } from "@/lib/models/campaign";
+
+const ZERO_STAT: CampaignStat = {
+  signups: 0,
+  paidStudents: 0,
+  revenueCents: 0,
+  scan7d: 0,
+  scan30d: 0,
+};
 
 const BASE =
   process.env.NEXT_PUBLIC_APP_URL || "https://tututordeingles.online";
@@ -36,14 +50,21 @@ export interface CampaignRow {
   fallbackCode: string | null;
   scanCount: number;
   signupCount: number;
-  conversion: number; // signups / scans, 0..1
+  paidCount: number;
+  revenuePesos: number;
+  scan7d: number;
+  scan30d: number;
+  conversion: number; // paying students / scans, 0..1
   notes: string | null;
   scanUrl: string;
   createdAt: string;
   deactivatedAt: string | null;
 }
 
-function toRow(c: Campaign): CampaignRow {
+function toRow(c: Campaign, stat: CampaignStat): CampaignRow {
+  // Prefer recomputed signup count from campaign_signups; fall back to the
+  // denormalized counter if stats are unavailable.
+  const signups = stat.signups || c.signupCount;
   return {
     code: c.code,
     label: c.label,
@@ -53,8 +74,13 @@ function toRow(c: Campaign): CampaignRow {
     permanent: c.permanent,
     fallbackCode: c.fallbackCode ?? null,
     scanCount: c.scanCount,
-    signupCount: c.signupCount,
-    conversion: c.scanCount > 0 ? c.signupCount / c.scanCount : 0,
+    signupCount: signups,
+    paidCount: stat.paidStudents,
+    revenuePesos: Math.round(stat.revenueCents / 100),
+    scan7d: stat.scan7d,
+    scan30d: stat.scan30d,
+    // Conversion that matters: paying students per scan.
+    conversion: c.scanCount > 0 ? stat.paidStudents / c.scanCount : 0,
     notes: c.notes ?? null,
     scanUrl: buildCampaignScanUrl(c.code),
     createdAt: c.createdAt.toISOString(),
@@ -69,14 +95,42 @@ export async function listCampaignsAction() {
   try {
     await ensureCampaignIndexes();
     const col = await getCollection<Campaign>(CAMPAIGN_COLLECTION);
-    const campaigns = await col.find({}).sort({ createdAt: -1 }).toArray();
-    return { success: true as const, campaigns: campaigns.map(toRow) };
+    const [campaigns, stats] = await Promise.all([
+      col.find({}).sort({ createdAt: -1 }).toArray(),
+      getCampaignStats(),
+    ]);
+    return {
+      success: true as const,
+      campaigns: campaigns.map((c) => toRow(c, stats.get(c.code) ?? ZERO_STAT)),
+    };
   } catch (error) {
     console.error("listCampaignsAction:", error);
     return {
       success: false as const,
       error:
         error instanceof Error ? error.message : "Error al cargar campañas.",
+    };
+  }
+}
+
+export interface CampaignSignupsResult {
+  success: true;
+  signups: CampaignSignupRow[];
+}
+
+export async function getCampaignSignupsAction(code: string) {
+  if (!(await requireTeacher())) {
+    return { success: false as const, error: "No autorizado." };
+  }
+  try {
+    const signups = await getCampaignSignups(code);
+    return { success: true as const, signups };
+  } catch (error) {
+    console.error("getCampaignSignupsAction:", error);
+    return {
+      success: false as const,
+      error:
+        error instanceof Error ? error.message : "Error al cargar registros.",
     };
   }
 }
@@ -216,6 +270,119 @@ export async function generateCampaignQrAction(code: string) {
     return {
       success: false as const,
       error: error instanceof Error ? error.message : "Error al generar el QR.",
+    };
+  }
+}
+
+export interface BulkCreateResult {
+  success: true;
+  created: string[];
+  skipped: { line: string; reason: string }[];
+}
+
+/**
+ * Create many codes at once. Each non-empty line is `code | label | medium`
+ * (label and medium optional). Duplicates and invalid codes are skipped and
+ * reported rather than aborting the whole batch.
+ */
+export async function createCampaignsBulkAction(
+  text: string,
+  defaults?: { medium?: string; target?: string; permanent?: boolean }
+) {
+  if (!(await requireTeacher())) {
+    return { success: false as const, error: "No autorizado." };
+  }
+  try {
+    await ensureCampaignIndexes();
+    const col = await getCollection<Campaign>(CAMPAIGN_COLLECTION);
+    const created: string[] = [];
+    const skipped: { line: string; reason: string }[] = [];
+
+    const lines = text
+      .split("\n")
+      .map((l) => l.trim())
+      .filter(Boolean);
+
+    for (const line of lines) {
+      const [rawCode, label, medium] = line.split("|").map((p) => p.trim());
+      if (!rawCode) {
+        skipped.push({ line, reason: "sin código" });
+        continue;
+      }
+      try {
+        const doc = createCampaign({
+          code: rawCode,
+          label: label || rawCode,
+          medium: medium || defaults?.medium,
+          target: defaults?.target,
+          permanent: defaults?.permanent,
+        });
+        await col.insertOne(doc as Campaign);
+        created.push(doc.code);
+      } catch (err) {
+        if (err instanceof MongoServerError && err.code === 11000) {
+          skipped.push({ line, reason: "código duplicado" });
+        } else {
+          skipped.push({
+            line,
+            reason: err instanceof Error ? err.message : "error",
+          });
+        }
+      }
+    }
+
+    return { success: true as const, created, skipped };
+  } catch (error) {
+    console.error("createCampaignsBulkAction:", error);
+    return {
+      success: false as const,
+      error: error instanceof Error ? error.message : "Error al crear en lote.",
+    };
+  }
+}
+
+export interface SheetItem {
+  code: string;
+  label: string;
+  medium: string;
+  url: string;
+  dataUrl: string;
+}
+
+/**
+ * QR + label for every active campaign, for a print-and-cut poster sheet.
+ */
+export async function generateCampaignSheetAction() {
+  if (!(await requireTeacher())) {
+    return { success: false as const, error: "No autorizado." };
+  }
+  try {
+    const col = await getCollection<Campaign>(CAMPAIGN_COLLECTION);
+    const campaigns = await col
+      .find({ active: true })
+      .sort({ createdAt: -1 })
+      .toArray();
+
+    const items: SheetItem[] = await Promise.all(
+      campaigns.map(async (c) => {
+        const url = buildCampaignScanUrl(c.code);
+        const dataUrl = await QRCode.toDataURL(url, {
+          type: "image/png",
+          width: 512,
+          margin: 1,
+          color: { dark: "#000000", light: "#ffffff" },
+        });
+        return { code: c.code, label: c.label, medium: c.medium, url, dataUrl };
+      })
+    );
+
+    return { success: true as const, items };
+  } catch (error) {
+    console.error("generateCampaignSheetAction:", error);
+    return {
+      success: false as const,
+      error:
+        error instanceof Error ? error.message : "Error al generar la hoja.",
     };
   }
 }

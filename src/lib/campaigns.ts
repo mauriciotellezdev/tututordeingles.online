@@ -8,6 +8,20 @@ import {
   normalizeCampaignCode,
   type Campaign,
 } from "@/lib/models/campaign";
+import { PAYMENT_COLLECTION } from "@/lib/models/payment";
+import { STUDENT_COLLECTION } from "@/lib/models/student";
+
+// Link-preview crawlers and scrapers that hit /q/<code> when a link is shared
+// (WhatsApp, Messenger, Slack, etc.). They must still be redirected so the
+// preview unfurls, but must NOT inflate scan counts or receive an attribution
+// cookie. A missing UA is treated as a bot too (real browsers always send one).
+const BOT_UA =
+  /bot|crawl|spider|slurp|facebookexternalhit|whatsapp|telegram|discord|slack|twitter|linkedin|embedly|pinterest|redditbot|applebot|bingpreview|yandex|baiduspider|python-requests|axios|okhttp|curl|wget|headless|preview/i;
+
+export function isBotUserAgent(ua: string | null | undefined): boolean {
+  if (!ua || !ua.trim()) return true;
+  return BOT_UA.test(ua);
+}
 
 let ensureCampaignIndexesPromise: Promise<void> | null = null;
 
@@ -171,4 +185,194 @@ export async function recordSignupAttribution(payload: {
     { code },
     { $inc: { signupCount: 1 }, $set: { updatedAt: now } }
   );
+}
+
+export interface CampaignStat {
+  signups: number;
+  paidStudents: number;
+  revenueCents: number;
+  scan7d: number;
+  scan30d: number;
+}
+
+function dayString(d: Date): string {
+  return d.toISOString().slice(0, 10);
+}
+
+/**
+ * Read-time analytics per campaign code: attributed signups, how many of those
+ * students actually PAID, total attributed revenue, and recent scan trend.
+ * Recomputed from source (campaign_signups + payments + campaign_scans) so it
+ * needs no write-path changes to the Stripe webhook.
+ */
+export async function getCampaignStats(): Promise<Map<string, CampaignStat>> {
+  const signupsCol = await getCollection(CAMPAIGN_SIGNUP_COLLECTION);
+  const scansCol = await getCollection(CAMPAIGN_SCAN_COLLECTION);
+
+  const now = new Date();
+  const cutoff7 = dayString(new Date(now.getTime() - 6 * 86_400_000));
+  const cutoff30 = dayString(new Date(now.getTime() - 29 * 86_400_000));
+
+  const [revenueRows, scanRows] = await Promise.all([
+    signupsCol
+      .aggregate<{
+        _id: string;
+        signups: number;
+        paidStudents: number;
+        revenueCents: number;
+      }>([
+        {
+          $lookup: {
+            from: PAYMENT_COLLECTION,
+            let: { sid: "$studentId" },
+            pipeline: [
+              {
+                $match: {
+                  $expr: {
+                    $and: [
+                      { $eq: ["$studentId", "$$sid"] },
+                      { $eq: ["$status", "succeeded"] },
+                    ],
+                  },
+                },
+              },
+              { $project: { amount: 1 } },
+            ],
+            as: "pays",
+          },
+        },
+        {
+          $group: {
+            _id: "$code",
+            signups: { $sum: 1 },
+            paidStudents: {
+              $sum: { $cond: [{ $gt: [{ $size: "$pays" }, 0] }, 1, 0] },
+            },
+            revenueCents: { $sum: { $sum: "$pays.amount" } },
+          },
+        },
+      ])
+      .toArray(),
+    scansCol
+      .aggregate<{ _id: string; scan7d: number; scan30d: number }>([
+        { $match: { day: { $gte: cutoff30 } } },
+        {
+          $group: {
+            _id: "$code",
+            scan7d: {
+              $sum: { $cond: [{ $gte: ["$day", cutoff7] }, "$count", 0] },
+            },
+            scan30d: { $sum: "$count" },
+          },
+        },
+      ])
+      .toArray(),
+  ]);
+
+  const map = new Map<string, CampaignStat>();
+  const ensure = (code: string): CampaignStat => {
+    let stat = map.get(code);
+    if (!stat) {
+      stat = {
+        signups: 0,
+        paidStudents: 0,
+        revenueCents: 0,
+        scan7d: 0,
+        scan30d: 0,
+      };
+      map.set(code, stat);
+    }
+    return stat;
+  };
+
+  for (const r of revenueRows) {
+    const stat = ensure(r._id);
+    stat.signups = r.signups;
+    stat.paidStudents = r.paidStudents;
+    stat.revenueCents = r.revenueCents || 0;
+  }
+  for (const s of scanRows) {
+    const stat = ensure(s._id);
+    stat.scan7d = s.scan7d;
+    stat.scan30d = s.scan30d;
+  }
+  return map;
+}
+
+export interface CampaignSignupRow {
+  studentId: string;
+  name: string;
+  email: string;
+  createdAt: string;
+  paid: boolean;
+  revenueCents: number;
+}
+
+/** Who signed up from a given code, and whether they became paying students. */
+export async function getCampaignSignups(
+  rawCode: string
+): Promise<CampaignSignupRow[]> {
+  let code: string;
+  try {
+    code = normalizeCampaignCode(rawCode);
+  } catch {
+    return [];
+  }
+
+  const signupsCol = await getCollection(CAMPAIGN_SIGNUP_COLLECTION);
+  const rows = await signupsCol
+    .aggregate<{
+      studentId?: ObjectId;
+      email?: string;
+      createdAt?: Date;
+      student?: { name?: string; email?: string };
+      pays?: { amount?: number }[];
+    }>([
+      { $match: { code } },
+      { $sort: { createdAt: -1 } },
+      { $limit: 200 },
+      {
+        $lookup: {
+          from: STUDENT_COLLECTION,
+          localField: "studentId",
+          foreignField: "_id",
+          as: "student",
+        },
+      },
+      { $unwind: { path: "$student", preserveNullAndEmptyArrays: true } },
+      {
+        $lookup: {
+          from: PAYMENT_COLLECTION,
+          let: { sid: "$studentId" },
+          pipeline: [
+            {
+              $match: {
+                $expr: {
+                  $and: [
+                    { $eq: ["$studentId", "$$sid"] },
+                    { $eq: ["$status", "succeeded"] },
+                  ],
+                },
+              },
+            },
+            { $project: { amount: 1 } },
+          ],
+          as: "pays",
+        },
+      },
+    ])
+    .toArray();
+
+  return rows.map((r) => {
+    const pays = r.pays ?? [];
+    const created = r.createdAt instanceof Date ? r.createdAt : new Date();
+    return {
+      studentId: r.studentId?.toString() ?? "",
+      name: r.student?.name ?? "—",
+      email: r.student?.email ?? r.email ?? "—",
+      createdAt: created.toISOString(),
+      paid: pays.length > 0,
+      revenueCents: pays.reduce((sum, p) => sum + (p.amount ?? 0), 0),
+    };
+  });
 }

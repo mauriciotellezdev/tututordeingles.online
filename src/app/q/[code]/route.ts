@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import {
   ensureCampaignIndexes,
+  isBotUserAgent,
   recordScan,
   resolveCampaignRedirect,
 } from "@/lib/campaigns";
@@ -27,14 +28,20 @@ export async function GET(
     normalized = "";
   }
 
+  // Link-preview crawlers must be redirected (so the unfurl works) but must not
+  // count as scans or receive an attribution cookie.
+  const isBot = isBotUserAgent(request.headers.get("user-agent"));
+
   let target = "/clases-de-ingles-en-tehuacan";
   try {
     await ensureCampaignIndexes();
     const resolution = await resolveCampaignRedirect(rawCode);
     target = resolution.target;
-    // Count the scan against the originally scanned code. Awaited so the write
-    // isn't dropped when the redirect response ends the request.
-    await recordScan(rawCode);
+    if (!isBot) {
+      // Count the scan against the originally scanned code. Awaited so the
+      // write isn't dropped when the redirect response ends the request.
+      await recordScan(rawCode);
+    }
   } catch (error) {
     console.error("Campaign redirect error:", error);
   }
@@ -46,7 +53,7 @@ export async function GET(
   const response = NextResponse.redirect(destination, 302);
 
   // Persist which code brought them in, so signup can attribute it.
-  if (normalized) {
+  if (normalized && !isBot) {
     response.cookies.set(CAMPAIGN_COOKIE, normalized, {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
