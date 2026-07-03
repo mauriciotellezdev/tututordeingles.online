@@ -412,26 +412,69 @@ export async function createCheckoutSessionAction(payload: {
       },
     ];
 
-    const session = await stripe.checkout.sessions.create({
-      payment_method_types: ["card", "oxxo", "customer_balance"],
-      payment_method_options: {
-        customer_balance: {
-          funding_type: "bank_transfer",
-          bank_transfer: {
-            type: "mx_bank_transfer",
+    // Stripe rejects the whole session if ANY requested payment method isn't
+    // activated on the account (e.g. SPEI/bank transfers pending KYC). Degrade
+    // gracefully — try the full method list, then progressively narrower ones —
+    // so a not-yet-activated method never blocks card purchases.
+    const methodAttempts: Array<Array<"card" | "oxxo" | "customer_balance">> = [
+      ["card", "oxxo", "customer_balance"],
+      ["card", "oxxo"],
+      ["card"],
+    ];
+
+    let session: Stripe.Checkout.Session | null = null;
+    let lastError: unknown = null;
+    for (const methods of methodAttempts) {
+      try {
+        session = await stripe.checkout.sessions.create({
+          payment_method_types: methods,
+          ...(methods.includes("customer_balance")
+            ? {
+                payment_method_options: {
+                  customer_balance: {
+                    funding_type: "bank_transfer" as const,
+                    bank_transfer: { type: "mx_bank_transfer" as const },
+                  },
+                },
+              }
+            : {}),
+          line_items: lineItems,
+          mode: "payment",
+          customer: stripeCustomerId,
+          success_url: `${appUrl}/student?checkout_success=true&plan=${planType}&session_id={CHECKOUT_SESSION_ID}`,
+          cancel_url: `${appUrl}/student?checkout_cancel=true`,
+          metadata: {
+            studentId: studentIdStr,
+            planType,
           },
-        },
-      },
-      line_items: lineItems,
-      mode: "payment",
-      customer: stripeCustomerId,
-      success_url: `${appUrl}/student?checkout_success=true&plan=${planType}&session_id={CHECKOUT_SESSION_ID}`,
-      cancel_url: `${appUrl}/student?checkout_cancel=true`,
-      metadata: {
-        studentId: studentIdStr,
-        planType,
-      },
-    });
+        });
+        if (methods.length < 3) {
+          console.warn(
+            `Checkout created without: ${["card", "oxxo", "customer_balance"]
+              .filter((m) => !methods.includes(m as never))
+              .join(", ")} (not activated in Stripe yet?)`
+          );
+        }
+        break;
+      } catch (attemptError) {
+        lastError = attemptError;
+        const message =
+          attemptError instanceof Error ? attemptError.message : "";
+        // Only fall back on payment-method activation problems; anything else
+        // (bad key, network, etc.) should surface immediately.
+        if (
+          !/payment method|payment_method|activate|invalid.*type/i.test(message)
+        ) {
+          throw attemptError;
+        }
+      }
+    }
+
+    if (!session) {
+      throw lastError instanceof Error
+        ? lastError
+        : new Error("No se pudo crear la sesión de pago.");
+    }
 
     return {
       success: true,

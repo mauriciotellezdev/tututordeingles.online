@@ -38,6 +38,16 @@ export async function POST(req: Request) {
     );
   }
 
+  // OXXO voucher expired unpaid / SPEI transfer never arrived — log it so a
+  // "customer says they paid" dispute is traceable, and note it for follow-up.
+  if (event.type === "checkout.session.async_payment_failed") {
+    const session = event.data.object as Stripe.Checkout.Session;
+    console.warn(
+      `Webhook: async payment FAILED for session ${session.id} (student ${session.metadata?.studentId ?? "unknown"}, plan ${session.metadata?.planType ?? "unknown"})`
+    );
+    return NextResponse.json({ received: true, status: "async_failed" });
+  }
+
   if (
     event.type === "checkout.session.completed" ||
     event.type === "checkout.session.async_payment_succeeded"
