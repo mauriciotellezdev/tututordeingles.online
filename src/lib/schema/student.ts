@@ -28,6 +28,19 @@ export const studentSchemaValidation = {
           completedAt: { bsonType: "date" },
         },
       },
+      quizProgress: {
+        bsonType: "object",
+        required: ["lastQuestionId", "answeredQuestions", "updatedAt"],
+        additionalProperties: false,
+        properties: {
+          lastQuestionId: { bsonType: "string", minLength: 1 },
+          answeredQuestions: {
+            bsonType: "array",
+            items: { bsonType: "string" },
+          },
+          updatedAt: { bsonType: "date" },
+        },
+      },
     },
   },
 };
