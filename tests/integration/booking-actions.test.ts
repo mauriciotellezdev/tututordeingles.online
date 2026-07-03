@@ -96,8 +96,9 @@ beforeEach(() => {
 test("bookIntroCallAction sends both student and owner booking emails", async () => {
   const { bookIntroCallAction } = await bookingModulePromise;
 
+  const futureDate = new Date(Date.now() + 48 * 60 * 60 * 1000);
   const result = await bookIntroCallAction({
-    dateTimeIso: "2026-06-07T19:00:00.000Z",
+    dateTimeIso: futureDate.toISOString(),
   });
 
   expect(result.success).toBe(true);
@@ -115,8 +116,9 @@ test("bookIntroCallAction still succeeds when the owner notification fails", asy
     throw new Error("owner mail down");
   });
 
+  const futureDate = new Date(Date.now() + 72 * 60 * 60 * 1000);
   const result = await bookIntroCallAction({
-    dateTimeIso: "2026-06-07T20:00:00.000Z",
+    dateTimeIso: futureDate.toISOString(),
   });
 
   expect(result.success).toBe(true);

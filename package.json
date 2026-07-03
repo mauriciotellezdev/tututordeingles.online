@@ -20,6 +20,8 @@
     "test": "bun run test:all",
     "db:seed:dev": "node --import tsx --env-file=.env.development scripts/seed.ts --drop",
     "db:seed:prod": "node --import tsx --env-file=.env.production scripts/seed.ts",
+    "db:migrate:campaigns:dev": "node --import tsx --env-file=.env.development scripts/migrate-campaigns.ts",
+    "db:migrate:campaigns:prod": "node --import tsx --env-file=.env.production scripts/migrate-campaigns.ts",
     "maildev": "lsof -t -i :1080 -i :1026 | xargs kill -9 2>/dev/null || true; maildev --smtp 1026",
     "proxy": "caddy run --config ./Caddyfile",
     "genqr": "bun run scripts/genqr.ts"

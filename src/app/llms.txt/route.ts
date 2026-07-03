@@ -1,5 +1,6 @@
 export async function GET() {
-  const base = process.env.NEXT_PUBLIC_APP_URL || "https://tututordeingles.online";
+  const base =
+    process.env.NEXT_PUBLIC_APP_URL || "https://tututordeingles.online";
   const body = `# Tu Tutor de Inglés
 
 > Private English tutoring for LATAM professionals who want better jobs, stronger interview answers, and clearer workplace communication.
@@ -7,6 +8,8 @@ export async function GET() {
 ## Core Pages
 
 - [Home](${base}/) - Main site entry and conversion point.
+- [Clases de Inglés en Tehuacán](${base}/clases-de-ingles-en-tehuacan) - Local landing page for Tehuacán, Puebla: in-person (cafés) and online classes.
+- [Clases de Inglés de Experiencias](${base}/clases-de-ingles-experiencias) - Experiential classes: real-life outings and monthly Puebla immersion trips.
 - [Spanish Interview Hub](${base}/ingles-para-entrevistas-de-trabajo) - Spanish-first landing page for LATAM search intent.
 - [English for Job Interviews](${base}/english-for-job-interviews) - Hub page for interview preparation.
 - [Blog](${base}/blog) - Supporting educational articles.

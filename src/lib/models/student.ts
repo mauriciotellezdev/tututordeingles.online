@@ -12,6 +12,7 @@ export interface Student {
   signupBrowserId?: string;
   signupIpHash?: string;
   signupUserAgentHash?: string;
+  signupCampaignCode?: string;
   verificationCode?: string;
   verificationCodeExpires?: Date;
   stripeCustomerId?: string;

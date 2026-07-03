@@ -5,6 +5,7 @@ import "../globals.css";
 
 import Header from "./layout/header";
 import Footer from "./layout/footer";
+import { AnalyticsAndConsent } from "@/shared/analytics/analytics-and-consent";
 
 const plusJakarta = Plus_Jakarta_Sans({
   subsets: ["latin"],
@@ -12,7 +13,8 @@ const plusJakarta = Plus_Jakarta_Sans({
   weight: ["300", "400", "500", "600", "700", "800"],
 });
 
-const BASE = process.env.NEXT_PUBLIC_APP_URL || "https://tututordeingles.online";
+const BASE =
+  process.env.NEXT_PUBLIC_APP_URL || "https://tututordeingles.online";
 
 export async function generateMetadata(): Promise<Metadata> {
   const hdrs = await headers();
@@ -48,6 +50,7 @@ export default function RootLayout({
         <Header />
         {children}
         <Footer />
+        <AnalyticsAndConsent />
       </body>
     </html>
   );

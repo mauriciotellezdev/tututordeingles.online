@@ -1,4 +1,10 @@
-import { MongoClient, Db, Collection, Document, MongoServerError } from "mongodb";
+import {
+  MongoClient,
+  Db,
+  Collection,
+  Document,
+  MongoServerError,
+} from "mongodb";
 
 declare global {
   var _mongo: { client: MongoClient; db: Db } | undefined;
@@ -24,7 +30,10 @@ async function connectToDatabase() {
   if (global._mongo && global._mongo.client) {
     return global._mongo;
   }
-  const client = new MongoClient(uri);
+  const client = new MongoClient(uri, {
+    maxPoolSize: 10,
+    serverSelectionTimeoutMS: 10000,
+  });
   await client.connect();
   const db = client.db(getDbName());
   global._mongo = { client, db };

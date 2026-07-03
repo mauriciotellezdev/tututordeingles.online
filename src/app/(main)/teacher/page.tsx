@@ -4,8 +4,21 @@ import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/shared/ui/button";
 import { Badge } from "@/shared/ui/badge";
-import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/shared/ui/card";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/shared/ui/table";
+import {
+  Card,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+  CardContent,
+} from "@/shared/ui/card";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/shared/ui/table";
 import { getTeacherDashboardDataAction, teacherLogoutAction } from "./actions";
 import {
   Calendar as CalendarIcon,
@@ -18,6 +31,8 @@ import {
   Phone,
   Gift,
   BadgeCheck,
+  QrCode,
+  CreditCard,
 } from "lucide-react";
 
 interface StudentData {
@@ -116,7 +131,7 @@ export default function TeacherDashboard() {
 
   if (loading) {
     return (
-      <main className="min-h-screen bg-[#0a0a0a] flex items-center justify-center text-white/50 text-sm">
+      <main className="flex min-h-screen items-center justify-center bg-[#0a0a0a] text-sm text-white/50">
         Cargando panel del profesor...
       </main>
     );
@@ -124,55 +139,77 @@ export default function TeacherDashboard() {
 
   return (
     <>
-      <main className="min-h-screen bg-[#0a0a0a] pt-24 pb-16 px-4 md:px-8 relative overflow-hidden text-white">
-        <div className="absolute left-[-10%] top-[-10%] w-[500px] h-[500px] bg-blue-600/5 rounded-full blur-[100px] pointer-events-none" />
-        <div className="absolute right-[-10%] bottom-[-10%] w-[500px] h-[500px] bg-blue-500/5 rounded-full blur-[100px] pointer-events-none" />
+      <main className="relative min-h-screen overflow-hidden bg-[#0a0a0a] px-4 pt-24 pb-16 text-white md:px-8">
+        <div className="pointer-events-none absolute top-[-10%] left-[-10%] h-[500px] w-[500px] rounded-full bg-blue-600/5 blur-[100px]" />
+        <div className="pointer-events-none absolute right-[-10%] bottom-[-10%] h-[500px] w-[500px] rounded-full bg-blue-500/5 blur-[100px]" />
 
-        <div className="max-w-6xl mx-auto z-10 relative">
-
-          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8 border-b border-white/[0.08] pb-6">
+        <div className="relative z-10 mx-auto max-w-6xl">
+          <div className="mb-8 flex flex-col items-start justify-between gap-4 border-b border-white/[0.08] pb-6 sm:flex-row sm:items-center">
             <div>
-              <h1 className="text-2xl md:text-3xl font-bold tracking-tight">
+              <h1 className="text-2xl font-bold tracking-tight md:text-3xl">
                 Dashboard del <span className="text-blue-400">Profesor</span>
               </h1>
-              <p className="text-white/40 text-xs mt-1">
+              <p className="mt-1 text-xs text-white/40">
                 Mauricio Tellez · Gestión académica y de alumnos activos
               </p>
             </div>
-            <Button
-              variant="ghost"
-              onClick={handleLogout}
-              className="rounded-full px-5 py-2.5 text-white/50 hover:text-white hover:bg-white/5 text-xs font-semibold flex items-center gap-1.5 self-end sm:self-auto"
-            >
-              <LogOut className="size-4" />
-              Cerrar Sesión
-            </Button>
+            <div className="flex items-center gap-2 self-end sm:self-auto">
+              <a href="/teacher/campaigns">
+                <Button
+                  variant="ghost"
+                  className="flex items-center gap-1.5 rounded-full px-5 py-2.5 text-xs font-semibold text-blue-400 hover:bg-blue-500/5 hover:text-blue-300"
+                >
+                  <QrCode className="size-4" />
+                  Campañas QR
+                </Button>
+              </a>
+              <a href="/teacher/test-pagos">
+                <Button
+                  variant="ghost"
+                  className="flex items-center gap-1.5 rounded-full px-5 py-2.5 text-xs font-semibold text-white/50 hover:bg-white/5 hover:text-white"
+                >
+                  <CreditCard className="size-4" />
+                  Pagos de prueba
+                </Button>
+              </a>
+              <Button
+                variant="ghost"
+                onClick={handleLogout}
+                className="flex items-center gap-1.5 rounded-full px-5 py-2.5 text-xs font-semibold text-white/50 hover:bg-white/5 hover:text-white"
+              >
+                <LogOut className="size-4" />
+                Cerrar Sesión
+              </Button>
+            </div>
           </div>
 
           {error && (
-            <Card className="bg-destructive/10 border-destructive/20 text-destructive p-4 rounded-xl mb-6">
+            <Card className="bg-destructive/10 border-destructive/20 text-destructive mb-6 rounded-xl p-4">
               <p className="text-sm font-semibold">{error}</p>
             </Card>
           )}
 
           <div className="space-y-8">
-
-            <Card className="bg-[#0f1729]/40 border-white/[0.08] backdrop-blur-xl rounded-2xl overflow-hidden">
+            <Card className="overflow-hidden rounded-2xl border-white/[0.08] bg-[#0f1729]/40 backdrop-blur-xl">
               <CardHeader className="pb-3">
-                <CardTitle className="text-lg font-bold flex items-center gap-2">
-                  <CalendarIcon className="size-5 text-blue-400" /> Clases Próximas Agendadas
+                <CardTitle className="flex items-center gap-2 text-lg font-bold">
+                  <CalendarIcon className="size-5 text-blue-400" /> Clases
+                  Próximas Agendadas
                 </CardTitle>
-                <CardDescription className="text-white/40 text-xs">
+                <CardDescription className="text-xs text-white/40">
                   Listado cronológico de sesiones agendadas por estudiantes.
                 </CardDescription>
               </CardHeader>
               <CardContent>
                 {upcomingSessions.length === 0 ? (
-                  <div className="text-center py-10 border border-dashed border-white/[0.06] rounded-xl bg-white/[0.01]">
-                    <CalendarIcon className="size-8 text-white/15 mx-auto mb-3" />
-                    <h5 className="text-sm font-semibold text-white/70">No hay clases próximas</h5>
-                    <p className="text-xs text-white/40 mt-1 max-w-xs mx-auto leading-relaxed">
-                      Las clases que programen los estudiantes aparecerán listadas aquí con su enlace de WhatsApp.
+                  <div className="rounded-xl border border-dashed border-white/[0.06] bg-white/[0.01] py-10 text-center">
+                    <CalendarIcon className="mx-auto mb-3 size-8 text-white/15" />
+                    <h5 className="text-sm font-semibold text-white/70">
+                      No hay clases próximas
+                    </h5>
+                    <p className="mx-auto mt-1 max-w-xs text-xs leading-relaxed text-white/40">
+                      Las clases que programen los estudiantes aparecerán
+                      listadas aquí con su enlace de WhatsApp.
                     </p>
                   </div>
                 ) : (
@@ -180,38 +217,65 @@ export default function TeacherDashboard() {
                     <Table className="min-w-full">
                       <TableHeader className="border-b border-white/[0.06] bg-white/[0.02]">
                         <TableRow>
-                          <TableHead className="text-[10px] font-semibold text-white/40 uppercase tracking-wider">Fecha y Hora</TableHead>
-                          <TableHead className="text-[10px] font-semibold text-white/40 uppercase tracking-wider">Estudiante</TableHead>
-                          <TableHead className="text-[10px] font-semibold text-white/40 uppercase tracking-wider">Contacto</TableHead>
-                          <TableHead className="text-[10px] font-semibold text-white/40 uppercase tracking-wider">Tipo de Clase</TableHead>
-                          <TableHead className="text-[10px] font-semibold text-white/40 uppercase tracking-wider">Acciones</TableHead>
+                          <TableHead className="text-[10px] font-semibold tracking-wider text-white/40 uppercase">
+                            Fecha y Hora
+                          </TableHead>
+                          <TableHead className="text-[10px] font-semibold tracking-wider text-white/40 uppercase">
+                            Estudiante
+                          </TableHead>
+                          <TableHead className="text-[10px] font-semibold tracking-wider text-white/40 uppercase">
+                            Contacto
+                          </TableHead>
+                          <TableHead className="text-[10px] font-semibold tracking-wider text-white/40 uppercase">
+                            Tipo de Clase
+                          </TableHead>
+                          <TableHead className="text-[10px] font-semibold tracking-wider text-white/40 uppercase">
+                            Acciones
+                          </TableHead>
                         </TableRow>
                       </TableHeader>
                       <TableBody>
                         {upcomingSessions.map((session) => {
                           const dateObj = new Date(session.dateTime);
-                          const formattedDate = dateObj.toLocaleDateString("es-ES", {
-                            weekday: "short",
-                            day: "numeric",
-                            month: "short",
-                          });
-                          const formattedTime = dateObj.toLocaleTimeString("es-MX", {
-                            hour: "2-digit",
-                            minute: "2-digit",
-                            hour12: false,
-                          });
+                          const formattedDate = dateObj.toLocaleDateString(
+                            "es-ES",
+                            {
+                              weekday: "short",
+                              day: "numeric",
+                              month: "short",
+                            }
+                          );
+                          const formattedTime = dateObj.toLocaleTimeString(
+                            "es-MX",
+                            {
+                              hour: "2-digit",
+                              minute: "2-digit",
+                              hour12: false,
+                            }
+                          );
 
                           return (
-                            <TableRow key={session._id} className="border-b border-white/[0.04] hover:bg-white/[0.01]">
+                            <TableRow
+                              key={session._id}
+                              className="border-b border-white/[0.04] hover:bg-white/[0.01]"
+                            >
                               <TableCell className="py-4">
-                                <span className="block font-bold text-white capitalize text-sm">{formattedDate}</span>
-                                <span className="block text-xs text-white/50 mt-0.5">{formattedTime} hrs (CDMX)</span>
+                                <span className="block text-sm font-bold text-white capitalize">
+                                  {formattedDate}
+                                </span>
+                                <span className="mt-0.5 block text-xs text-white/50">
+                                  {formattedTime} hrs (CDMX)
+                                </span>
                               </TableCell>
                               <TableCell className="py-4">
-                                <span className="block font-semibold text-white text-sm">{session.student.name}</span>
-                                <span className="block text-xs text-white/45 mt-0.5">{session.student.email}</span>
+                                <span className="block text-sm font-semibold text-white">
+                                  {session.student.name}
+                                </span>
+                                <span className="mt-0.5 block text-xs text-white/45">
+                                  {session.student.email}
+                                </span>
                               </TableCell>
-                              <TableCell className="py-4 space-y-1">
+                              <TableCell className="space-y-1 py-4">
                                 <div className="flex items-center gap-1.5 text-xs text-white/60">
                                   <Phone className="size-3 text-white/40" />
                                   {session.student.phone}
@@ -227,12 +291,20 @@ export default function TeacherDashboard() {
                                 </a>
                               </TableCell>
                               <TableCell className="py-4">
-                                <Badge className={session.type === "intro"
-                                  ? "bg-green-500/10 text-green-400 border border-green-500/20 rounded-full text-[9px] tracking-wider uppercase font-semibold"
-                                  : "bg-blue-500/10 text-blue-400 border border-blue-500/20 rounded-full text-[9px] tracking-wider uppercase font-semibold"}>
-                                  {session.type === "intro" ? "Demo Gratis" : "Clase Privada"}
+                                <Badge
+                                  className={
+                                    session.type === "intro"
+                                      ? "rounded-full border border-green-500/20 bg-green-500/10 text-[9px] font-semibold tracking-wider text-green-400 uppercase"
+                                      : "rounded-full border border-blue-500/20 bg-blue-500/10 text-[9px] font-semibold tracking-wider text-blue-400 uppercase"
+                                  }
+                                >
+                                  {session.type === "intro"
+                                    ? "Demo Gratis"
+                                    : "Clase Privada"}
                                 </Badge>
-                                <span className="block text-[10px] text-white/30 mt-1">{session.duration} min</span>
+                                <span className="mt-1 block text-[10px] text-white/30">
+                                  {session.duration} min
+                                </span>
                               </TableCell>
                               <TableCell className="py-4">
                                 {session.meetingLink && (
@@ -240,7 +312,7 @@ export default function TeacherDashboard() {
                                     href={session.meetingLink}
                                     target="_blank"
                                     rel="noopener noreferrer"
-                                    className="bg-blue-500 hover:bg-blue-400 text-white rounded-full py-2 px-4 text-xs font-semibold transition-all inline-flex items-center gap-1 shadow-md shadow-blue-500/10"
+                                    className="inline-flex items-center gap-1 rounded-full bg-blue-500 px-4 py-2 text-xs font-semibold text-white shadow-md shadow-blue-500/10 transition-all hover:bg-blue-400"
                                   >
                                     <Video className="size-3.5" />
                                     WhatsApp
@@ -255,22 +327,28 @@ export default function TeacherDashboard() {
                   </div>
                 )}
               </CardContent>
-            </Card><Card className="bg-[#0f1729]/40 border-white/[0.08] backdrop-blur-xl rounded-2xl overflow-hidden">
+            </Card>
+            <Card className="overflow-hidden rounded-2xl border-white/[0.08] bg-[#0f1729]/40 backdrop-blur-xl">
               <CardHeader className="pb-3">
-                <CardTitle className="text-lg font-bold flex items-center gap-2">
-                  <Users className="size-5 text-blue-400" /> Estudiantes Activos (Últimos 30 días)
+                <CardTitle className="flex items-center gap-2 text-lg font-bold">
+                  <Users className="size-5 text-blue-400" /> Estudiantes Activos
+                  (Últimos 30 días)
                 </CardTitle>
-                <CardDescription className="text-white/40 text-xs">
-                  Estudiantes con reservas de clases o compras en los últimos 30 días.
+                <CardDescription className="text-xs text-white/40">
+                  Estudiantes con reservas de clases o compras en los últimos 30
+                  días.
                 </CardDescription>
               </CardHeader>
               <CardContent>
                 {activeStudents.length === 0 ? (
-                  <div className="text-center py-10 border border-dashed border-white/[0.06] rounded-xl bg-white/[0.01]">
-                    <Users className="size-8 text-white/15 mx-auto mb-3" />
-                    <h5 className="text-sm font-semibold text-white/70">No hay estudiantes activos</h5>
-                    <p className="text-xs text-white/40 mt-1 max-w-xs mx-auto leading-relaxed">
-                      Los alumnos con actividad académica o pagos en los últimos 30 días figurarán en este listado.
+                  <div className="rounded-xl border border-dashed border-white/[0.06] bg-white/[0.01] py-10 text-center">
+                    <Users className="mx-auto mb-3 size-8 text-white/15" />
+                    <h5 className="text-sm font-semibold text-white/70">
+                      No hay estudiantes activos
+                    </h5>
+                    <p className="mx-auto mt-1 max-w-xs text-xs leading-relaxed text-white/40">
+                      Los alumnos con actividad académica o pagos en los últimos
+                      30 días figurarán en este listado.
                     </p>
                   </div>
                 ) : (
@@ -278,23 +356,38 @@ export default function TeacherDashboard() {
                     <Table className="min-w-full">
                       <TableHeader className="border-b border-white/[0.06] bg-white/[0.02]">
                         <TableRow>
-                          <TableHead className="text-[10px] font-semibold text-white/40 uppercase tracking-wider">Nombre</TableHead>
-                          <TableHead className="text-[10px] font-semibold text-white/40 uppercase tracking-wider">Correo</TableHead>
-                          <TableHead className="text-[10px] font-semibold text-white/40 uppercase tracking-wider">Teléfono / WhatsApp</TableHead>
-                          <TableHead className="text-[10px] font-semibold text-white/40 uppercase tracking-wider text-center">Créditos</TableHead>
-                          <TableHead className="text-[10px] font-semibold text-white/40 uppercase tracking-wider">Examen de Ubicación</TableHead>
+                          <TableHead className="text-[10px] font-semibold tracking-wider text-white/40 uppercase">
+                            Nombre
+                          </TableHead>
+                          <TableHead className="text-[10px] font-semibold tracking-wider text-white/40 uppercase">
+                            Correo
+                          </TableHead>
+                          <TableHead className="text-[10px] font-semibold tracking-wider text-white/40 uppercase">
+                            Teléfono / WhatsApp
+                          </TableHead>
+                          <TableHead className="text-center text-[10px] font-semibold tracking-wider text-white/40 uppercase">
+                            Créditos
+                          </TableHead>
+                          <TableHead className="text-[10px] font-semibold tracking-wider text-white/40 uppercase">
+                            Examen de Ubicación
+                          </TableHead>
                         </TableRow>
                       </TableHeader>
                       <TableBody>
                         {activeStudents.map((student) => (
-                          <TableRow key={student._id} className="border-b border-white/[0.04] hover:bg-white/[0.01]">
+                          <TableRow
+                            key={student._id}
+                            className="border-b border-white/[0.04] hover:bg-white/[0.01]"
+                          >
                             <TableCell className="py-4">
-                              <span className="font-semibold text-white text-sm">{student.name}</span>
+                              <span className="text-sm font-semibold text-white">
+                                {student.name}
+                              </span>
                             </TableCell>
                             <TableCell className="py-4">
                               <a
                                 href={`mailto:${student.email}`}
-                                className="text-xs text-white/60 hover:underline hover:text-white flex items-center gap-1.5"
+                                className="flex items-center gap-1.5 text-xs text-white/60 hover:text-white hover:underline"
                               >
                                 <Mail className="size-3.5 text-white/30" />
                                 {student.email}
@@ -305,28 +398,35 @@ export default function TeacherDashboard() {
                                 href={`https://wa.me/${student.phone.replace(/\+/g, "")}`}
                                 target="_blank"
                                 rel="noopener noreferrer"
-                                className="text-xs text-[#25d366] hover:underline flex items-center gap-1.5"
+                                className="flex items-center gap-1.5 text-xs text-[#25d366] hover:underline"
                               >
                                 <MessageSquare className="size-3.5 text-[#25d366]/40" />
                                 {student.phone}
                               </a>
                             </TableCell>
                             <TableCell className="py-4 text-center">
-                              <span className="text-base font-extrabold text-white">{student.credits}</span>
+                              <span className="text-base font-extrabold text-white">
+                                {student.credits}
+                              </span>
                             </TableCell>
                             <TableCell className="py-4">
                               {student.quizResult ? (
                                 <div>
-                                  <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-semibold text-blue-400 bg-blue-500/10 border border-blue-500/20">
+                                  <span className="inline-flex items-center gap-1 rounded-full border border-blue-500/20 bg-blue-500/10 px-2.5 py-0.5 text-[10px] font-semibold text-blue-400">
                                     <Award className="size-3" />
-                                    {getProficiencyLevelName(student.quizResult.score)}
+                                    {getProficiencyLevelName(
+                                      student.quizResult.score
+                                    )}
                                   </span>
-                                  <span className="block text-[10px] text-white/30 mt-1">
-                                    Score: {student.quizResult.score}/{student.quizResult.totalQuestions}
+                                  <span className="mt-1 block text-[10px] text-white/30">
+                                    Score: {student.quizResult.score}/
+                                    {student.quizResult.totalQuestions}
                                   </span>
                                 </div>
                               ) : (
-                                <span className="text-xs text-white/30 italic">No realizado</span>
+                                <span className="text-xs text-white/30 italic">
+                                  No realizado
+                                </span>
                               )}
                             </TableCell>
                           </TableRow>
@@ -338,22 +438,27 @@ export default function TeacherDashboard() {
               </CardContent>
             </Card>
 
-            <Card className="bg-[#0f1729]/40 border-white/[0.08] backdrop-blur-xl rounded-2xl overflow-hidden">
+            <Card className="overflow-hidden rounded-2xl border-white/[0.08] bg-[#0f1729]/40 backdrop-blur-xl">
               <CardHeader className="pb-3">
-                <CardTitle className="text-lg font-bold flex items-center gap-2">
-                  <Gift className="size-5 text-blue-400" /> Referidos y recompensas
+                <CardTitle className="flex items-center gap-2 text-lg font-bold">
+                  <Gift className="size-5 text-blue-400" /> Referidos y
+                  recompensas
                 </CardTitle>
-                <CardDescription className="text-white/40 text-xs">
-                  Registro reciente de quién refirió a quién y qué bono se acreditó.
+                <CardDescription className="text-xs text-white/40">
+                  Registro reciente de quién refirió a quién y qué bono se
+                  acreditó.
                 </CardDescription>
               </CardHeader>
               <CardContent>
                 {referrals.length === 0 ? (
-                  <div className="text-center py-10 border border-dashed border-white/[0.06] rounded-xl bg-white/[0.01]">
-                    <Gift className="size-8 text-white/15 mx-auto mb-3" />
-                    <h5 className="text-sm font-semibold text-white/70">Todavía no hay referidos</h5>
-                    <p className="text-xs text-white/40 mt-1 max-w-xs mx-auto leading-relaxed">
-                      Los nuevos registros y pagos aparecerán aquí cuando los estudiantes compartan sus enlaces.
+                  <div className="rounded-xl border border-dashed border-white/[0.06] bg-white/[0.01] py-10 text-center">
+                    <Gift className="mx-auto mb-3 size-8 text-white/15" />
+                    <h5 className="text-sm font-semibold text-white/70">
+                      Todavía no hay referidos
+                    </h5>
+                    <p className="mx-auto mt-1 max-w-xs text-xs leading-relaxed text-white/40">
+                      Los nuevos registros y pagos aparecerán aquí cuando los
+                      estudiantes compartan sus enlaces.
                     </p>
                   </div>
                 ) : (
@@ -361,50 +466,64 @@ export default function TeacherDashboard() {
                     <Table className="min-w-full">
                       <TableHeader className="border-b border-white/[0.06] bg-white/[0.02]">
                         <TableRow>
-                          <TableHead className="text-[10px] font-semibold text-white/40 uppercase tracking-wider">Referente</TableHead>
-                          <TableHead className="text-[10px] font-semibold text-white/40 uppercase tracking-wider">Nuevo estudiante</TableHead>
-                          <TableHead className="text-[10px] font-semibold text-white/40 uppercase tracking-wider">Estado</TableHead>
-                          <TableHead className="text-[10px] font-semibold text-white/40 uppercase tracking-wider">Bono</TableHead>
+                          <TableHead className="text-[10px] font-semibold tracking-wider text-white/40 uppercase">
+                            Referente
+                          </TableHead>
+                          <TableHead className="text-[10px] font-semibold tracking-wider text-white/40 uppercase">
+                            Nuevo estudiante
+                          </TableHead>
+                          <TableHead className="text-[10px] font-semibold tracking-wider text-white/40 uppercase">
+                            Estado
+                          </TableHead>
+                          <TableHead className="text-[10px] font-semibold tracking-wider text-white/40 uppercase">
+                            Bono
+                          </TableHead>
                         </TableRow>
                       </TableHeader>
                       <TableBody>
                         {referrals.map((referral) => (
-                          <TableRow key={referral._id} className="border-b border-white/[0.04] hover:bg-white/[0.01]">
+                          <TableRow
+                            key={referral._id}
+                            className="border-b border-white/[0.04] hover:bg-white/[0.01]"
+                          >
                             <TableCell className="py-4">
-                              <span className="font-semibold text-white text-sm block">
+                              <span className="block text-sm font-semibold text-white">
                                 {referral.referrer?.name || "Desconocido"}
                               </span>
-                              <span className="text-xs text-white/45 block mt-0.5">
+                              <span className="mt-0.5 block text-xs text-white/45">
                                 {referral.referrer?.email || "Sin correo"}
                               </span>
                             </TableCell>
                             <TableCell className="py-4">
-                              <span className="font-semibold text-white text-sm block">
+                              <span className="block text-sm font-semibold text-white">
                                 {referral.referred?.name || "Pendiente"}
                               </span>
-                              <span className="text-xs text-white/45 block mt-0.5">
+                              <span className="mt-0.5 block text-xs text-white/45">
                                 {referral.referred?.email || "Sin correo"}
                               </span>
-                              <span className="text-[10px] text-white/25 block mt-1 uppercase tracking-wider">
+                              <span className="mt-1 block text-[10px] tracking-wider text-white/25 uppercase">
                                 Código usado: {referral.referralCodeUsed}
                               </span>
                             </TableCell>
                             <TableCell className="py-4">
                               {referral.rewardGrantedAt ? (
-                                <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-semibold text-emerald-400 bg-emerald-500/10 border border-emerald-500/20">
+                                <span className="inline-flex items-center gap-1 rounded-full border border-emerald-500/20 bg-emerald-500/10 px-2.5 py-0.5 text-[10px] font-semibold text-emerald-400">
                                   <BadgeCheck className="size-3" />
                                   Recompensado
                                 </span>
                               ) : (
-                                <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-semibold text-amber-400 bg-amber-500/10 border border-amber-500/20">
+                                <span className="inline-flex items-center gap-1 rounded-full border border-amber-500/20 bg-amber-500/10 px-2.5 py-0.5 text-[10px] font-semibold text-amber-400">
                                   Pendiente
                                 </span>
                               )}
                             </TableCell>
                             <TableCell className="py-4">
-                              <span className="text-base font-extrabold text-white">{referral.rewardCredits}</span>
-                              <span className="block text-[10px] text-white/30 mt-1">
-                                {referral.rewardDescription || "Bono de referido"}
+                              <span className="text-base font-extrabold text-white">
+                                {referral.rewardCredits}
+                              </span>
+                              <span className="mt-1 block text-[10px] text-white/30">
+                                {referral.rewardDescription ||
+                                  "Bono de referido"}
                               </span>
                             </TableCell>
                           </TableRow>
@@ -415,7 +534,6 @@ export default function TeacherDashboard() {
                 )}
               </CardContent>
             </Card>
-
           </div>
         </div>
       </main>

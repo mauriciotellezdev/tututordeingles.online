@@ -19,6 +19,12 @@ import {
   ensureReferralIndexes,
   generateUniqueReferralCode,
 } from "@/lib/referrals";
+import { recordSignupAttribution } from "@/lib/campaigns";
+import {
+  checkVerifyAllowed,
+  recordFailedVerify,
+  clearOtpGuard,
+} from "@/lib/otp-guard";
 import { sendMail } from "@/lib/mail";
 
 /**
@@ -81,7 +87,10 @@ export async function signupStudentAction(input: {
       signupIpHash: clientIpHash,
       createdAt: { $gte: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000) },
     });
-    if (recentIpAccounts >= 3) {
+    // Mexican mobile users are commonly behind carrier-grade NAT (many
+    // unrelated people share one public IP), so keep this threshold forgiving
+    // to avoid rejecting legitimate QR-driven signups.
+    if (recentIpAccounts >= 8) {
       return {
         success: false,
         error:
@@ -180,6 +189,32 @@ export async function signupStudentAction(input: {
         );
       }
 
+      // QR / marketing attribution — persist which campaign code brought them
+      // in. Best-effort and isolated so it can never break the signup flow.
+      const campaignCode = cookieStore.get("tu_campaign")?.value;
+      if (campaignCode) {
+        try {
+          await recordSignupAttribution({
+            code: campaignCode,
+            studentId: insertedId.toString(),
+            email: normalizedEmail,
+          });
+          // Convenience denormalized field on the student (best-effort; a
+          // not-yet-migrated validator must not break signup).
+          await studentsCol.updateOne(
+            { _id: insertedId },
+            {
+              $set: { signupCampaignCode: campaignCode, updatedAt: new Date() },
+            }
+          );
+        } catch (attributionError) {
+          console.warn(
+            "Failed to record campaign attribution:",
+            attributionError
+          );
+        }
+      }
+
       // Send the verification code email
       const subject = "Tu código de verificación - Tu Tutor de Inglés 🔑";
       const text = `¡Hola ${input.name}!\n\nGracias por registrarte en Tu Tutor de Inglés.\n\nTu código de verificación es: ${verificationCode}\n\nEste código vencerá en 15 minutos.\n\nSi no solicitaste este registro, puedes ignorar este mensaje.\n\nSaludos,\nMauricio Tellez\nTu Tutor de Inglés`;
@@ -266,6 +301,15 @@ export async function verifyCodeAndLoginAction(payload: {
       return { success: false, error: "Usuario no encontrado." };
     }
 
+    // Brute-force lockout on the 6-digit code.
+    const verifyGuard = await checkVerifyAllowed(normalizedEmail);
+    if (!verifyGuard.allowed) {
+      return {
+        success: false,
+        error: `Demasiados intentos. Intenta de nuevo en ${Math.ceil((verifyGuard.retryAfterSec ?? 900) / 60)} minutos.`,
+      };
+    }
+
     // Verify code expiration and match
     const now = new Date();
     if (
@@ -280,11 +324,14 @@ export async function verifyCodeAndLoginAction(payload: {
     }
 
     if (student.verificationCode !== code.trim()) {
+      await recordFailedVerify(normalizedEmail);
       return {
         success: false,
         error: "El código de verificación es incorrecto.",
       };
     }
+
+    await clearOtpGuard(normalizedEmail);
 
     // Update student as verified and clear temporary code
     await studentsCol.updateOne(

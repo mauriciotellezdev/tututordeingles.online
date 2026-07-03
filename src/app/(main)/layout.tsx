@@ -6,6 +6,7 @@ import "../globals.css";
 
 import Header from "./layout/header";
 import Footer from "./layout/footer";
+import { AnalyticsAndConsent } from "@/shared/analytics/analytics-and-consent";
 
 const plusJakarta = Plus_Jakarta_Sans({
   subsets: ["latin"],
@@ -19,7 +20,8 @@ const manrope = Manrope({
   weight: ["400", "500", "600", "700", "800"],
 });
 
-const BASE = process.env.NEXT_PUBLIC_APP_URL || "https://tututordeingles.online";
+const BASE =
+  process.env.NEXT_PUBLIC_APP_URL || "https://tututordeingles.online";
 
 export async function generateMetadata(): Promise<Metadata> {
   const hdrs = await headers();
@@ -31,7 +33,16 @@ export async function generateMetadata(): Promise<Metadata> {
       template: "%s | Tu Tutor de Inglés",
     },
     description:
-      "Clases privadas de inglés para profesionales hispanohablantes. Aprende inglés real con un tutor nativo 1 a 1 en Tehuacán y en línea.",
+      "Clases privadas de inglés en Tehuacán, Puebla y en línea. Aprende inglés real con un tutor nativo estadounidense 1 a 1 — presencial en cafés locales o por WhatsApp. Inglés de negocios, conversación y entrevistas.",
+    keywords: [
+      "clases de inglés en Tehuacán",
+      "inglés Tehuacán",
+      "tutor de inglés Tehuacán",
+      "clases de inglés Puebla",
+      "clases de inglés en línea",
+      "inglés de negocios",
+      "profesor de inglés nativo",
+    ],
     metadataBase: new URL(BASE),
     alternates: {
       canonical: `${BASE}${pathname}`,
@@ -46,7 +57,7 @@ export async function generateMetadata(): Promise<Metadata> {
       type: "website",
       images: [
         {
-          url: "/og-default.svg",
+          url: "/og-image",
           width: 1200,
           height: 630,
           alt: "Tu Tutor de Inglés",
@@ -58,7 +69,7 @@ export async function generateMetadata(): Promise<Metadata> {
       title: "Tu Tutor de Inglés — Clases privadas 1 a 1",
       description:
         "Clases privadas de inglés para profesionales hispanohablantes. Aprende inglés real con un tutor nativo 1 a 1.",
-      images: ["/og-default.svg"],
+      images: ["/og-image"],
     },
     icons: {
       icon: "/favicon.svg",
@@ -79,6 +90,7 @@ export default function RootLayout({
         <Header />
         {children}
         <Footer />
+        <AnalyticsAndConsent />
       </body>
     </html>
   );

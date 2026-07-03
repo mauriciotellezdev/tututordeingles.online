@@ -1,7 +1,8 @@
 import type { MetadataRoute } from "next";
 import { blogPosts } from "@/lib/blog-posts";
 
-const BASE = process.env.NEXT_PUBLIC_APP_URL || "https://tututordeingles.online";
+const BASE =
+  process.env.NEXT_PUBLIC_APP_URL || "https://tututordeingles.online";
 
 export default function sitemap(): MetadataRoute.Sitemap {
   const staticPages = [
@@ -10,6 +11,18 @@ export default function sitemap(): MetadataRoute.Sitemap {
       lastModified: new Date(),
       changeFrequency: "weekly" as const,
       priority: 1,
+    },
+    {
+      url: `${BASE}/clases-de-ingles-en-tehuacan`,
+      lastModified: new Date(),
+      changeFrequency: "weekly" as const,
+      priority: 0.9,
+    },
+    {
+      url: `${BASE}/clases-de-ingles-experiencias`,
+      lastModified: new Date(),
+      changeFrequency: "monthly" as const,
+      priority: 0.8,
     },
     {
       url: `${BASE}/english-for-job-interviews`,
@@ -28,6 +41,24 @@ export default function sitemap(): MetadataRoute.Sitemap {
       lastModified: new Date(),
       changeFrequency: "weekly" as const,
       priority: 0.7,
+    },
+    {
+      url: `${BASE}/aviso-de-privacidad`,
+      lastModified: new Date(),
+      changeFrequency: "yearly" as const,
+      priority: 0.2,
+    },
+    {
+      url: `${BASE}/terminos`,
+      lastModified: new Date(),
+      changeFrequency: "yearly" as const,
+      priority: 0.2,
+    },
+    {
+      url: `${BASE}/reembolsos`,
+      lastModified: new Date(),
+      changeFrequency: "yearly" as const,
+      priority: 0.2,
     },
   ];
 

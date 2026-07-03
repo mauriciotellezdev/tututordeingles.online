@@ -14,6 +14,7 @@ export const studentSchemaValidation = {
       signupBrowserId: { bsonType: "string", minLength: 8 },
       signupIpHash: { bsonType: "string", minLength: 32 },
       signupUserAgentHash: { bsonType: "string", minLength: 32 },
+      signupCampaignCode: { bsonType: "string", minLength: 1, maxLength: 48 },
       verificationCode: { bsonType: "string", minLength: 6, maxLength: 6 },
       verificationCodeExpires: { bsonType: "date" },
       stripeCustomerId: { bsonType: "string", minLength: 1 },

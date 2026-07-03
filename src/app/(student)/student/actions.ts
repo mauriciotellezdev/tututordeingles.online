@@ -4,7 +4,11 @@ import { cookies } from "next/headers";
 import { ObjectId } from "mongodb";
 import { getCollection } from "@/lib/db";
 import { STUDENT_COLLECTION, Student } from "@/lib/models/student";
-import { createSession, SESSION_COLLECTION } from "@/lib/models/session";
+import {
+  createSession,
+  SESSION_COLLECTION,
+  type Session,
+} from "@/lib/models/session";
 import { getTeacherData } from "@/lib/models/teacher";
 import { createCredit, CREDIT_COLLECTION } from "@/lib/models/credit";
 import {
@@ -336,6 +340,183 @@ export async function bookSessionAction(payload: {
 }
 
 /**
+ * Cancel a booked session. Paid (tutoring) classes cancelled with >24h notice
+ * get their credit refunded; late cancellations forfeit it (per the terms).
+ */
+export async function cancelSessionAction(payload: { sessionId: string }) {
+  try {
+    const cookieStore = await cookies();
+    const studentIdStr = cookieStore.get("student_id")?.value;
+    if (!studentIdStr) return { success: false, error: "Sesión no iniciada." };
+
+    const studentOid = new ObjectId(studentIdStr);
+    const sessionsCol = await getCollection<Session>(SESSION_COLLECTION);
+    const sessionOid = new ObjectId(payload.sessionId);
+
+    const session = await sessionsCol.findOne({
+      _id: sessionOid,
+      studentId: studentOid,
+    });
+    if (!session) return { success: false, error: "Clase no encontrada." };
+    if (session.status !== "booked") {
+      return { success: false, error: "Esta clase ya no está activa." };
+    }
+
+    // Atomic transition — only one caller can flip booked → canceled, so a
+    // double-cancel can't double-refund.
+    const res = await sessionsCol.updateOne(
+      { _id: sessionOid, studentId: studentOid, status: "booked" },
+      { $set: { status: "canceled", updatedAt: new Date() } }
+    );
+    if (res.modifiedCount !== 1) {
+      return { success: false, error: "Esta clase ya no está activa." };
+    }
+
+    const dateTime = new Date(session.dateTime);
+    const cutoff = new Date();
+    cutoff.setHours(cutoff.getHours() + 24);
+    let refunded = false;
+    if (session.type === "tutoring" && session.creditId && dateTime > cutoff) {
+      const creditsCol = await getCollection(CREDIT_COLLECTION);
+      await creditsCol.insertOne(
+        createCredit({
+          studentId: studentIdStr,
+          amount: 1,
+          source: "adjustment",
+          description: "Reembolso por cancelación de clase",
+        })
+      );
+      refunded = true;
+    }
+
+    const studentsCol = await getCollection<Student>(STUDENT_COLLECTION);
+    const student = await studentsCol.findOne({ _id: studentOid });
+    const teacher = await getTeacherData();
+    const whenStr = dateTime.toLocaleString("es-MX", {
+      timeZone: "America/Mexico_City",
+    });
+    try {
+      if (student) {
+        await sendMail({
+          to: student.email,
+          subject: "Clase cancelada - Tu Tutor de Inglés",
+          text: `Hola ${student.name},\n\nTu clase del ${whenStr} ha sido cancelada.\n\n${refunded ? "Tu crédito fue reembolsado a tu cuenta." : "Por cancelarse con menos de 24 horas de anticipación, el crédito no se reembolsa."}\n\nSaludos,\nMauricio Tellez`,
+        });
+      }
+      await sendMail({
+        to: teacher.email,
+        subject: `Clase cancelada: ${student?.name ?? "estudiante"}`,
+        text: `Se canceló la clase del ${whenStr}${refunded ? " (crédito reembolsado)" : ""}.`,
+      });
+    } catch (mailError) {
+      console.warn("Cancel notification failed:", mailError);
+    }
+
+    return { success: true, refunded };
+  } catch (error: unknown) {
+    console.error("Error in cancelSessionAction:", error);
+    return {
+      success: false,
+      error:
+        error instanceof Error ? error.message : "Error al cancelar la clase.",
+    };
+  }
+}
+
+/**
+ * Reschedule a booked session to a new time (>=24h out, slot free). Keeps the
+ * same credit.
+ */
+export async function rescheduleSessionAction(payload: {
+  sessionId: string;
+  newDateTimeIso: string;
+}) {
+  try {
+    const cookieStore = await cookies();
+    const studentIdStr = cookieStore.get("student_id")?.value;
+    if (!studentIdStr) return { success: false, error: "Sesión no iniciada." };
+
+    const studentOid = new ObjectId(studentIdStr);
+    const sessionsCol = await getCollection<Session>(SESSION_COLLECTION);
+    const sessionOid = new ObjectId(payload.sessionId);
+
+    const session = await sessionsCol.findOne({
+      _id: sessionOid,
+      studentId: studentOid,
+    });
+    if (!session) return { success: false, error: "Clase no encontrada." };
+    if (session.status !== "booked") {
+      return { success: false, error: "Esta clase ya no está activa." };
+    }
+
+    const newDateTime = new Date(payload.newDateTimeIso);
+    const minimumTime = new Date();
+    minimumTime.setHours(minimumTime.getHours() + 24);
+    if (newDateTime < minimumTime) {
+      return {
+        success: false,
+        error: "La nueva fecha debe ser con al menos 24 horas de anticipación.",
+      };
+    }
+
+    const hourStart = new Date(newDateTime);
+    hourStart.setMinutes(0, 0, 0);
+    const hourEnd = new Date(hourStart);
+    hourEnd.setHours(hourEnd.getHours() + 1);
+    const clash = await sessionsCol.findOne({
+      _id: { $ne: sessionOid },
+      status: "booked",
+      dateTime: { $gte: hourStart, $lt: hourEnd },
+    });
+    if (clash) {
+      return {
+        success: false,
+        error: "Ese horario ya está ocupado. Elige otro.",
+      };
+    }
+
+    await sessionsCol.updateOne(
+      { _id: sessionOid, studentId: studentOid, status: "booked" },
+      { $set: { dateTime: newDateTime, updatedAt: new Date() } }
+    );
+
+    const studentsCol = await getCollection<Student>(STUDENT_COLLECTION);
+    const student = await studentsCol.findOne({ _id: studentOid });
+    const teacher = await getTeacherData();
+    const whenStr = newDateTime.toLocaleString("es-MX", {
+      timeZone: "America/Mexico_City",
+    });
+    try {
+      if (student) {
+        await sendMail({
+          to: student.email,
+          subject: "Clase reprogramada - Tu Tutor de Inglés",
+          text: `Hola ${student.name},\n\nTu clase fue reprogramada para el ${whenStr} (hora CDMX).\n\nSaludos,\nMauricio Tellez`,
+        });
+      }
+      await sendMail({
+        to: teacher.email,
+        subject: `Clase reprogramada: ${student?.name ?? "estudiante"}`,
+        text: `Clase reprogramada para el ${whenStr}.`,
+      });
+    } catch (mailError) {
+      console.warn("Reschedule notification failed:", mailError);
+    }
+
+    return { success: true };
+  } catch (error: unknown) {
+    console.error("Error in rescheduleSessionAction:", error);
+    return {
+      success: false,
+      error:
+        error instanceof Error
+          ? error.message
+          : "Error al reprogramar la clase.",
+    };
+  }
+}
+
+/**
  * Action 3: Log out the student
  */
 export async function logoutAction() {
@@ -412,18 +593,69 @@ export async function createCheckoutSessionAction(payload: {
       },
     ];
 
-    const session = await stripe.checkout.sessions.create({
-      payment_method_types: ["card"],
-      line_items: lineItems,
-      mode: "payment",
-      customer: stripeCustomerId,
-      success_url: `${appUrl}/student?checkout_success=true&plan=${planType}&session_id={CHECKOUT_SESSION_ID}`,
-      cancel_url: `${appUrl}/student?checkout_cancel=true`,
-      metadata: {
-        studentId: studentIdStr,
-        planType,
-      },
-    });
+    // Stripe rejects the whole session if ANY requested payment method isn't
+    // activated on the account (e.g. SPEI/bank transfers pending KYC). Degrade
+    // gracefully — try the full method list, then progressively narrower ones —
+    // so a not-yet-activated method never blocks card purchases.
+    const methodAttempts: Array<Array<"card" | "oxxo" | "customer_balance">> = [
+      ["card", "oxxo", "customer_balance"],
+      ["card", "oxxo"],
+      ["card"],
+    ];
+
+    let session: Stripe.Checkout.Session | null = null;
+    let lastError: unknown = null;
+    for (const methods of methodAttempts) {
+      try {
+        session = await stripe.checkout.sessions.create({
+          payment_method_types: methods,
+          ...(methods.includes("customer_balance")
+            ? {
+                payment_method_options: {
+                  customer_balance: {
+                    funding_type: "bank_transfer" as const,
+                    bank_transfer: { type: "mx_bank_transfer" as const },
+                  },
+                },
+              }
+            : {}),
+          line_items: lineItems,
+          mode: "payment",
+          customer: stripeCustomerId,
+          success_url: `${appUrl}/student?checkout_success=true&plan=${planType}&session_id={CHECKOUT_SESSION_ID}`,
+          cancel_url: `${appUrl}/student?checkout_cancel=true`,
+          metadata: {
+            studentId: studentIdStr,
+            planType,
+          },
+        });
+        if (methods.length < 3) {
+          console.warn(
+            `Checkout created without: ${["card", "oxxo", "customer_balance"]
+              .filter((m) => !methods.includes(m as never))
+              .join(", ")} (not activated in Stripe yet?)`
+          );
+        }
+        break;
+      } catch (attemptError) {
+        lastError = attemptError;
+        const message =
+          attemptError instanceof Error ? attemptError.message : "";
+        // Only fall back on payment-method activation problems; anything else
+        // (bad key, network, etc.) should surface immediately.
+        if (
+          !/payment method|payment_method|activate|invalid.*type/i.test(message)
+        ) {
+          throw attemptError;
+        }
+      }
+    }
+
+    if (!session) {
+      throw lastError instanceof Error
+        ? lastError
+        : new Error("No se pudo crear la sesión de pago.");
+    }
 
     return {
       success: true,
@@ -465,6 +697,13 @@ export async function verifyPaymentAction(payload: {
     }
 
     if (session.payment_status !== "paid") {
+      if (session.status === "open" || session.status === "complete") {
+        return {
+          success: true,
+          message:
+            "Tu pago está pendiente de confirmación (ej. pago en OXXO o transferencia SPEI). Tus créditos se activarán automáticamente en cuanto se confirme el pago.",
+        };
+      }
       return {
         success: false,
         error:
