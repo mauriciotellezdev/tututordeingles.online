@@ -1,5 +1,6 @@
 "use client";
 import Link from "next/link";
+import { WHATSAPP_LINK } from "@/shared/seo/business";
 
 const currentYear = new Date().getFullYear();
 
@@ -25,7 +26,13 @@ const links = {
     { label: "Entrar", href: "/login" },
   ],
   contacto: [
+    { label: "WhatsApp", href: WHATSAPP_LINK },
     { label: "Correo", href: "mailto:mauricio@tututordeingles.online" },
+  ],
+  legal: [
+    { label: "Aviso de Privacidad", href: "/aviso-de-privacidad" },
+    { label: "Términos", href: "/terminos" },
+    { label: "Reembolsos", href: "/reembolsos" },
   ],
 };
 

@@ -56,7 +56,7 @@ export async function generateMetadata(): Promise<Metadata> {
       type: "website",
       images: [
         {
-          url: "/og-default.svg",
+          url: "/og-image",
           width: 1200,
           height: 630,
           alt: "Tu Tutor de Inglés",
@@ -68,7 +68,7 @@ export async function generateMetadata(): Promise<Metadata> {
       title: "Tu Tutor de Inglés — Clases privadas 1 a 1",
       description:
         "Clases privadas de inglés para profesionales hispanohablantes. Aprende inglés real con un tutor nativo 1 a 1.",
-      images: ["/og-default.svg"],
+      images: ["/og-image"],
     },
     icons: {
       icon: "/favicon.svg",

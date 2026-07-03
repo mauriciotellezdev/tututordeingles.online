@@ -1,7 +1,9 @@
 "use client";
 
+import Link from "next/link";
 import { Button } from "@/shared/ui/button";
 import { Badge } from "@/shared/ui/badge";
+import { WHATSAPP_LINK } from "@/shared/seo/business";
 
 const plans = [
   {
@@ -151,20 +153,18 @@ export default function Pricing() {
                 })}
               </ul>
 
-              <a
-                href={`mailto:mauricio@tututordeingles.online?subject=${encodeURIComponent(plan.name)}`}
-              >
+              <Link href="/signup">
                 <Button
                   className={
                     plan.highlight
-                      ? "rounded-full bg-blue-500 py-6 text-sm font-semibold tracking-wide text-white shadow-lg shadow-blue-500/25 transition-all duration-300 hover:scale-[1.01] hover:bg-blue-400"
-                      : "rounded-full border border-white/10 bg-white/5 py-6 text-sm font-medium tracking-wide text-white transition-all duration-300 hover:bg-white/10"
+                      ? "w-full rounded-full bg-blue-500 py-6 text-sm font-semibold tracking-wide text-white shadow-lg shadow-blue-500/25 transition-all duration-300 hover:scale-[1.01] hover:bg-blue-400"
+                      : "w-full rounded-full border border-white/10 bg-white/5 py-6 text-sm font-medium tracking-wide text-white transition-all duration-300 hover:bg-white/10"
                   }
                   style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}
                 >
                   {plan.cta}
                 </Button>
-              </a>
+              </Link>
             </div>
           ))}
         </div>
@@ -174,10 +174,12 @@ export default function Pricing() {
           style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}
         >
           <a
-            href="mailto:mauricio@tututordeingles.online"
+            href={WHATSAPP_LINK}
+            target="_blank"
+            rel="noopener noreferrer"
             className="text-white/20 underline hover:text-white/40"
           >
-            ¿Tienes preguntas? Escríbeme por correo antes de comprar.
+            ¿Tienes preguntas? Escríbeme por WhatsApp antes de comprar.
           </a>
         </p>
       </div>

@@ -82,7 +82,10 @@ export async function signupStudentAction(input: {
       signupIpHash: clientIpHash,
       createdAt: { $gte: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000) },
     });
-    if (recentIpAccounts >= 3) {
+    // Mexican mobile users are commonly behind carrier-grade NAT (many
+    // unrelated people share one public IP), so keep this threshold forgiving
+    // to avoid rejecting legitimate QR-driven signups.
+    if (recentIpAccounts >= 8) {
       return {
         success: false,
         error:

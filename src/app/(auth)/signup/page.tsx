@@ -2,6 +2,7 @@
 
 import React, { Suspense, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
+import Link from "next/link";
 import { Button } from "@/shared/ui/button";
 import { Input } from "@/shared/ui/input";
 import {
@@ -26,6 +27,7 @@ function SignupForm() {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
+  const [accepted, setAccepted] = useState(false);
 
   // Verification Code State
   const [code, setCode] = useState("");
@@ -43,6 +45,13 @@ function SignupForm() {
       return;
     }
 
+    if (!accepted) {
+      setError(
+        "Debes aceptar el Aviso de Privacidad y los Términos para continuar."
+      );
+      return;
+    }
+
     setLoading(true);
     setError(null);
 
@@ -53,7 +62,7 @@ function SignupForm() {
     if (res.success && res.email) {
       setEmail(res.email);
       setSuccessMessage(
-        "¡Código enviado! Revisa tu bandeja de entrada o tu servidor local de correos (Maildev)."
+        "¡Código enviado! Revisa tu bandeja de entrada (y la carpeta de spam)."
       );
       setStep(2);
     } else {
@@ -136,6 +145,7 @@ function SignupForm() {
               <Input
                 data-testid="signup-name-input"
                 type="text"
+                autoComplete="name"
                 placeholder="Ej. Juan Pérez"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
@@ -151,6 +161,8 @@ function SignupForm() {
               <Input
                 data-testid="signup-email-input"
                 type="email"
+                autoComplete="email"
+                inputMode="email"
                 placeholder="Ej. juan@example.com"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
@@ -166,6 +178,7 @@ function SignupForm() {
               <Input
                 data-testid="signup-phone-input"
                 type="tel"
+                autoComplete="tel"
                 placeholder="Ej. +52 55 1234 5678"
                 value={phone}
                 onChange={(e) => setPhone(e.target.value)}
@@ -174,11 +187,41 @@ function SignupForm() {
               />
             </div>
 
+            <label className="flex cursor-pointer items-start gap-2.5 pt-1 text-xs leading-relaxed text-white/50">
+              <input
+                data-testid="signup-consent-checkbox"
+                type="checkbox"
+                checked={accepted}
+                onChange={(e) => setAccepted(e.target.checked)}
+                className="mt-0.5 size-4 shrink-0 accent-blue-500"
+                disabled={loading}
+              />
+              <span>
+                He leído y acepto el{" "}
+                <Link
+                  href="/aviso-de-privacidad"
+                  target="_blank"
+                  className="text-blue-400 underline hover:text-blue-300"
+                >
+                  Aviso de Privacidad
+                </Link>{" "}
+                y los{" "}
+                <Link
+                  href="/terminos"
+                  target="_blank"
+                  className="text-blue-400 underline hover:text-blue-300"
+                >
+                  Términos y Condiciones
+                </Link>
+                .
+              </span>
+            </label>
+
             <Button
               data-testid="signup-submit-button"
               type="submit"
               className="mt-6 flex w-full items-center justify-center gap-2 rounded-full bg-blue-500 py-6 text-sm font-semibold tracking-wide text-white shadow-lg shadow-blue-500/20 transition-all hover:bg-blue-400"
-              disabled={loading}
+              disabled={loading || !accepted}
             >
               {loading ? "Creando Cuenta..." : "Registrarme y Recibir Código"}
               <ChevronRight className="size-4" />
@@ -206,6 +249,8 @@ function SignupForm() {
               <Input
                 data-testid="signup-code-input"
                 type="text"
+                inputMode="numeric"
+                autoComplete="one-time-code"
                 maxLength={6}
                 placeholder="000000"
                 value={code}

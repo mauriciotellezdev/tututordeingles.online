@@ -15,6 +15,7 @@ import {
 } from "lucide-react";
 
 const URL = `${BASE_URL}/clases-de-ingles-experiencias`;
+const OG_IMAGE = `${BASE_URL}/og-image?title=${encodeURIComponent("Inglés viviendo la vida real")}&subtitle=${encodeURIComponent("Salidas por Tehuacán y viajes a Puebla")}`;
 
 export const metadata: Metadata = {
   title: "Clases de Inglés de Experiencias — Salidas y Viajes en Tehuacán",
@@ -28,6 +29,7 @@ export const metadata: Metadata = {
     url: URL,
     type: "website",
     locale: "es_MX",
+    images: [{ url: OG_IMAGE, width: 1200, height: 630 }],
   },
 };
 

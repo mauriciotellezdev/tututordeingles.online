@@ -46,7 +46,7 @@ export default function LoginPage() {
     if (res.success && res.email) {
       setEmail(res.email);
       setSuccessMessage(
-        "¡Código de acceso enviado! Revisa tu correo o Maildev."
+        "¡Código de acceso enviado! Revisa tu bandeja de entrada (y la carpeta de spam)."
       );
       setStep(2);
     } else {
@@ -130,6 +130,8 @@ export default function LoginPage() {
               </label>
               <Input
                 type="email"
+                autoComplete="email"
+                inputMode="email"
                 placeholder="Ej. estudiante@example.com"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
@@ -177,6 +179,8 @@ export default function LoginPage() {
               </label>
               <Input
                 type="text"
+                inputMode="numeric"
+                autoComplete="one-time-code"
                 maxLength={6}
                 placeholder="000000"
                 value={code}
