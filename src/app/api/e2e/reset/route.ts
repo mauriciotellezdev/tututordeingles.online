@@ -36,6 +36,12 @@ export async function POST(request: NextRequest) {
   const paymentsCol = await getCollection(PAYMENT_COLLECTION);
   const sessionsCol = await getCollection(SESSION_COLLECTION);
 
+  // Always clear the OTP guard (keyed by email) and any campaign attribution so
+  // repeated e2e runs don't hit the send throttle / verify lockout or leave
+  // stale attribution behind.
+  const otpGuardsCol = await getCollection<{ _id: string }>("otp_guards");
+  await otpGuardsCol.deleteOne({ _id: email });
+
   const existing = await studentsCol.findOne({ email });
   if (!existing) {
     return NextResponse.json({ success: true, deleted: false });

@@ -81,20 +81,27 @@ export function createCampaign(
 ): Omit<Campaign, "_id"> {
   const now = new Date();
   const code = normalizeCampaignCode(input.code);
-  return {
+  // Omit optional fields entirely when empty — the strict $jsonSchema validator
+  // rejects `null`/`undefined` for `fallbackCode`/`notes` (they must be absent
+  // or a string), and the driver serializes `undefined` as `null`.
+  const doc: Omit<Campaign, "_id"> = {
     code,
     label: input.label.trim() || code,
     medium: (input.medium || "other").trim().toLowerCase(),
     target: normalizeCampaignTarget(input.target),
     active: true,
     permanent: Boolean(input.permanent),
-    fallbackCode: input.fallbackCode
-      ? normalizeCampaignCode(input.fallbackCode)
-      : undefined,
-    notes: input.notes?.trim() || undefined,
     scanCount: 0,
     signupCount: 0,
     createdAt: now,
     updatedAt: now,
   };
+  if (input.fallbackCode) {
+    doc.fallbackCode = normalizeCampaignCode(input.fallbackCode);
+  }
+  const notes = input.notes?.trim();
+  if (notes) {
+    doc.notes = notes;
+  }
+  return doc;
 }

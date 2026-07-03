@@ -69,6 +69,13 @@ test("createCampaign normalizes medium, target, and fallback", () => {
   expect(c.label).toBe("flyer-centro");
 });
 
+test("createCampaign omits empty optional fields (strict validator safety)", () => {
+  const c = createCampaign({ code: "combi-01", label: "Combi" });
+  // Must be ABSENT, not null/undefined — the $jsonSchema validator rejects null.
+  expect("fallbackCode" in c).toBe(false);
+  expect("notes" in c).toBe(false);
+});
+
 test("isBotUserAgent flags link-preview crawlers and empty UAs", () => {
   // Real browsers → not bots (counted).
   expect(

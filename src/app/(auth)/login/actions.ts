@@ -1,6 +1,6 @@
 "use server";
 
-import { cookies } from "next/headers";
+import { cookies, headers } from "next/headers";
 import { getCollection } from "@/lib/db";
 import { ObjectId } from "mongodb";
 import {
@@ -25,6 +25,10 @@ const TEACHER_AUTH_COLLECTION = "teacher_auth";
 export async function requestLoginCodeAction(email: string) {
   try {
     const normalizedEmail = email.toLowerCase().trim();
+    const requestHeaders = await headers();
+    const isE2ERequest =
+      Boolean(process.env.E2E_TEST_SECRET) &&
+      requestHeaders.get("x-e2e-secret") === process.env.E2E_TEST_SECRET;
     const teacher = await getTeacherData();
     const teacherEmail = teacher.email.toLowerCase().trim();
 
@@ -95,11 +99,13 @@ export async function requestLoginCodeAction(email: string) {
     const subject = "Tu código de acceso - Tu Tutor de Inglés 🔑";
     const text = `¡Hola ${name}!\n\nTu código de acceso temporal para iniciar sesión es: ${verificationCode}\n\nEste código vencerá en 15 minutos.\n\nSaludos,\nMauricio Tellez\nTu Tutor de Inglés`;
 
-    await sendMail({
-      to: normalizedEmail,
-      subject,
-      text,
-    });
+    if (!isE2ERequest) {
+      await sendMail({
+        to: normalizedEmail,
+        subject,
+        text,
+      });
+    }
 
     return {
       success: true,
