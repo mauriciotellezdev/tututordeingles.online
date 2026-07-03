@@ -32,6 +32,7 @@ import {
   Gift,
   BadgeCheck,
   QrCode,
+  CreditCard,
 } from "lucide-react";
 
 interface StudentData {
@@ -160,6 +161,15 @@ export default function TeacherDashboard() {
                 >
                   <QrCode className="size-4" />
                   Campañas QR
+                </Button>
+              </a>
+              <a href="/teacher/test-pagos">
+                <Button
+                  variant="ghost"
+                  className="flex items-center gap-1.5 rounded-full px-5 py-2.5 text-xs font-semibold text-white/50 hover:bg-white/5 hover:text-white"
+                >
+                  <CreditCard className="size-4" />
+                  Pagos de prueba
                 </Button>
               </a>
               <Button
