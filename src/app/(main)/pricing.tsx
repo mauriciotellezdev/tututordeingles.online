@@ -65,8 +65,8 @@ export default function Pricing() {
             className="mx-auto mt-4 max-w-sm text-sm text-white/40"
             style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}
           >
-            Todos los precios en MXN. Pago seguro con tarjeta a través de
-            Stripe.
+            Todos los precios en MXN. Pago seguro (tarjeta, transferencia SPEI u
+            OXXO) a través de Stripe.
           </p>
         </div>
 

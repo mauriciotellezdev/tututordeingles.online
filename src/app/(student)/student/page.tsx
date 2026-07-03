@@ -3,8 +3,28 @@
 import React, { useState, useEffect, Suspense, useRef } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Card, CardContent } from "@/shared/ui/card";
-import { getStudentDashboardDataAction, verifyPaymentAction } from "./actions";
-import { Mail, Copy, Link2, Send, Gift, Users, BadgeCheck } from "lucide-react";
+import { Button } from "@/shared/ui/button";
+import {
+  getStudentDashboardDataAction,
+  verifyPaymentAction,
+  createCheckoutSessionAction,
+  bookSessionAction,
+  getBookedSlotsAction,
+} from "./actions";
+import {
+  Copy,
+  Link2,
+  Send,
+  Gift,
+  Users,
+  BadgeCheck,
+  CreditCard,
+  Calendar as CalendarIcon,
+  Clock,
+  ChevronRight,
+  MessageSquare,
+  Sparkles,
+} from "lucide-react";
 
 interface StudentData {
   _id: string;
@@ -28,18 +48,50 @@ interface ReferralData {
   pendingConversions: number;
 }
 
+interface SessionData {
+  _id: string;
+  type: "intro" | "tutoring";
+  dateTime: string;
+  duration: number;
+  meetingLink?: string;
+  status: string;
+  paid?: boolean;
+}
+
+const TIME_SLOTS = [
+  "09:00",
+  "10:00",
+  "11:00",
+  "12:00",
+  "13:00",
+  "14:00",
+  "15:00",
+  "16:00",
+  "17:00",
+];
+
 function StudentDashboard() {
   const router = useRouter();
   const searchParams = useSearchParams();
 
   const [student, setStudent] = useState<StudentData | null>(null);
   const [referral, setReferral] = useState<ReferralData | null>(null);
+  const [sessions, setSessions] = useState<SessionData[]>([]);
+  const [teacherPhone, setTeacherPhone] = useState<string>("");
   const [loading, setLoading] = useState(true);
   const [statusMessage, setStatusMessage] = useState<{
     type: "success" | "error";
     text: string;
   } | null>(null);
   const [copied, setCopied] = useState(false);
+  const [buying, setBuying] = useState<"single" | "package" | null>(null);
+
+  // Booking state
+  const [selectedDate, setSelectedDate] = useState<Date | null>(null);
+  const [selectedTimeSlot, setSelectedTimeSlot] = useState<string | null>(null);
+  const [bookedSlots, setBookedSlots] = useState<string[]>([]);
+  const [booking, setBooking] = useState(false);
+  const timeZone = Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC";
 
   const verifiedSession = useRef<string | null>(null);
 
@@ -50,6 +102,12 @@ function StudentDashboard() {
     if (res.success && res.student) {
       setStudent(res.student);
       setReferral((res as { referral?: ReferralData }).referral ?? null);
+      setSessions(
+        (res as { upcomingSessions?: SessionData[] }).upcomingSessions ?? []
+      );
+      setTeacherPhone(
+        (res as { teacher?: { phone?: string } }).teacher?.phone ?? ""
+      );
     } else {
       router.push("/login");
     }
@@ -61,6 +119,19 @@ function StudentDashboard() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  // Refresh available slots when a date is picked
+  useEffect(() => {
+    if (!selectedDate) return;
+    (async () => {
+      const res = await getBookedSlotsAction({
+        dateIso: selectedDate.toISOString(),
+        timeZone,
+      });
+      if (res.success) setBookedSlots(res.bookedSlots);
+    })();
+  }, [selectedDate, timeZone]);
+
+  // Handle Stripe checkout return
   useEffect(() => {
     const success = searchParams.get("checkout_success");
     const cancel = searchParams.get("checkout_cancel");
@@ -90,7 +161,9 @@ function StudentDashboard() {
         if (verifyRes.success) {
           setStatusMessage({
             type: "success",
-            text: `¡Compra de ${plan === "single" ? "1 clase" : "10 clases"} procesada con éxito! Tus créditos han sido actualizados.`,
+            text:
+              verifyRes.message ||
+              `¡Compra procesada con éxito! Tus créditos han sido actualizados.`,
           });
           loadDashboardData();
         } else {
@@ -134,6 +207,62 @@ function StudentDashboard() {
     setTimeout(() => setCopied(false), 2000);
   };
 
+  const handleBuy = async (planType: "single" | "package") => {
+    setBuying(planType);
+    setStatusMessage(null);
+    const res = await createCheckoutSessionAction({ planType });
+    if (res.success && res.url) {
+      window.location.href = res.url;
+    } else {
+      setBuying(null);
+      setStatusMessage({
+        type: "error",
+        text: res.error || "No se pudo iniciar el pago. Intenta de nuevo.",
+      });
+    }
+  };
+
+  const getAvailableDates = () => {
+    const dates: Date[] = [];
+    const start = new Date();
+    start.setDate(start.getDate() + 1);
+    for (let i = 0; i < 10; i++) {
+      const d = new Date(start);
+      d.setDate(start.getDate() + i);
+      if (d.getDay() !== 0) dates.push(d);
+    }
+    return dates;
+  };
+
+  const confirmBooking = async () => {
+    if (!selectedDate || !selectedTimeSlot) return;
+    setBooking(true);
+    setStatusMessage(null);
+    const dateTime = new Date(selectedDate);
+    const [h, m] = selectedTimeSlot.split(":").map(Number);
+    dateTime.setHours(h, m, 0, 0);
+
+    const res = await bookSessionAction({
+      type: "tutoring",
+      dateTimeIso: dateTime.toISOString(),
+    });
+    setBooking(false);
+    if (res.success) {
+      setSelectedDate(null);
+      setSelectedTimeSlot(null);
+      setStatusMessage({
+        type: "success",
+        text: "¡Clase agendada! Te enviamos la confirmación por correo. Nos vemos por WhatsApp.",
+      });
+      loadDashboardData();
+    } else {
+      setStatusMessage({
+        type: "error",
+        text: res.error || "No se pudo agendar. Intenta otro horario.",
+      });
+    }
+  };
+
   if (loading) {
     return (
       <main className="flex min-h-screen items-center justify-center bg-[#0a0a0a] text-sm text-white/50">
@@ -143,6 +272,8 @@ function StudentDashboard() {
   }
 
   if (!student) return null;
+
+  const hasCredits = student.credits > 0;
 
   return (
     <main
@@ -170,13 +301,256 @@ function StudentDashboard() {
             <span className="text-2xl">🎉</span>
           </div>
           <h1 className="text-2xl font-bold tracking-tight md:text-3xl">
-            ¡Gracias por registrarte,{" "}
-            <span className="text-blue-400">{student.name}</span>!
+            Hola, <span className="text-blue-400">{student.name}</span>
           </h1>
           <p className="mt-2 max-w-md text-sm text-white/40">
-            Tu cuenta está lista. El servicio comenzará muy pronto.
+            Compra créditos y agenda tus clases de inglés con Mauricio.
           </p>
         </div>
+
+        {/* Credits + Buy */}
+        <Card
+          data-testid="credits-card"
+          className="mb-6 overflow-hidden rounded-2xl border-white/[0.08] bg-[#0f1729]/40 backdrop-blur-xl"
+        >
+          <CardContent className="p-6 md:p-8">
+            <div className="mb-6 flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="flex size-12 items-center justify-center rounded-full border border-blue-500/20 bg-blue-500/10">
+                  <CreditCard className="size-5 text-blue-400" />
+                </div>
+                <div>
+                  <p className="text-[10px] font-semibold tracking-[0.2em] text-white/45 uppercase">
+                    Tus créditos
+                  </p>
+                  <p className="text-3xl font-extrabold text-white">
+                    {student.credits}
+                  </p>
+                </div>
+              </div>
+              <p className="max-w-[9rem] text-right text-[11px] text-white/35">
+                1 crédito = 1 clase privada de 60 min
+              </p>
+            </div>
+
+            <div className="grid gap-3 sm:grid-cols-2">
+              <button
+                onClick={() => handleBuy("single")}
+                disabled={buying !== null}
+                className="group rounded-xl border border-white/[0.08] bg-white/[0.03] p-4 text-left transition-all hover:border-blue-500/40 hover:bg-blue-500/[0.06] disabled:opacity-50"
+              >
+                <p className="text-sm font-bold text-white">Clase individual</p>
+                <p className="mt-0.5 text-2xl font-extrabold text-white">
+                  $300{" "}
+                  <span className="text-xs font-medium text-white/40">MXN</span>
+                </p>
+                <p className="mt-1 text-[11px] text-white/40">1 crédito</p>
+                <span className="mt-3 inline-flex items-center gap-1 text-xs font-semibold text-blue-400">
+                  {buying === "single" ? "Redirigiendo…" : "Comprar"}
+                  <ChevronRight className="size-3.5 transition-transform group-hover:translate-x-0.5" />
+                </span>
+              </button>
+
+              <button
+                onClick={() => handleBuy("package")}
+                disabled={buying !== null}
+                className="group relative rounded-xl border border-blue-500/30 bg-blue-500/[0.06] p-4 text-left transition-all hover:border-blue-500/50 hover:bg-blue-500/10 disabled:opacity-50"
+              >
+                <span className="absolute top-3 right-3 rounded-full bg-blue-500/20 px-2 py-0.5 text-[9px] font-bold tracking-wider text-blue-300 uppercase">
+                  Mejor valor
+                </span>
+                <p className="text-sm font-bold text-white">
+                  Paquete 10 clases
+                </p>
+                <p className="mt-0.5 text-2xl font-extrabold text-white">
+                  $2,400{" "}
+                  <span className="text-xs font-medium text-white/40">MXN</span>
+                </p>
+                <p className="mt-1 text-[11px] text-white/40">
+                  10 créditos · 8 pagadas + 2 gratis
+                </p>
+                <span className="mt-3 inline-flex items-center gap-1 text-xs font-semibold text-blue-400">
+                  {buying === "package" ? "Redirigiendo…" : "Comprar"}
+                  <ChevronRight className="size-3.5 transition-transform group-hover:translate-x-0.5" />
+                </span>
+              </button>
+            </div>
+            <p className="mt-4 text-center text-[11px] text-white/30">
+              Pago seguro con Stripe · tarjeta, transferencia SPEI u OXXO
+            </p>
+          </CardContent>
+        </Card>
+
+        {/* Book a class */}
+        <Card
+          data-testid="booking-card"
+          className="mb-6 overflow-hidden rounded-2xl border-white/[0.08] bg-[#0f1729]/40 backdrop-blur-xl"
+        >
+          <CardContent className="p-6 md:p-8">
+            <div className="mb-5 flex items-center gap-3">
+              <div className="flex size-12 items-center justify-center rounded-full border border-blue-500/20 bg-blue-500/10">
+                <CalendarIcon className="size-5 text-blue-400" />
+              </div>
+              <div>
+                <p className="text-[10px] font-semibold tracking-[0.2em] text-white/45 uppercase">
+                  Agenda una clase
+                </p>
+                <h2 className="text-lg font-bold text-white">
+                  Reserva tu próxima sesión
+                </h2>
+              </div>
+            </div>
+
+            {!hasCredits ? (
+              <div className="rounded-xl border border-dashed border-white/[0.1] bg-white/[0.02] p-6 text-center">
+                <Sparkles className="mx-auto mb-2 size-6 text-blue-400/60" />
+                <p className="text-sm font-semibold text-white/80">
+                  Necesitas créditos para agendar
+                </p>
+                <p className="mt-1 text-xs text-white/40">
+                  Compra una clase o un paquete arriba y podrás elegir tu
+                  horario.
+                </p>
+              </div>
+            ) : (
+              <>
+                <label className="mb-2 flex items-center gap-1.5 text-[10px] font-semibold tracking-wider text-white/50 uppercase">
+                  <CalendarIcon className="size-3.5" /> 1. Elige el día
+                </label>
+                <div className="mb-5 grid max-h-40 grid-cols-3 gap-2 overflow-y-auto pr-1 sm:grid-cols-4">
+                  {getAvailableDates().map((date, idx) => {
+                    const isSelected =
+                      selectedDate?.toDateString() === date.toDateString();
+                    return (
+                      <button
+                        key={idx}
+                        onClick={() => {
+                          setSelectedDate(date);
+                          setSelectedTimeSlot(null);
+                        }}
+                        className={`rounded-xl border p-3 text-center text-[11px] font-semibold transition-all ${
+                          isSelected
+                            ? "border-blue-500 bg-blue-500/10 text-white"
+                            : "border-white/[0.06] bg-[#111827]/25 text-white/50 hover:border-white/15 hover:text-white"
+                        }`}
+                      >
+                        <span className="block text-white capitalize">
+                          {date.toLocaleDateString("es-ES", {
+                            weekday: "short",
+                          })}
+                        </span>
+                        <span className="mt-0.5 block text-xs font-bold">
+                          {date.toLocaleDateString("es-ES", {
+                            day: "numeric",
+                            month: "short",
+                          })}
+                        </span>
+                      </button>
+                    );
+                  })}
+                </div>
+
+                {selectedDate && (
+                  <div className="mb-5">
+                    <label className="mb-2 flex items-center gap-1.5 text-[10px] font-semibold tracking-wider text-white/50 uppercase">
+                      <Clock className="size-3.5" /> 2. Elige la hora (tu zona
+                      horaria)
+                    </label>
+                    <div className="grid grid-cols-4 gap-2 sm:grid-cols-5">
+                      {TIME_SLOTS.map((slot) => {
+                        const isBooked = bookedSlots.includes(slot);
+                        const isSelected = selectedTimeSlot === slot;
+                        return (
+                          <button
+                            key={slot}
+                            disabled={isBooked}
+                            onClick={() => setSelectedTimeSlot(slot)}
+                            className={`rounded-xl border p-2.5 text-center text-xs font-bold transition-all ${
+                              isBooked
+                                ? "cursor-not-allowed border-white/[0.03] bg-white/[0.02] text-white/20 line-through"
+                                : isSelected
+                                  ? "border-blue-500 bg-blue-500/10 text-white"
+                                  : "border-white/[0.06] bg-[#111827]/25 text-white/60 hover:border-white/15 hover:text-white"
+                            }`}
+                          >
+                            {slot}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
+
+                <Button
+                  onClick={confirmBooking}
+                  disabled={booking || !selectedDate || !selectedTimeSlot}
+                  className="flex w-full items-center justify-center gap-2 rounded-full bg-blue-500 py-6 text-sm font-semibold text-white shadow-lg shadow-blue-500/20 transition-all hover:bg-blue-400"
+                >
+                  {booking ? "Confirmando…" : "Agendar clase (1 crédito)"}
+                  <ChevronRight className="size-4" />
+                </Button>
+              </>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Upcoming sessions */}
+        {sessions.length > 0 && (
+          <Card
+            data-testid="sessions-card"
+            className="mb-6 overflow-hidden rounded-2xl border-white/[0.08] bg-[#0f1729]/40 backdrop-blur-xl"
+          >
+            <CardContent className="p-6 md:p-8">
+              <p className="mb-4 text-[10px] font-semibold tracking-[0.2em] text-white/45 uppercase">
+                Próximas clases
+              </p>
+              <div className="space-y-3">
+                {sessions.map((s) => {
+                  const d = new Date(s.dateTime);
+                  return (
+                    <div
+                      key={s._id}
+                      className="flex items-center justify-between rounded-xl border border-white/[0.06] bg-white/[0.02] p-4"
+                    >
+                      <div>
+                        <p className="text-sm font-semibold text-white capitalize">
+                          {d.toLocaleDateString("es-MX", {
+                            weekday: "long",
+                            day: "numeric",
+                            month: "long",
+                            timeZone: "America/Mexico_City",
+                          })}
+                        </p>
+                        <p className="mt-0.5 text-xs text-white/50">
+                          {d.toLocaleTimeString("es-MX", {
+                            hour: "2-digit",
+                            minute: "2-digit",
+                            hour12: false,
+                            timeZone: "America/Mexico_City",
+                          })}{" "}
+                          hrs (CDMX) ·{" "}
+                          {s.type === "intro" ? "Clase demo" : "Clase privada"}{" "}
+                          · {s.duration} min
+                        </p>
+                      </div>
+                      {teacherPhone && (
+                        <a
+                          href={`https://wa.me/${teacherPhone.replace(/\D/g, "")}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center gap-1.5 rounded-full border border-[#25d366]/30 bg-[#25d366]/10 px-3 py-2 text-xs font-semibold text-[#25d366] transition-colors hover:bg-[#25d366]/20"
+                        >
+                          <MessageSquare className="size-3.5" />
+                          WhatsApp
+                        </a>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            </CardContent>
+          </Card>
+        )}
 
         {student.quizResult && (
           <Card

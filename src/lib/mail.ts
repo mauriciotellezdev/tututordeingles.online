@@ -144,12 +144,18 @@ export async function sendMail(options: {
     return sendViaBrevoApi(options);
   }
 
-  if (
-    process.env.MAIL_HOST &&
-    process.env.MAIL_HOST !== "127.0.0.1" &&
-    process.env.MAIL_HOST !== "localhost"
-  ) {
+  if (process.env.MAIL_HOST) {
     return sendViaSmtp(options);
+  }
+
+  // Fail loud in production: transactional mail (OTP login/signup, booking
+  // confirmations) is critical. Never silently drop it — a missing transport
+  // must surface as an error so signup/login/booking fail visibly, not silently
+  // lock users out.
+  if (process.env.NODE_ENV === "production") {
+    throw new Error(
+      "No email transport configured (set BREVO_API_KEY or MAIL_HOST). Refusing to silently drop transactional email in production."
+    );
   }
 
   console.log("\n=== MOCK EMAIL ===");

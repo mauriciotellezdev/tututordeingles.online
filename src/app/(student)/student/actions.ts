@@ -413,7 +413,15 @@ export async function createCheckoutSessionAction(payload: {
     ];
 
     const session = await stripe.checkout.sessions.create({
-      payment_method_types: ["card"],
+      payment_method_types: ["card", "oxxo", "customer_balance"],
+      payment_method_options: {
+        customer_balance: {
+          funding_type: "bank_transfer",
+          bank_transfer: {
+            type: "mx_bank_transfer",
+          },
+        },
+      },
       line_items: lineItems,
       mode: "payment",
       customer: stripeCustomerId,
@@ -465,6 +473,13 @@ export async function verifyPaymentAction(payload: {
     }
 
     if (session.payment_status !== "paid") {
+      if (session.status === "open" || session.status === "complete") {
+        return {
+          success: true,
+          message:
+            "Tu pago está pendiente de confirmación (ej. pago en OXXO o transferencia SPEI). Tus créditos se activarán automáticamente en cuanto se confirme el pago.",
+        };
+      }
       return {
         success: false,
         error:
