@@ -91,9 +91,11 @@ export async function POST(request: NextRequest) {
     );
   }
 
+  const seeded = await studentsCol.findOne({ _id: studentId });
   const response = NextResponse.json({
     success: true,
     studentId: studentId.toString(),
+    referralCode: seeded?.referralCode ?? null,
   });
   response.cookies.set("student_id", studentId.toString(), {
     httpOnly: true,

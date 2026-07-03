@@ -19,6 +19,7 @@ import { sendMail } from "@/lib/mail";
 import Stripe from "stripe";
 import { getReferralDashboardSummary } from "@/lib/referrals";
 import { getTimeZoneDateKey, getTimeZoneHourLabel } from "@/lib/timezone";
+import { findConflictingSession } from "@/lib/bookings";
 
 /**
  * Action 1: Get data for student dashboard
@@ -169,17 +170,10 @@ export async function bookSessionAction(payload: {
 
     const dateTime = new Date(dateTimeIso);
 
-    // Check for existing booking in the same hour slot
+    // Reject any booking overlapping this one (absolute-time window, so
+    // half-hour-offset timezones can't slip past an hour-truncated check).
     const sessionsCol = await getCollection(SESSION_COLLECTION);
-    const hourStart = new Date(dateTime);
-    hourStart.setMinutes(0, 0, 0);
-    const hourEnd = new Date(hourStart);
-    hourEnd.setHours(hourEnd.getHours() + 1);
-
-    const existingSlot = await sessionsCol.findOne({
-      status: "booked",
-      dateTime: { $gte: hourStart, $lt: hourEnd },
-    });
+    const existingSlot = await findConflictingSession(sessionsCol, dateTime);
 
     if (existingSlot) {
       return {
@@ -459,15 +453,11 @@ export async function rescheduleSessionAction(payload: {
       };
     }
 
-    const hourStart = new Date(newDateTime);
-    hourStart.setMinutes(0, 0, 0);
-    const hourEnd = new Date(hourStart);
-    hourEnd.setHours(hourEnd.getHours() + 1);
-    const clash = await sessionsCol.findOne({
-      _id: { $ne: sessionOid },
-      status: "booked",
-      dateTime: { $gte: hourStart, $lt: hourEnd },
-    });
+    const clash = await findConflictingSession(
+      sessionsCol,
+      newDateTime,
+      sessionOid
+    );
     if (clash) {
       return {
         success: false,

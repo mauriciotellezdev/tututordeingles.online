@@ -27,21 +27,38 @@ function getPathValue(source: AnyRecord, path: string) {
   }, source);
 }
 
+const OPERATOR_KEYS = ["$exists", "$gte", "$lte", "$gt", "$lt", "$ne", "$in"];
+
 function matchesValue(actual: unknown, expected: unknown): boolean {
-  if (isPlainObject(expected)) {
-    if ("$exists" in expected) {
-      const exists = actual !== undefined;
-      return Boolean(expected.$exists) ? exists : !exists;
-    }
-    if ("$gte" in expected) {
-      return Number(actual) >= Number(expected.$gte);
-    }
-    if ("$lte" in expected) {
-      return Number(actual) <= Number(expected.$lte);
-    }
-    if ("$in" in expected && Array.isArray(expected.$in)) {
-      return expected.$in.some((item) => matchesValue(actual, item));
-    }
+  if (
+    isPlainObject(expected) &&
+    Object.keys(expected).some((k) => OPERATOR_KEYS.includes(k))
+  ) {
+    // Operator objects are conjunctive: every operator present must hold
+    // (e.g. { $gt: a, $lt: b } is a range).
+    return Object.entries(expected).every(([op, operand]) => {
+      switch (op) {
+        case "$exists":
+          return Boolean(operand) ? actual !== undefined : actual === undefined;
+        case "$gte":
+          return Number(actual) >= Number(operand);
+        case "$lte":
+          return Number(actual) <= Number(operand);
+        case "$gt":
+          return Number(actual) > Number(operand);
+        case "$lt":
+          return Number(actual) < Number(operand);
+        case "$ne":
+          return !matchesValue(actual, operand);
+        case "$in":
+          return (
+            Array.isArray(operand) &&
+            operand.some((item) => matchesValue(actual, item))
+          );
+        default:
+          return false;
+      }
+    });
   }
 
   if (actual instanceof ObjectId || expected instanceof ObjectId) {

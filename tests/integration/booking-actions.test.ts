@@ -127,6 +127,29 @@ test("bookIntroCallAction still succeeds when the owner notification fails", asy
   expect(consoleWarnSpy).toHaveBeenCalledTimes(1);
 });
 
+test("bookIntroCallAction rejects a booking that overlaps by 30 minutes", async () => {
+  const { bookIntroCallAction } = await bookingModulePromise;
+
+  // A :30 start time — what a half-hour-offset timezone produces.
+  const first = new Date(Date.now() + 96 * 60 * 60 * 1000);
+  first.setMinutes(30, 0, 0);
+  const firstResult = await bookIntroCallAction({
+    dateTimeIso: first.toISOString(),
+  });
+  expect(firstResult.success).toBe(true);
+
+  // 30 minutes later, at the top of the NEXT hour — the running :30 session
+  // still overlaps it, but the old hour-bucket check looked only inside
+  // [H+1, H+2) and let it through. The overlap window must reject it.
+  const overlapping = new Date(first.getTime() + 30 * 60 * 1000);
+  const overlapResult = await bookIntroCallAction({
+    dateTimeIso: overlapping.toISOString(),
+  });
+  expect(overlapResult.success).toBe(false);
+  expect(overlapResult.error).toContain("ocupado");
+  expect(collections.sessions.docs).toHaveLength(1);
+});
+
 test("getBookedSlotsAction maps booked UTC sessions to the browser timezone", async () => {
   const { getBookedSlotsAction } = await bookingModulePromise;
   const bookedDate = new Date("2026-06-06T19:00:00.000Z");
