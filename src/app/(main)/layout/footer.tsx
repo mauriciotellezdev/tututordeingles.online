@@ -6,7 +6,8 @@ const currentYear = new Date().getFullYear();
 const links = {
   navegacion: [
     { label: "Cómo funciona", href: "#como-funciona" },
-    { label: "Tu tutor", href: "#tutor" },
+    { label: "Clases en Tehuacán", href: "/clases-de-ingles-en-tehuacan" },
+    { label: "Clases de experiencias", href: "/clases-de-ingles-experiencias" },
     { label: "Precios", href: "#precios" },
     { label: "Blog", href: "/blog" },
   ],
@@ -44,10 +45,16 @@ export default function Footer() {
               <span className="font-light text-blue-400">de Inglés</span>
             </Link>
             <p
-              className="mt-4 max-w-[180px] text-xs leading-relaxed text-white/25"
+              className="mt-4 max-w-[200px] text-xs leading-relaxed text-white/25"
               style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}
             >
               Clases privadas de inglés para profesionales hispanohablantes.
+            </p>
+            <p
+              className="mt-3 text-[11px] font-medium text-white/30"
+              style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}
+            >
+              Tehuacán, Puebla · México
             </p>
           </div>
 

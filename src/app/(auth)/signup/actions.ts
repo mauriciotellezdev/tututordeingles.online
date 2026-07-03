@@ -19,6 +19,7 @@ import {
   ensureReferralIndexes,
   generateUniqueReferralCode,
 } from "@/lib/referrals";
+import { recordSignupAttribution } from "@/lib/campaigns";
 import { sendMail } from "@/lib/mail";
 
 /**
@@ -178,6 +179,32 @@ export async function signupStudentAction(input: {
             },
           }
         );
+      }
+
+      // QR / marketing attribution — persist which campaign code brought them
+      // in. Best-effort and isolated so it can never break the signup flow.
+      const campaignCode = cookieStore.get("tu_campaign")?.value;
+      if (campaignCode) {
+        try {
+          await recordSignupAttribution({
+            code: campaignCode,
+            studentId: insertedId.toString(),
+            email: normalizedEmail,
+          });
+          // Convenience denormalized field on the student (best-effort; a
+          // not-yet-migrated validator must not break signup).
+          await studentsCol.updateOne(
+            { _id: insertedId },
+            {
+              $set: { signupCampaignCode: campaignCode, updatedAt: new Date() },
+            }
+          );
+        } catch (attributionError) {
+          console.warn(
+            "Failed to record campaign attribution:",
+            attributionError
+          );
+        }
       }
 
       // Send the verification code email

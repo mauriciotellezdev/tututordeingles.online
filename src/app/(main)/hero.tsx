@@ -6,20 +6,20 @@ import Image from "next/image";
 
 export default function Hero() {
   return (
-    <section className="relative min-h-screen flex items-center bg-[#0f1729] overflow-hidden">
+    <section className="relative flex min-h-screen items-center overflow-hidden bg-[#0f1729]">
       {/* Radial glow behind photo */}
-      <div className="absolute right-0 top-0 w-[55%] h-full bg-gradient-to-l from-[#1a2a50] to-transparent pointer-events-none" />
-      <div className="absolute right-[10%] top-1/2 -translate-y-1/2 w-[400px] h-[400px] bg-blue-600/10 rounded-full blur-[80px] pointer-events-none" />
+      <div className="pointer-events-none absolute top-0 right-0 h-full w-[55%] bg-gradient-to-l from-[#1a2a50] to-transparent" />
+      <div className="pointer-events-none absolute top-1/2 right-[10%] h-[400px] w-[400px] -translate-y-1/2 rounded-full bg-blue-600/10 blur-[80px]" />
 
-      <div className="relative z-10 max-w-6xl mx-auto px-6 w-full grid grid-cols-1 md:grid-cols-2 gap-12 items-center py-24">
+      <div className="relative z-10 mx-auto grid w-full max-w-6xl grid-cols-1 items-center gap-12 px-6 py-24 md:grid-cols-2">
         {/* Left — copy */}
         <div>
-          <Badge className="mb-6 bg-blue-500/10 text-blue-400 border border-blue-500/20 rounded-full px-4 py-1.5 text-[11px] tracking-widest uppercase font-normal">
-            Clases 1 a 1 · WhatsApp
+          <Badge className="mb-6 rounded-full border border-blue-500/20 bg-blue-500/10 px-4 py-1.5 text-[11px] font-normal tracking-widest text-blue-400 uppercase">
+            Tehuacán · Presencial o en línea
           </Badge>
 
           <h1
-            className="text-4xl md:text-5xl lg:text-6xl font-bold text-white mb-6 leading-[1.1]"
+            className="mb-6 text-4xl leading-[1.1] font-bold text-white md:text-5xl lg:text-6xl"
             style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}
           >
             Suena como un
@@ -30,19 +30,20 @@ export default function Hero() {
           </h1>
 
           <p
-            className="text-white/55 text-base leading-relaxed mb-8 max-w-md"
+            className="mb-8 max-w-md text-base leading-relaxed text-white/55"
             style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}
           >
-            Soy estadounidense y hablo inglés sin acento. Te enseño a sonar
-            como un nativo — sin acento mexicano. Coaching uno a uno para
-            profesionales que quieren expresarse con claridad y confianza.
+            Soy estadounidense y hablo inglés sin acento. Te enseño a sonar como
+            un nativo — sin acento mexicano. Clases uno a uno en Tehuacán
+            (presenciales o en línea) para profesionales que quieren expresarse
+            con claridad y confianza.
           </p>
 
-          <div className="flex flex-wrap gap-3 mb-10">
+          <div className="mb-10 flex flex-wrap gap-3">
             <a href="/signup">
               <Button
                 size="lg"
-                className="bg-blue-500 hover:bg-blue-400 text-white rounded-full px-7 py-6 text-sm font-semibold tracking-wide transition-all duration-300 hover:scale-[1.02] shadow-lg shadow-blue-500/25"
+                className="rounded-full bg-blue-500 px-7 py-6 text-sm font-semibold tracking-wide text-white shadow-lg shadow-blue-500/25 transition-all duration-300 hover:scale-[1.02] hover:bg-blue-400"
                 style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}
               >
                 Agenda tu clase gratis
@@ -51,7 +52,7 @@ export default function Hero() {
             <Button
               variant="ghost"
               size="lg"
-              className="text-white/50 hover:text-white hover:bg-white/5 rounded-full px-7 py-6 text-sm font-medium border border-white/10 transition-all duration-300"
+              className="rounded-full border border-white/10 px-7 py-6 text-sm font-medium text-white/50 transition-all duration-300 hover:bg-white/5 hover:text-white"
               style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}
               onClick={() => {
                 const pricingSection = document.getElementById("precios");
@@ -66,7 +67,7 @@ export default function Hero() {
 
           {/* Stats row */}
           <div
-            className="flex gap-8 pt-8 border-t border-white/[0.08]"
+            className="flex gap-8 border-t border-white/[0.08] pt-8"
             style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}
           >
             {[
@@ -74,8 +75,8 @@ export default function Hero() {
               { value: "MXN", label: "Pago en pesos" },
             ].map((stat) => (
               <div key={stat.label}>
-                <p className="text-white font-bold text-lg">{stat.value}</p>
-                <p className="text-white/35 text-xs mt-0.5">{stat.label}</p>
+                <p className="text-lg font-bold text-white">{stat.value}</p>
+                <p className="mt-0.5 text-xs text-white/35">{stat.label}</p>
               </div>
             ))}
           </div>
@@ -85,19 +86,30 @@ export default function Hero() {
         <div className="relative flex justify-center md:justify-end">
           <div className="relative w-[320px] md:w-[400px]">
             {/* Glow ring */}
-            <div className="absolute inset-0 rounded-2xl bg-blue-500/10 blur-2xl scale-110" />
+            <div className="absolute inset-0 scale-110 rounded-2xl bg-blue-500/10 blur-2xl" />
             {/* Photo box — replace div with <Image> */}
-            <div className="relative rounded-2xl overflow-hidden bg-[#1a2a50] border border-white/[0.08] aspect-[3/4] flex items-end">
+            <div className="relative flex aspect-[3/4] items-end overflow-hidden rounded-2xl border border-white/[0.08] bg-[#1a2a50]">
               {/* <Image src="/tutor.jpg" alt="Tu tutor" fill className="object-cover" /> */}
               <div className="absolute inset-0 flex items-center justify-center">
-                <Image src="/tutor-avatar.png" alt="Tu tutor" fill className="object-cover" />
+                <Image
+                  src="/tutor-avatar.png"
+                  alt="Tu tutor"
+                  fill
+                  className="object-cover"
+                />
               </div>
               {/* Name card overlay */}
-              <div className="relative z-10 w-full p-5 bg-gradient-to-t from-[#0f1729] to-transparent">
-                <p className="text-white font-semibold text-sm" style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
+              <div className="relative z-10 w-full bg-gradient-to-t from-[#0f1729] to-transparent p-5">
+                <p
+                  className="text-sm font-semibold text-white"
+                  style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}
+                >
                   Mauricio Tellez
                 </p>
-                <p className="text-white/40 text-xs mt-0.5" style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
+                <p
+                  className="mt-0.5 text-xs text-white/40"
+                  style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}
+                >
                   Tutor nativo · EE.UU.
                 </p>
               </div>
