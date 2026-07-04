@@ -14,6 +14,10 @@ Every payment test is **real money**. "Pagos de prueba" charges the **$10 MXN mi
 - [ ] A **Gmail you control** as "the student", plus a **second, different email** for the referral test
 - [ ] A **real debit/credit card** + ~$10 cash for one OXXO run
 - [ ] **Teacher login** (`mauricio@` OTP), **Stripe dashboard**, and the receiving **inbox — check spam too**
+- [ ] **Your test QR code** — a live prod campaign `qa-test` is already set up for this plan:
+  - Scan URL: **`https://tututordeingles.online/q/qa-test`**
+  - Printable PNG: `~/Desktop/qrcodes/tututordeingles-online_q_qa-test.png`
+  - It tracks in `/teacher/campaigns` (scans → signups → revenue), so use it for every "scan" step below.
 
 ---
 
@@ -21,7 +25,7 @@ Every payment test is **real money**. "Pagos de prueba" charges the **$10 MXN mi
 
 **If any of these fail, do not advertise.**
 
-- [ ] **[human]** Scan a real `/q/<code>` (or open `tututordeingles.online/q/test-1`) → lands on the Tehuacán page.
+- [ ] **[human]** Scan your test QR (or open **`https://tututordeingles.online/q/qa-test`**) on your phone → redirects to the Tehuacán page.
 - [ ] **[human]** Homepage + Tehuacán page render clean on mobile; tap "Agenda tu clase gratis" → `/signup`.
 - [ ] **[human] — the critical one:** Sign up (name/email/phone, check consent) → the **OTP email arrives within ~30s — CHECK SPAM** → enter code → lands on the quiz.
   - If in spam → mark "Not spam" + reply (builds reputation).
@@ -53,7 +57,7 @@ Every payment test is **real money**. "Pagos de prueba" charges the **$10 MXN mi
 
 ## Phase 4 — Growth & ops (~15 min)
 
-- [ ] **[human]** **QR tracking:** create a code in `/teacher/campaigns` → scan its `/q/` link on your phone → sign up → the campaign shows **scans / signups** (and revenue once that student pays). Confirm bot preview-scans aren't inflating counts.
+- [ ] **[human]** **QR tracking:** open `/teacher/campaigns` → find `qa-test` (or create a new code) → scan its `/q/` link on your phone → sign up → the campaign shows **scans / signups** (and revenue once that student pays). Confirm bot preview-scans aren't inflating counts.
 - [ ] **[human]** **Print sheet:** `/teacher/campaigns` → "Hoja para imprimir" → clean printable grid.
 - [ ] **[human]** **WhatsApp OG preview:** paste `tututordeingles.online/clases-de-ingles-en-tehuacan` into a WhatsApp chat → a **real image preview** renders, not blank. _(Was broken pre-fix.)_
 - [ ] **[human]** **Cookie consent** banner appears first visit → Accept → gone on reload. _(auto)_
