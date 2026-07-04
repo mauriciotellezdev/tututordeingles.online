@@ -35,6 +35,9 @@ function SignupForm() {
 
   // Loading and Error States
   const [loading, setLoading] = useState(false);
+  // Stays true from a successful verify through the delayed redirect so the
+  // code field + buttons can't be edited or re-submitted mid-navigation.
+  const [redirecting, setRedirecting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
@@ -88,6 +91,7 @@ function SignupForm() {
 
     if (res.success) {
       trackSignup();
+      setRedirecting(true);
       setSuccessMessage(
         "¡Email verificado correctamente! Redirigiendo al examen de ubicación..."
       );
@@ -258,7 +262,7 @@ function SignupForm() {
                 value={code}
                 onChange={(e) => setCode(e.target.value.replace(/\D/g, ""))}
                 className="rounded-full border-white/[0.08] bg-[#111827]/40 py-6 text-center text-lg font-bold tracking-widest text-white placeholder:text-white/20 focus:border-blue-500/50"
-                disabled={loading}
+                disabled={loading || redirecting}
               />
             </div>
 
@@ -266,9 +270,13 @@ function SignupForm() {
               data-testid="signup-verify-button"
               type="submit"
               className="mt-6 flex w-full items-center justify-center gap-2 rounded-full bg-blue-500 py-6 text-sm font-semibold tracking-wide text-white shadow-lg shadow-blue-500/20 transition-all hover:bg-blue-400"
-              disabled={loading || code.length !== 6}
+              disabled={loading || redirecting || code.length !== 6}
             >
-              {loading ? "Verificando..." : "Verificar Código e Ingresar"}
+              {redirecting
+                ? "Redirigiendo..."
+                : loading
+                  ? "Verificando..."
+                  : "Verificar Código e Ingresar"}
               <ChevronRight className="size-4" />
             </Button>
 
@@ -276,7 +284,7 @@ function SignupForm() {
               type="button"
               onClick={() => setStep(1)}
               className="mt-4 w-full text-center text-xs text-white/40 underline underline-offset-4 transition-colors hover:text-white"
-              disabled={loading}
+              disabled={loading || redirecting}
             >
               Volver a editar mis datos
             </button>
