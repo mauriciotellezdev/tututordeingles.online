@@ -41,6 +41,7 @@ export async function createTestCheckoutAction({
 
     const session = await stripe.checkout.sessions.create({
       payment_method_types: [pmType],
+      locale: "es-419", // Latin American Spanish (audience is Mexico)
       line_items: [
         {
           price_data: {

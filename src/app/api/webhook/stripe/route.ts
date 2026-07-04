@@ -13,9 +13,17 @@ export async function POST(req: Request) {
   const stripeSecretKey = process.env.STRIPE_SECRET_KEY;
   const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
 
-  if (!stripeSecretKey) {
+  // Both are mandatory in EVERY environment. Never process an unverified event:
+  // without signature verification anyone who knows this URL could POST a forged
+  // "payment succeeded" and mint themselves credits. Fail loud instead.
+  if (!stripeSecretKey || !webhookSecret) {
+    console.error(
+      "Stripe webhook not configured: missing " +
+        (!stripeSecretKey ? "STRIPE_SECRET_KEY " : "") +
+        (!webhookSecret ? "STRIPE_WEBHOOK_SECRET" : "")
+    );
     return NextResponse.json(
-      { error: "Stripe not configured" },
+      { error: "Webhook not configured" },
       { status: 500 }
     );
   }
@@ -24,12 +32,7 @@ export async function POST(req: Request) {
 
   try {
     const stripe = new Stripe(stripeSecretKey);
-    if (webhookSecret) {
-      event = stripe.webhooks.constructEvent(body, signature, webhookSecret);
-    } else {
-      // Fallback for local dev without webhook secret — parse raw body
-      event = JSON.parse(body);
-    }
+    event = stripe.webhooks.constructEvent(body, signature, webhookSecret);
   } catch (err: Error | unknown) {
     console.error(
       "Stripe webhook signature verification failed:",
