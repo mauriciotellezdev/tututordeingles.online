@@ -616,6 +616,7 @@ export async function createCheckoutSessionAction(payload: {
       try {
         session = await stripe.checkout.sessions.create({
           payment_method_types: methods,
+          locale: "es-419", // Latin American Spanish (audience is Mexico)
           ...(methods.includes("customer_balance")
             ? {
                 payment_method_options: {
