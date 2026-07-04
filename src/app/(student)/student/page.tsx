@@ -138,6 +138,16 @@ function StudentDashboard() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  // Returning from Stripe via browser Back restores this page from the bfcache
+  // with `buying` still set, leaving the purchase buttons permanently disabled.
+  // `pageshow` fires on bfcache restore — clear the in-flight state so they
+  // re-enable.
+  useEffect(() => {
+    const reset = () => setBuying(null);
+    window.addEventListener("pageshow", reset);
+    return () => window.removeEventListener("pageshow", reset);
+  }, []);
+
   // Refresh available slots when a date is picked
   useEffect(() => {
     if (!selectedDate) return;
@@ -317,6 +327,83 @@ function StudentDashboard() {
             Compra créditos y agenda tus clases de inglés con Mauricio.
           </p>
         </div>
+
+        {/* Upcoming sessions — surfaced at the top so students see what's next first */}
+        {sessions.length > 0 && (
+          <Card
+            data-testid="sessions-card"
+            className="mb-6 overflow-hidden rounded-2xl border-white/[0.08] bg-[#0f1729]/40 backdrop-blur-xl"
+          >
+            <CardContent className="p-6 md:p-8">
+              <p className="mb-4 text-[10px] font-semibold tracking-[0.2em] text-white/45 uppercase">
+                Próximas clases
+              </p>
+              <div className="space-y-3">
+                {sessions.map((s) => {
+                  const d = new Date(s.dateTime);
+                  const isFree = s.type === "intro";
+                  return (
+                    <div
+                      key={s._id}
+                      className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-4"
+                    >
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <div className="flex items-center gap-2">
+                            <p className="text-sm font-semibold text-white capitalize">
+                              {d.toLocaleDateString("es-MX", {
+                                weekday: "long",
+                                day: "numeric",
+                                month: "long",
+                                timeZone: "America/Mexico_City",
+                              })}
+                            </p>
+                            {isFree && (
+                              <span className="rounded-full border border-green-500/30 bg-green-500/10 px-2 py-0.5 text-[9px] font-bold tracking-wider text-green-400 uppercase">
+                                Gratis
+                              </span>
+                            )}
+                          </div>
+                          <p className="mt-0.5 text-xs text-white/50">
+                            {d.toLocaleTimeString("es-MX", {
+                              hour: "2-digit",
+                              minute: "2-digit",
+                              hour12: false,
+                              timeZone: "America/Mexico_City",
+                            })}{" "}
+                            hrs (CDMX) ·{" "}
+                            {isFree
+                              ? "Consulta demo gratuita"
+                              : "Clase privada"}{" "}
+                            · {s.duration} min
+                          </p>
+                        </div>
+                        {teacherPhone && (
+                          <a
+                            href={`https://wa.me/${teacherPhone.replace(/\D/g, "")}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex items-center gap-1.5 rounded-full border border-[#25d366]/30 bg-[#25d366]/10 px-3 py-2 text-xs font-semibold text-[#25d366] transition-colors hover:bg-[#25d366]/20"
+                          >
+                            <MessageSquare className="size-3.5" />
+                            WhatsApp
+                          </a>
+                        )}
+                      </div>
+                      <SessionActions
+                        sessionId={s._id}
+                        onChanged={(msg) => {
+                          setStatusMessage(msg);
+                          loadDashboardData();
+                        }}
+                      />
+                    </div>
+                  );
+                })}
+              </div>
+            </CardContent>
+          </Card>
+        )}
 
         {/* Credits + Buy */}
         <Card
@@ -503,75 +590,6 @@ function StudentDashboard() {
             )}
           </CardContent>
         </Card>
-
-        {/* Upcoming sessions */}
-        {sessions.length > 0 && (
-          <Card
-            data-testid="sessions-card"
-            className="mb-6 overflow-hidden rounded-2xl border-white/[0.08] bg-[#0f1729]/40 backdrop-blur-xl"
-          >
-            <CardContent className="p-6 md:p-8">
-              <p className="mb-4 text-[10px] font-semibold tracking-[0.2em] text-white/45 uppercase">
-                Próximas clases
-              </p>
-              <div className="space-y-3">
-                {sessions.map((s) => {
-                  const d = new Date(s.dateTime);
-                  return (
-                    <div
-                      key={s._id}
-                      className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-4"
-                    >
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <p className="text-sm font-semibold text-white capitalize">
-                            {d.toLocaleDateString("es-MX", {
-                              weekday: "long",
-                              day: "numeric",
-                              month: "long",
-                              timeZone: "America/Mexico_City",
-                            })}
-                          </p>
-                          <p className="mt-0.5 text-xs text-white/50">
-                            {d.toLocaleTimeString("es-MX", {
-                              hour: "2-digit",
-                              minute: "2-digit",
-                              hour12: false,
-                              timeZone: "America/Mexico_City",
-                            })}{" "}
-                            hrs (CDMX) ·{" "}
-                            {s.type === "intro"
-                              ? "Clase demo"
-                              : "Clase privada"}{" "}
-                            · {s.duration} min
-                          </p>
-                        </div>
-                        {teacherPhone && (
-                          <a
-                            href={`https://wa.me/${teacherPhone.replace(/\D/g, "")}`}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="inline-flex items-center gap-1.5 rounded-full border border-[#25d366]/30 bg-[#25d366]/10 px-3 py-2 text-xs font-semibold text-[#25d366] transition-colors hover:bg-[#25d366]/20"
-                          >
-                            <MessageSquare className="size-3.5" />
-                            WhatsApp
-                          </a>
-                        )}
-                      </div>
-                      <SessionActions
-                        sessionId={s._id}
-                        onChanged={(msg) => {
-                          setStatusMessage(msg);
-                          loadDashboardData();
-                        }}
-                      />
-                    </div>
-                  );
-                })}
-              </div>
-            </CardContent>
-          </Card>
-        )}
 
         {student.quizResult && (
           <Card

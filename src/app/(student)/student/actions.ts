@@ -520,9 +520,23 @@ export async function logoutAction() {
  */
 export async function createCheckoutSessionAction(payload: {
   planType: "single" | "package";
+  /**
+   * Test purchases charge the $10 MXN Stripe minimum but still grant the plan's
+   * credits (so the buy→book funnel can be exercised cheaply). Only honored when
+   * ENABLE_TEST_CHECKOUT is explicitly "true" — otherwise it's rejected outright
+   * so the price can never be silently discounted for a real customer.
+   */
+  test?: boolean;
 }) {
   try {
     const { planType } = payload;
+    const isTest = payload.test === true;
+    if (isTest && process.env.ENABLE_TEST_CHECKOUT !== "true") {
+      return {
+        success: false,
+        error: "El checkout de prueba está deshabilitado.",
+      };
+    }
     const cookieStore = await cookies();
     const studentIdStr = cookieStore.get("student_id")?.value;
 
@@ -570,14 +584,17 @@ export async function createCheckoutSessionAction(payload: {
         price_data: {
           currency: "mxn",
           product_data: {
-            name: isSingle
-              ? "Clase Individual (1 Crédito)"
-              : "Paquete 10 Clases (8 Pagadas + 2 Gratis)",
+            name: `${isTest ? "PRUEBA — " : ""}${
+              isSingle
+                ? "Clase Individual (1 Crédito)"
+                : "Paquete 10 Clases (8 Pagadas + 2 Gratis)"
+            }`,
             description: isSingle
               ? "1 sesión privada de inglés (60 minutos) con Mauricio Tellez."
               : "Paquete de 10 sesiones privadas de inglés — 8 pagadas + 2 gratis (60 minutos cada una) con Mauricio Tellez.",
           },
-          unit_amount: isSingle ? 30000 : 240000, // In cents: $300 MXN vs $2400 MXN
+          // Test purchases hit the $10 MXN Stripe minimum; real ones charge full.
+          unit_amount: isTest ? 1000 : isSingle ? 30000 : 240000,
         },
         quantity: 1,
       },

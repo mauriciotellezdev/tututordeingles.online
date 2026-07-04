@@ -16,6 +16,36 @@ import {
   saveQuizProgressAction,
 } from "@/app/(student)/placement-quiz/actions";
 
+// Deterministic per-seed shuffle (mulberry32 over an FNV-1a hash of the seed).
+// Seeding by the question id keeps the option order stable across re-renders and
+// back/next navigation, while breaking the authoring bias where the correct
+// answer tended to sit in the same slot. Grading is by answer id, so reordering
+// the display never affects correctness.
+function hashSeed(str: string): number {
+  let h = 2166136261;
+  for (let i = 0; i < str.length; i++) {
+    h ^= str.charCodeAt(i);
+    h = Math.imul(h, 16777619);
+  }
+  return h >>> 0;
+}
+
+function seededShuffle<T>(items: T[], seed: string): T[] {
+  let state = hashSeed(seed) || 1;
+  const next = () => {
+    state = (state + 0x6d2b79f5) | 0;
+    let t = Math.imul(state ^ (state >>> 15), 1 | state);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+  const arr = [...items];
+  for (let i = arr.length - 1; i > 0; i--) {
+    const j = Math.floor(next() * (i + 1));
+    [arr[i], arr[j]] = [arr[j], arr[i]];
+  }
+  return arr;
+}
+
 interface QuizQuestionAnswer {
   _id: string;
   answer: string;
@@ -136,6 +166,10 @@ export default function QuestionPage({
   const currentQuestionIndex = questionNumber - 1;
   const currentQuestion = questions[currentQuestionIndex];
   const selectedAnswerId = selectedAnswers[currentQuestion._id] || "";
+  const shuffledAnswers = seededShuffle(
+    currentQuestion.answers,
+    currentQuestion._id
+  );
 
   // Answer handler
   const handleAnswerSelect = (answerId: string) => {
@@ -265,7 +299,7 @@ export default function QuestionPage({
 
         {/* Answer Options */}
         <div className="mb-8 space-y-3">
-          {currentQuestion.answers.map((answer) => {
+          {shuffledAnswers.map((answer) => {
             const isSelected = selectedAnswerId === answer._id;
             return (
               <button
