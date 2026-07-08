@@ -16,9 +16,8 @@ export default function Header() {
 
   const navLinks = [
     { label: "Cómo funciona", href: "#como-funciona" },
-    { label: "Tehuacán", href: "/clases-de-ingles-en-tehuacan" },
-    { label: "Experiencias", href: "/clases-de-ingles-experiencias" },
-    { label: "Precios", href: "#precios" },
+    { label: "Próximas sesiones", href: "#calendario" },
+    { label: "Preguntas", href: "#preguntas" },
     { label: "Blog", href: "/blog" },
   ];
 
@@ -58,23 +57,17 @@ export default function Header() {
           ))}
         </nav>
 
-        {/* Desktop CTAs */}
+        {/* Desktop CTA */}
         <div
           className="hidden items-center gap-3 md:flex"
           style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}
         >
-          <Link
-            href="/login"
-            className="px-2 text-sm font-medium text-white/45 transition-colors duration-200 hover:text-white"
-          >
-            Entrar
-          </Link>
-          <Link href="/signup">
+          <Link href="/join">
             <Button
               size="sm"
               className="rounded-full bg-blue-500 px-5 py-2 text-sm font-semibold text-white shadow-lg shadow-blue-500/20 transition-all duration-300 hover:scale-[1.02] hover:bg-blue-400"
             >
-              Regístrate
+              Reserva tu lugar
             </Button>
           </Link>
         </div>
@@ -118,15 +111,12 @@ export default function Header() {
             </Link>
           ))}
           <div className="flex flex-col gap-3 border-t border-white/[0.07] pt-2">
-            <Link href="/login" className="text-sm font-medium text-white/40">
-              Entrar
-            </Link>
-            <Link href="/signup">
+            <Link href="/join" onClick={() => setMenuOpen(false)}>
               <Button
                 size="sm"
                 className="w-fit rounded-full bg-blue-500 px-5 py-2 text-sm font-semibold text-white shadow-lg shadow-blue-500/20 hover:bg-blue-400"
               >
-                Regístrate
+                Reserva tu lugar
               </Button>
             </Link>
           </div>

@@ -1,15 +1,58 @@
-import { ObjectId } from "mongodb";
 import { getCollection } from "@/lib/db";
 import {
   CAMPAIGN_COLLECTION,
   CAMPAIGN_SCAN_COLLECTION,
-  CAMPAIGN_SIGNUP_COLLECTION,
-  DEFAULT_CAMPAIGN_TARGET,
   normalizeCampaignCode,
   type Campaign,
 } from "@/lib/models/campaign";
-import { PAYMENT_COLLECTION } from "@/lib/models/payment";
-import { STUDENT_COLLECTION } from "@/lib/models/student";
+import {
+  LEAD_COLLECTION,
+  LEAD_LEVEL_LABELS,
+  LEAD_SLOT_LABELS,
+  type Lead,
+} from "@/lib/models/lead";
+import { blogPosts } from "@/lib/blog-posts";
+
+// Where a scan is sent when its destination is dead or the code is unknown —
+// the visitor always lands somewhere real, never on a 404.
+export const HOMEPAGE_TARGET = "/";
+
+// The public pages a campaign QR may legitimately point to. Built from the
+// static marketing routes plus the content registry so it stays in sync as
+// posts/landing pages are added. A printed QR always encodes /q/<code>, so the
+// image never changes — but if the destination we forward it to was since
+// deleted, we send the scan to the homepage instead of a broken page.
+const STATIC_DESTINATIONS = [
+  "/",
+  "/join",
+  "/perder-el-miedo-a-hablar-ingles",
+  "/club-de-conversacion-en-ingles-tehuacan",
+  "/clases-de-ingles-experiencias",
+  "/english-for-job-interviews",
+  "/ingles-para-entrevistas-de-trabajo",
+  "/blog",
+  "/aviso-de-privacidad",
+  "/terminos",
+  "/reembolsos",
+];
+
+const VALID_DESTINATIONS = new Set<string>([
+  ...STATIC_DESTINATIONS,
+  ...blogPosts.map((p) =>
+    p.kind === "blog" ? `/blog/${p.slug}` : `/${p.slug}`
+  ),
+]);
+
+/**
+ * Guarantee a scan never lands on a dead page. External URLs pass through
+ * unchanged; internal paths are checked against the set of pages that actually
+ * exist and fall back to the homepage when the target no longer resolves.
+ */
+export function resolveValidDestination(target: string): string {
+  if (/^https?:\/\//i.test(target)) return target;
+  const path = target.split(/[?#]/)[0].replace(/\/+$/, "") || "/";
+  return VALID_DESTINATIONS.has(path) ? target : HOMEPAGE_TARGET;
+}
 
 // Link-preview crawlers and scrapers that hit /q/<code> when a link is shared
 // (WhatsApp, Messenger, Slack, etc.). They must still be redirected so the
@@ -30,7 +73,7 @@ export async function ensureCampaignIndexes() {
     ensureCampaignIndexesPromise = (async () => {
       const campaignsCol = await getCollection<Campaign>(CAMPAIGN_COLLECTION);
       const scansCol = await getCollection(CAMPAIGN_SCAN_COLLECTION);
-      const signupsCol = await getCollection(CAMPAIGN_SIGNUP_COLLECTION);
+      const leadsCol = await getCollection<Lead>(LEAD_COLLECTION);
 
       await Promise.all([
         campaignsCol.createIndex(
@@ -41,14 +84,11 @@ export async function ensureCampaignIndexes() {
           { code: 1, day: 1 },
           { unique: true, name: "campaign_scan_code_day_unique" }
         ),
-        signupsCol.createIndex(
-          { studentId: 1 },
-          { unique: true, sparse: true, name: "campaign_signup_student_unique" }
+        leadsCol.createIndex(
+          { campaignCode: 1 },
+          { name: "lead_campaign_idx" }
         ),
-        signupsCol.createIndex(
-          { code: 1 },
-          { name: "campaign_signup_code_idx" }
-        ),
+        leadsCol.createIndex({ createdAt: -1 }, { name: "lead_created_idx" }),
       ]);
     })().catch((error) => {
       ensureCampaignIndexesPromise = null;
@@ -69,13 +109,13 @@ export interface RedirectResolution {
 }
 
 /**
- * Decide where a scanned code should send the visitor.
+ * Decide where a scanned code should send the visitor. Every returned target is
+ * passed through resolveValidDestination, so a scan can never dead-end on a
+ * deleted page — it goes to the homepage instead.
  *
- * - Active code → its own target.
- * - Inactive code → follow the fallbackCode chain to the first ACTIVE code's
- *   target (intelligent redirect for retired codes), otherwise the default
- *   Tehuacán landing page. We never dead-end a printed QR.
- * - Unknown code → default landing page.
+ * - Active code → its own target (or homepage if that page no longer exists).
+ * - Inactive (retired) code → homepage.
+ * - Unknown code → homepage.
  */
 export async function resolveCampaignRedirect(
   rawCode: string
@@ -84,38 +124,26 @@ export async function resolveCampaignRedirect(
   try {
     code = normalizeCampaignCode(rawCode);
   } catch {
-    return { target: DEFAULT_CAMPAIGN_TARGET, found: false, active: false };
+    return { target: HOMEPAGE_TARGET, found: false, active: false };
   }
 
   const campaignsCol = await getCollection<Campaign>(CAMPAIGN_COLLECTION);
   const campaign = await campaignsCol.findOne({ code });
 
   if (!campaign) {
-    return { target: DEFAULT_CAMPAIGN_TARGET, found: false, active: false };
+    return { target: HOMEPAGE_TARGET, found: false, active: false };
   }
 
   if (campaign.active) {
-    return { target: campaign.target, found: true, active: true };
+    return {
+      target: resolveValidDestination(campaign.target),
+      found: true,
+      active: true,
+    };
   }
 
-  // Inactive: walk the fallback chain (guard against loops / long chains).
-  const seen = new Set<string>([code]);
-  let cursor: Campaign = campaign;
-  for (let hops = 0; hops < 8; hops += 1) {
-    const nextCode = cursor.fallbackCode;
-    if (!nextCode || seen.has(nextCode)) break;
-    seen.add(nextCode);
-    const next = await campaignsCol.findOne({ code: nextCode });
-    if (!next) break;
-    if (next.active) {
-      return { target: next.target, found: true, active: false };
-    }
-    cursor = next;
-  }
-
-  // No active fallback found — send to the default landing page rather than a
-  // retired destination.
-  return { target: DEFAULT_CAMPAIGN_TARGET, found: true, active: false };
+  // Retired code → send home rather than to a stale page.
+  return { target: HOMEPAGE_TARGET, found: true, active: false };
 }
 
 /** Record a scan against the originally scanned code (even if retired). */
@@ -146,51 +174,9 @@ export async function recordScan(rawCode: string): Promise<void> {
   ]);
 }
 
-/**
- * Persist which campaign code a new student signed up from. Best-effort and
- * decoupled from the students collection so it can never break signup.
- */
-export async function recordSignupAttribution(payload: {
-  code: string;
-  studentId: string;
-  email: string;
-}): Promise<void> {
-  let code: string;
-  try {
-    code = normalizeCampaignCode(payload.code);
-  } catch {
-    return;
-  }
-
-  const now = new Date();
-  const campaignsCol = await getCollection<Campaign>(CAMPAIGN_COLLECTION);
-  const signupsCol = await getCollection(CAMPAIGN_SIGNUP_COLLECTION);
-  const studentOid = new ObjectId(payload.studentId);
-
-  await signupsCol.updateOne(
-    { studentId: studentOid },
-    {
-      $setOnInsert: {
-        studentId: studentOid,
-        code,
-        email: payload.email.toLowerCase().trim(),
-        createdAt: now,
-      },
-    },
-    { upsert: true }
-  );
-
-  // Only counts against a real campaign record.
-  await campaignsCol.updateOne(
-    { code },
-    { $inc: { signupCount: 1 }, $set: { updatedAt: now } }
-  );
-}
-
 export interface CampaignStat {
-  signups: number;
-  paidStudents: number;
-  revenueCents: number;
+  /** Registrations (leads) attributed to this code. */
+  leads: number;
   scan7d: number;
   scan30d: number;
 }
@@ -200,58 +186,24 @@ function dayString(d: Date): string {
 }
 
 /**
- * Read-time analytics per campaign code: attributed signups, how many of those
- * students actually PAID, total attributed revenue, and recent scan trend.
- * Recomputed from source (campaign_signups + payments + campaign_scans) so it
- * needs no write-path changes to the Stripe webhook.
+ * Read-time analytics per campaign code: attributed registrations (leads) and
+ * recent scan trend. Recomputed from source (leads + campaign_scans) so it
+ * needs no write-path bookkeeping.
  */
 export async function getCampaignStats(): Promise<Map<string, CampaignStat>> {
-  const signupsCol = await getCollection(CAMPAIGN_SIGNUP_COLLECTION);
+  const leadsCol = await getCollection<Lead>(LEAD_COLLECTION);
   const scansCol = await getCollection(CAMPAIGN_SCAN_COLLECTION);
 
   const now = new Date();
   const cutoff7 = dayString(new Date(now.getTime() - 6 * 86_400_000));
   const cutoff30 = dayString(new Date(now.getTime() - 29 * 86_400_000));
 
-  const [revenueRows, scanRows] = await Promise.all([
-    signupsCol
+  const [leadRows, scanRows] = await Promise.all([
+    leadsCol
       .aggregate<{
         _id: string;
-        signups: number;
-        paidStudents: number;
-        revenueCents: number;
-      }>([
-        {
-          $lookup: {
-            from: PAYMENT_COLLECTION,
-            let: { sid: "$studentId" },
-            pipeline: [
-              {
-                $match: {
-                  $expr: {
-                    $and: [
-                      { $eq: ["$studentId", "$$sid"] },
-                      { $eq: ["$status", "succeeded"] },
-                    ],
-                  },
-                },
-              },
-              { $project: { amount: 1 } },
-            ],
-            as: "pays",
-          },
-        },
-        {
-          $group: {
-            _id: "$code",
-            signups: { $sum: 1 },
-            paidStudents: {
-              $sum: { $cond: [{ $gt: [{ $size: "$pays" }, 0] }, 1, 0] },
-            },
-            revenueCents: { $sum: { $sum: "$pays.amount" } },
-          },
-        },
-      ])
+        leads: number;
+      }>([{ $match: { campaignCode: { $type: "string" } } }, { $group: { _id: "$campaignCode", leads: { $sum: 1 } } }])
       .toArray(),
     scansCol
       .aggregate<{ _id: string; scan7d: number; scan30d: number }>([
@@ -273,24 +225,13 @@ export async function getCampaignStats(): Promise<Map<string, CampaignStat>> {
   const ensure = (code: string): CampaignStat => {
     let stat = map.get(code);
     if (!stat) {
-      stat = {
-        signups: 0,
-        paidStudents: 0,
-        revenueCents: 0,
-        scan7d: 0,
-        scan30d: 0,
-      };
+      stat = { leads: 0, scan7d: 0, scan30d: 0 };
       map.set(code, stat);
     }
     return stat;
   };
 
-  for (const r of revenueRows) {
-    const stat = ensure(r._id);
-    stat.signups = r.signups;
-    stat.paidStudents = r.paidStudents;
-    stat.revenueCents = r.revenueCents || 0;
-  }
+  for (const r of leadRows) ensure(r._id).leads = r.leads;
   for (const s of scanRows) {
     const stat = ensure(s._id);
     stat.scan7d = s.scan7d;
@@ -299,19 +240,19 @@ export async function getCampaignStats(): Promise<Map<string, CampaignStat>> {
   return map;
 }
 
-export interface CampaignSignupRow {
-  studentId: string;
+export interface CampaignLeadRow {
   name: string;
-  email: string;
+  phone: string;
+  level: string;
+  slot: string;
+  status: string;
   createdAt: string;
-  paid: boolean;
-  revenueCents: number;
 }
 
-/** Who signed up from a given code, and whether they became paying students. */
-export async function getCampaignSignups(
+/** The registrations (leads) attributed to a given campaign code. */
+export async function getCampaignLeads(
   rawCode: string
-): Promise<CampaignSignupRow[]> {
+): Promise<CampaignLeadRow[]> {
   let code: string;
   try {
     code = normalizeCampaignCode(rawCode);
@@ -319,60 +260,22 @@ export async function getCampaignSignups(
     return [];
   }
 
-  const signupsCol = await getCollection(CAMPAIGN_SIGNUP_COLLECTION);
-  const rows = await signupsCol
-    .aggregate<{
-      studentId?: ObjectId;
-      email?: string;
-      createdAt?: Date;
-      student?: { name?: string; email?: string };
-      pays?: { amount?: number }[];
-    }>([
-      { $match: { code } },
-      { $sort: { createdAt: -1 } },
-      { $limit: 200 },
-      {
-        $lookup: {
-          from: STUDENT_COLLECTION,
-          localField: "studentId",
-          foreignField: "_id",
-          as: "student",
-        },
-      },
-      { $unwind: { path: "$student", preserveNullAndEmptyArrays: true } },
-      {
-        $lookup: {
-          from: PAYMENT_COLLECTION,
-          let: { sid: "$studentId" },
-          pipeline: [
-            {
-              $match: {
-                $expr: {
-                  $and: [
-                    { $eq: ["$studentId", "$$sid"] },
-                    { $eq: ["$status", "succeeded"] },
-                  ],
-                },
-              },
-            },
-            { $project: { amount: 1 } },
-          ],
-          as: "pays",
-        },
-      },
-    ])
+  const leadsCol = await getCollection<Lead>(LEAD_COLLECTION);
+  const rows = await leadsCol
+    .find({ campaignCode: code })
+    .sort({ createdAt: -1 })
+    .limit(200)
     .toArray();
 
-  return rows.map((r) => {
-    const pays = r.pays ?? [];
-    const created = r.createdAt instanceof Date ? r.createdAt : new Date();
-    return {
-      studentId: r.studentId?.toString() ?? "",
-      name: r.student?.name ?? "—",
-      email: r.student?.email ?? r.email ?? "—",
-      createdAt: created.toISOString(),
-      paid: pays.length > 0,
-      revenueCents: pays.reduce((sum, p) => sum + (p.amount ?? 0), 0),
-    };
-  });
+  return rows.map((r) => ({
+    name: r.name,
+    phone: r.phone,
+    level: LEAD_LEVEL_LABELS[r.level] ?? r.level,
+    slot: LEAD_SLOT_LABELS[r.slot] ?? r.slot,
+    status: r.status,
+    createdAt:
+      r.createdAt instanceof Date
+        ? r.createdAt.toISOString()
+        : new Date().toISOString(),
+  }));
 }

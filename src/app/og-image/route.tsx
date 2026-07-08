@@ -7,13 +7,13 @@ export const runtime = "edge";
 // scrapers; this returns a proper raster. Pages can pass ?title= & ?subtitle=.
 export function GET(request: Request) {
   const { searchParams } = new URL(request.url);
-  const title = (searchParams.get("title") || "Clases de inglés 1 a 1").slice(
+  const title = (searchParams.get("title") || "Habla inglés de verdad").slice(
     0,
     90
   );
   const subtitle = (
     searchParams.get("subtitle") ||
-    "En Tehuacán y en línea · con un tutor nativo"
+    "Club de conversación en Tehuacán · grupos pequeños · instructor estadounidense"
   ).slice(0, 120);
 
   return new ImageResponse(

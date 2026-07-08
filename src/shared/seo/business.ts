@@ -5,29 +5,29 @@
 export const BASE_URL =
   process.env.NEXT_PUBLIC_APP_URL || "https://tututordeingles.online";
 
-// Single source of truth for the public WhatsApp/phone number. Set
-// NEXT_PUBLIC_WHATSAPP in env (digits only, incl. country code). Everything
-// else (schema telephone, footer, pricing, CTAs) derives from it. No fallback
-// on purpose: a missing value must fail loudly at build/render, never silently
-// serve a wrong number.
-const RAW_WHATSAPP = process.env.NEXT_PUBLIC_WHATSAPP;
-if (!RAW_WHATSAPP) {
-  throw new Error(
-    "NEXT_PUBLIC_WHATSAPP is not set. Add it to your environment (Vercel dashboard + .env files)."
-  );
-}
-export const WHATSAPP_NUMBER = RAW_WHATSAPP.replace(/\D/g, "");
-export const WHATSAPP_LINK = `https://wa.me/${WHATSAPP_NUMBER}`;
+// Where every "join us" CTA points. The site is now an in-person conversation
+// club: visitors register at /join (name + phone) and we call them. No online
+// payment, no WhatsApp deep-links.
+export const JOIN_PATH = "/join";
+
+// Optional public phone for structured data (NAP). Digits only, incl. country
+// code, via NEXT_PUBLIC_PHONE. Optional on purpose — a missing value simply
+// omits the telephone from schema rather than failing the build.
+const RAW_PHONE = (
+  process.env.NEXT_PUBLIC_PHONE ||
+  process.env.NEXT_PUBLIC_WHATSAPP ||
+  ""
+).replace(/\D/g, "");
+export const PHONE_NUMBER = RAW_PHONE;
 
 export const BUSINESS = {
   name: "Tu Tutor de Inglés",
   legalName: "Tu Tutor de Inglés",
   founder: "Mauricio Tellez",
   email: "mauricio@tututordeingles.online",
-  phone: `+${WHATSAPP_NUMBER}`,
-  whatsapp: WHATSAPP_LINK,
+  phone: PHONE_NUMBER ? `+${PHONE_NUMBER}` : "",
   url: BASE_URL,
-  // Delivery: online (WhatsApp / Google Meet) and in-person around Tehuacán.
+  // In-person conversation club around Tehuacán (cafés, markets, parks).
   city: "Tehuacán",
   state: "Puebla",
   stateCode: "PUE",
@@ -38,7 +38,7 @@ export const BUSINESS = {
   priceRange: "$$",
   currency: "MXN",
   languages: ["es", "en"],
-  areaServed: ["Tehuacán", "Puebla", "En línea"],
+  areaServed: ["Tehuacán", "Puebla"],
 } as const;
 
-export const WHATSAPP_SIGNUP_CTA = "Agenda tu clase gratis";
+export const JOIN_CTA = "Reserva tu lugar";

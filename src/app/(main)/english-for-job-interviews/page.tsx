@@ -4,7 +4,8 @@ import Link from "next/link";
 import { ArrowRight } from "lucide-react";
 import { Breadcrumbs } from "@/shared/seo/breadcrumbs";
 
-const BASE = process.env.NEXT_PUBLIC_APP_URL || "https://tututordeingles.online";
+const BASE =
+  process.env.NEXT_PUBLIC_APP_URL || "https://tututordeingles.online";
 const SPANISH_HUB = "/ingles-para-entrevistas-de-trabajo";
 
 export const metadata: Metadata = {
@@ -76,22 +77,28 @@ const supportingArticles = [
 
 export default function EnglishForJobInterviewsPage() {
   return (
-    <main lang="en" className="relative isolate overflow-hidden bg-[#070b14] text-white">
+    <main
+      lang="en"
+      className="relative isolate overflow-hidden bg-[#070b14] text-white"
+    >
       <div className="pointer-events-none absolute inset-x-0 top-0 -z-10 h-[28rem] bg-[radial-gradient(circle_at_top,_rgba(59,130,246,0.16),_rgba(7,11,20,0.16)_52%,_rgba(7,11,20,0)_100%)]" />
-      <div className="pointer-events-none absolute left-[-8rem] top-28 -z-10 h-[20rem] w-[20rem] rounded-full bg-blue-500/10 blur-3xl" />
-      <div className="pointer-events-none absolute right-[-7rem] top-[32rem] -z-10 h-[18rem] w-[18rem] rounded-full bg-emerald-400/8 blur-3xl" />
+      <div className="pointer-events-none absolute top-28 left-[-8rem] -z-10 h-[20rem] w-[20rem] rounded-full bg-blue-500/10 blur-3xl" />
+      <div className="pointer-events-none absolute top-[32rem] right-[-7rem] -z-10 h-[18rem] w-[18rem] rounded-full bg-emerald-400/8 blur-3xl" />
 
-      <div className="mx-auto max-w-5xl px-4 pb-24 pt-28 sm:px-6 lg:px-8">
+      <div className="mx-auto max-w-5xl px-4 pt-28 pb-24 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between gap-4">
           <Breadcrumbs
             items={[
               { label: "Home", href: "/" },
-              { label: "English for Job Interviews", href: "/english-for-job-interviews" },
+              {
+                label: "English for Job Interviews",
+                href: "/english-for-job-interviews",
+              },
             ]}
           />
           <Link
             href={SPANISH_HUB}
-            className="hidden sm:inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.04] px-4 py-2 text-xs font-semibold uppercase tracking-[0.22em] text-white/65 shadow-sm backdrop-blur transition hover:border-white/20 hover:text-white"
+            className="hidden items-center gap-2 rounded-full border border-white/10 bg-white/[0.04] px-4 py-2 text-xs font-semibold tracking-[0.22em] text-white/65 uppercase shadow-sm backdrop-blur transition hover:border-white/20 hover:text-white sm:inline-flex"
           >
             Español
             <ArrowRight className="h-3.5 w-3.5" />
@@ -99,11 +106,11 @@ export default function EnglishForJobInterviewsPage() {
         </div>
 
         <article className="mt-12 rounded-[2.25rem] border border-white/10 bg-white/[0.04] px-6 py-8 shadow-[0_24px_80px_-45px_rgba(0,0,0,0.78)] backdrop-blur sm:px-8 sm:py-10 lg:px-10 lg:py-12">
-          <div className="inline-flex items-center rounded-full border border-blue-400/15 bg-blue-500/10 px-4 py-2 text-[11px] font-semibold uppercase tracking-[0.24em] text-blue-300">
+          <div className="inline-flex items-center rounded-full border border-blue-400/15 bg-blue-500/10 px-4 py-2 text-[11px] font-semibold tracking-[0.24em] text-blue-300 uppercase">
             Interview Preparation
           </div>
 
-          <h1 className="mt-6 font-heading text-4xl font-medium tracking-tight text-white sm:text-5xl lg:text-6xl">
+          <h1 className="font-heading mt-6 text-4xl font-medium tracking-tight text-white sm:text-5xl lg:text-6xl">
             English for Job Interviews
           </h1>
 
@@ -118,7 +125,12 @@ export default function EnglishForJobInterviewsPage() {
               <strong className="font-semibold text-white">
                 Resumen en español:
               </strong>{" "}
-              Las entrevistas de trabajo en ingles son diferentes a las entrevistas en espanol. Los hiring managers en Estados Unidos esperan respuestas de comportamiento, comunicacion segura y encaje cultural, no solo habilidades tecnicas. Si el ingles no es tu primer idioma, la entrevista suele ser la parte mas dificil de la busqueda.
+              Las entrevistas de trabajo en ingles son diferentes a las
+              entrevistas en espanol. Los hiring managers en Estados Unidos
+              esperan respuestas de comportamiento, comunicacion segura y encaje
+              cultural, no solo habilidades tecnicas. Si el ingles no es tu
+              primer idioma, la entrevista suele ser la parte mas dificil de la
+              busqueda.
             </p>
             <p className="mt-3 text-xs font-medium text-white/55">
               Leer la version en espanol:{" "}
@@ -139,7 +151,10 @@ export default function EnglishForJobInterviewsPage() {
                 "Most of my students already have strong technical skills. They don't need help with their resume or qualifications. What they need is the ability to communicate those qualifications naturally in English, under the pressure of a live interview. That's what I work on.",
                 "Whether you're applying to a US tech company, preparing for a FAANG interview, or seeking remote work with an international team, the ability to express yourself clearly in English is often the deciding factor between moving forward and getting rejected.",
               ].map((paragraph) => (
-                <p key={paragraph} className="text-[1.02rem] leading-8 text-white/76">
+                <p
+                  key={paragraph}
+                  className="text-[1.02rem] leading-8 text-white/76"
+                >
                   {paragraph}
                 </p>
               ))}
@@ -180,7 +195,9 @@ export default function EnglishForJobInterviewsPage() {
                   <h3 className="font-heading text-lg font-medium tracking-tight text-white">
                     {item.title}
                   </h3>
-                  <p className="mt-2 text-sm leading-7 text-white/64">{item.desc}</p>
+                  <p className="mt-2 text-sm leading-7 text-white/64">
+                    {item.desc}
+                  </p>
                 </div>
               ))}
             </div>
@@ -191,8 +208,8 @@ export default function EnglishForJobInterviewsPage() {
               Why English Interviews Are Different
             </h2>
             <p className="mt-4 max-w-3xl text-[1.02rem] leading-8 text-white/76">
-              If you've only interviewed in Spanish, the US interview process can
-              feel unfamiliar. Here are the key differences:
+              If you've only interviewed in Spanish, the US interview process
+              can feel unfamiliar. Here are the key differences:
             </p>
             <div className="mt-6 grid gap-4">
               {[
@@ -224,7 +241,9 @@ export default function EnglishForJobInterviewsPage() {
                   <h3 className="font-heading text-lg font-medium tracking-tight text-white">
                     {item.title}
                   </h3>
-                  <p className="mt-2 text-sm leading-7 text-white/64">{item.desc}</p>
+                  <p className="mt-2 text-sm leading-7 text-white/64">
+                    {item.desc}
+                  </p>
                 </div>
               ))}
             </div>
@@ -242,7 +261,10 @@ export default function EnglishForJobInterviewsPage() {
                 "Recent graduates entering the English-speaking job market",
                 "Anyone who froze during an English interview and wants to do better next time",
               ].map((item) => (
-                <li key={item} className="flex items-start gap-3 text-sm leading-7 text-white/74">
+                <li
+                  key={item}
+                  className="flex items-start gap-3 text-sm leading-7 text-white/74"
+                >
                   <span className="mt-0.5 inline-flex h-5 w-5 items-center justify-center rounded-full bg-emerald-500/15 text-emerald-300">
                     ✓
                   </span>
@@ -264,7 +286,11 @@ export default function EnglishForJobInterviewsPage() {
             </p>
             <div className="mt-6 grid gap-4">
               {supportingArticles.map((article) => (
-                <Link key={article.slug} href={`/${article.slug}`} className="group">
+                <Link
+                  key={article.slug}
+                  href={`/${article.slug}`}
+                  className="group"
+                >
                   <div className="rounded-[1.75rem] border border-white/10 bg-white/[0.04] p-5 transition hover:border-blue-400/20 hover:bg-blue-500/5">
                     <h3 className="font-heading text-lg font-medium tracking-tight text-white group-hover:text-blue-300">
                       {article.title}
@@ -283,11 +309,11 @@ export default function EnglishForJobInterviewsPage() {
               Ready to Prepare?
             </h2>
             <p className="mx-auto mt-4 max-w-md text-sm leading-7 text-white/68">
-              Book a one-on-one session to practice real interview questions with
-              a native English speaker. No scripts. No memorization. Just real
-              practice.
+              Book a one-on-one session to practice real interview questions
+              with a native English speaker. No scripts. No memorization. Just
+              real practice.
             </p>
-            <Link href="/signup" className="mt-6 inline-flex">
+            <Link href="/join" className="mt-6 inline-flex">
               <Button className="rounded-full bg-white px-8 py-6 text-sm font-semibold text-slate-950 transition hover:bg-blue-100">
                 Book Your Session
               </Button>

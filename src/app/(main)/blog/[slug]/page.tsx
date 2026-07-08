@@ -15,17 +15,22 @@ import { Breadcrumbs } from "@/shared/seo/breadcrumbs";
 import { ShareBar } from "@/shared/social/share-bar";
 import { blogPosts, getReadingTime } from "@/lib/blog-posts";
 
-const BASE = process.env.NEXT_PUBLIC_APP_URL || "https://tututordeingles.online";
+const BASE =
+  process.env.NEXT_PUBLIC_APP_URL || "https://tututordeingles.online";
 
 interface PageProps {
   params: Promise<{ slug: string }>;
 }
 
 export async function generateStaticParams() {
-  return blogPosts.filter((post) => post.kind === "blog").map((post) => ({ slug: post.slug }));
+  return blogPosts
+    .filter((post) => post.kind === "blog")
+    .map((post) => ({ slug: post.slug }));
 }
 
-export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
+export async function generateMetadata({
+  params,
+}: PageProps): Promise<Metadata> {
   const { slug } = await params;
   const post = blogPosts.find((p) => p.slug === slug && p.kind === "blog");
   if (!post) return {};
@@ -110,7 +115,10 @@ function renderInlineMarkdown(text: string): ReactNode[] {
 
     if (match[1]) {
       nodes.push(
-        <strong key={`${match.index}-bold`} className="font-semibold text-white">
+        <strong
+          key={`${match.index}-bold`}
+          className="font-semibold text-white"
+        >
           {match[1]}
         </strong>
       );
@@ -148,7 +156,8 @@ export default async function BlogPostPage({ params }: PageProps) {
   const blogOnly = blogPosts.filter((p) => p.kind === "blog");
   const currentIndex = blogOnly.findIndex((p) => p.slug === slug);
   const prevPost = currentIndex > 0 ? blogOnly[currentIndex - 1] : null;
-  const nextPost = currentIndex < blogOnly.length - 1 ? blogOnly[currentIndex + 1] : null;
+  const nextPost =
+    currentIndex < blogOnly.length - 1 ? blogOnly[currentIndex + 1] : null;
 
   const related = post.relatedSlugs
     .map((relatedSlug) => blogPosts.find((p) => p.slug === relatedSlug))
@@ -198,22 +207,30 @@ export default async function BlogPostPage({ params }: PageProps) {
     }
   }
 
-  const outroStart = post.content.findLastIndex((line) => line.startsWith("---"));
-  const outroLines = outroStart >= 0 ? post.content.slice(outroStart + 1).filter((line) => line !== "") : [];
+  const outroStart = post.content.findLastIndex((line) =>
+    line.startsWith("---")
+  );
+  const outroLines =
+    outroStart >= 0
+      ? post.content.slice(outroStart + 1).filter((line) => line !== "")
+      : [];
 
   return (
     <main className="relative isolate overflow-hidden bg-[#070b14] text-white">
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(postJsonLd) }} />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(postJsonLd) }}
+      />
       <div className="pointer-events-none absolute inset-x-0 top-0 -z-10 h-[28rem] bg-[radial-gradient(circle_at_top,_rgba(59,130,246,0.16),_rgba(7,11,20,0.16)_52%,_rgba(7,11,20,0)_100%)]" />
-      <div className="pointer-events-none absolute left-[-8rem] top-28 -z-10 h-[20rem] w-[20rem] rounded-full bg-blue-500/10 blur-3xl" />
-      <div className="pointer-events-none absolute right-[-7rem] top-[32rem] -z-10 h-[18rem] w-[18rem] rounded-full bg-emerald-400/8 blur-3xl" />
+      <div className="pointer-events-none absolute top-28 left-[-8rem] -z-10 h-[20rem] w-[20rem] rounded-full bg-blue-500/10 blur-3xl" />
+      <div className="pointer-events-none absolute top-[32rem] right-[-7rem] -z-10 h-[18rem] w-[18rem] rounded-full bg-emerald-400/8 blur-3xl" />
 
-      <div className="mx-auto max-w-7xl px-4 pb-24 pt-28 sm:px-6 lg:px-8">
+      <div className="mx-auto max-w-7xl px-4 pt-28 pb-24 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between gap-4">
           <Breadcrumbs items={breadcrumbItems} />
           <Link
             href="/blog"
-            className="hidden sm:inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.04] px-4 py-2 text-xs font-semibold uppercase tracking-[0.22em] text-white/65 shadow-sm backdrop-blur transition hover:border-white/20 hover:text-white"
+            className="hidden items-center gap-2 rounded-full border border-white/10 bg-white/[0.04] px-4 py-2 text-xs font-semibold tracking-[0.22em] text-white/65 uppercase shadow-sm backdrop-blur transition hover:border-white/20 hover:text-white sm:inline-flex"
           >
             <ArrowLeft className="h-3.5 w-3.5" />
             Back to blog
@@ -239,7 +256,7 @@ export default async function BlogPostPage({ params }: PageProps) {
                 </span>
               </div>
 
-              <h1 className="mt-5 max-w-4xl font-heading text-4xl font-medium tracking-tight text-white sm:text-5xl lg:text-6xl">
+              <h1 className="font-heading mt-5 max-w-4xl text-4xl font-medium tracking-tight text-white sm:text-5xl lg:text-6xl">
                 {post.title}
               </h1>
 
@@ -248,7 +265,7 @@ export default async function BlogPostPage({ params }: PageProps) {
               </p>
 
               <div className="mt-8 flex flex-wrap gap-3">
-                <Link href="/signup">
+                <Link href="/join">
                   <Button className="rounded-full bg-white px-6 py-5 text-sm font-semibold text-slate-950 transition hover:bg-blue-100">
                     Book a Practice Session
                   </Button>
@@ -271,7 +288,7 @@ export default async function BlogPostPage({ params }: PageProps) {
 
               {summaryLine && (
                 <div className="mt-10 rounded-3xl border border-blue-400/15 bg-blue-500/10 px-5 py-5 text-sm leading-7 text-white/78">
-                  <div className="mb-2 inline-flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.24em] text-blue-300">
+                  <div className="mb-2 inline-flex items-center gap-2 text-[11px] font-semibold tracking-[0.24em] text-blue-300 uppercase">
                     <Sparkles className="h-3.5 w-3.5" />
                     Summary
                   </div>
@@ -281,7 +298,7 @@ export default async function BlogPostPage({ params }: PageProps) {
 
               {toc.length > 0 && (
                 <div className="mt-10 rounded-3xl border border-white/10 bg-white/[0.03] p-5 lg:hidden">
-                  <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-white/45">
+                  <p className="text-[11px] font-semibold tracking-[0.24em] text-white/45 uppercase">
                     Jump to section
                   </p>
                   <div className="mt-4 flex flex-wrap gap-2">
@@ -316,7 +333,9 @@ export default async function BlogPostPage({ params }: PageProps) {
                   const match = raw.match(/^(\d+)\.\s+(.+)/);
                   const num = match ? match[1] : "";
                   const title = match ? match[2] : raw;
-                  const id = match ? `q-${match[1]}` : raw.toLowerCase().replace(/[^a-z0-9]+/g, "-");
+                  const id = match
+                    ? `q-${match[1]}`
+                    : raw.toLowerCase().replace(/[^a-z0-9]+/g, "-");
 
                   const idx = post.content.indexOf(heading);
                   const blockLines: string[] = [];
@@ -332,8 +351,13 @@ export default async function BlogPostPage({ params }: PageProps) {
 
                   for (const line of blockLines) {
                     if (line.startsWith("**Why this works:")) {
-                      whyThisWorks = line.replace("**Why this works:** ", "").replace("**Why this works:**", "");
-                    } else if (line.startsWith("**Sample answer:") || line.startsWith("**Sample questions:")) {
+                      whyThisWorks = line
+                        .replace("**Why this works:** ", "")
+                        .replace("**Why this works:**", "");
+                    } else if (
+                      line.startsWith("**Sample answer:") ||
+                      line.startsWith("**Sample questions:")
+                    ) {
                       sampleAnswer = line
                         .replace(/\*\*Sample answer:\*\*\s*"?/, "")
                         .replace(/\*\*Sample questions:\*\*\s*"?/, "")
@@ -343,7 +367,8 @@ export default async function BlogPostPage({ params }: PageProps) {
                     }
                   }
 
-                  const hasNext = headings.indexOf(heading) < headings.length - 1;
+                  const hasNext =
+                    headings.indexOf(heading) < headings.length - 1;
 
                   return (
                     <section
@@ -381,7 +406,7 @@ export default async function BlogPostPage({ params }: PageProps) {
 
                       {whyThisWorks && (
                         <div className="mt-6 rounded-3xl border border-emerald-400/15 bg-emerald-500/10 p-5">
-                          <div className="mb-2 inline-flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.24em] text-emerald-300">
+                          <div className="mb-2 inline-flex items-center gap-2 text-[11px] font-semibold tracking-[0.24em] text-emerald-300 uppercase">
                             Why this works
                           </div>
                           <p className="text-sm leading-7 text-emerald-50/80">
@@ -417,19 +442,19 @@ export default async function BlogPostPage({ params }: PageProps) {
 
               <div className="mt-14 rounded-[2rem] border border-blue-400/15 bg-blue-500/10 p-6 sm:p-8">
                 <div className="max-w-2xl">
-                  <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-blue-300">
+                  <p className="text-[11px] font-semibold tracking-[0.24em] text-blue-300 uppercase">
                     Next step
                   </p>
-                  <h2 className="mt-3 font-heading text-2xl font-medium tracking-tight text-white sm:text-[2rem]">
+                  <h2 className="font-heading mt-3 text-2xl font-medium tracking-tight text-white sm:text-[2rem]">
                     Ready to practice these answers out loud?
                   </h2>
                   <p className="mt-4 text-sm leading-7 text-white/68 sm:text-base">
-                    Reading polished examples helps. Practicing them with a tutor
-                    who can correct your wording, timing, and pronunciation is
-                    what makes them usable in a real interview.
+                    Reading polished examples helps. Practicing them with a
+                    tutor who can correct your wording, timing, and
+                    pronunciation is what makes them usable in a real interview.
                   </p>
                   <div className="mt-6">
-                    <Link href="/signup">
+                    <Link href="/join">
                       <Button className="rounded-full bg-white px-6 py-5 text-sm font-semibold text-slate-950 transition hover:bg-blue-100">
                         Book a practice session
                       </Button>
@@ -443,10 +468,10 @@ export default async function BlogPostPage({ params }: PageProps) {
               {prevPost ? (
                 <Link href={`/blog/${prevPost.slug}`} className="group">
                   <div className="h-full rounded-[1.75rem] border border-white/10 bg-white/[0.04] p-5 transition hover:border-white/20 hover:bg-white/[0.06]">
-                    <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-white/45">
+                    <p className="text-[11px] font-semibold tracking-[0.24em] text-white/45 uppercase">
                       Previous article
                     </p>
-                    <p className="mt-3 font-heading text-xl font-medium tracking-tight text-white group-hover:text-blue-300">
+                    <p className="font-heading mt-3 text-xl font-medium tracking-tight text-white group-hover:text-blue-300">
                       {prevPost.title}
                     </p>
                     <p className="mt-2 text-sm leading-6 text-white/64">
@@ -465,10 +490,10 @@ export default async function BlogPostPage({ params }: PageProps) {
               {nextPost ? (
                 <Link href={`/blog/${nextPost.slug}`} className="group">
                   <div className="h-full rounded-[1.75rem] border border-white/10 bg-white/[0.04] p-5 text-right transition hover:border-white/20 hover:bg-white/[0.06]">
-                    <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-white/45">
+                    <p className="text-[11px] font-semibold tracking-[0.24em] text-white/45 uppercase">
                       Next article
                     </p>
-                    <p className="mt-3 font-heading text-xl font-medium tracking-tight text-white group-hover:text-blue-300">
+                    <p className="font-heading mt-3 text-xl font-medium tracking-tight text-white group-hover:text-blue-300">
                       {nextPost.title}
                     </p>
                     <p className="mt-2 text-sm leading-6 text-white/64">
@@ -488,7 +513,7 @@ export default async function BlogPostPage({ params }: PageProps) {
             {related.length > 0 && (
               <div className="mt-8 rounded-[2rem] border border-white/10 bg-white/[0.04] p-6 sm:p-8">
                 <div className="flex items-center gap-3">
-                  <h2 className="text-xs font-semibold uppercase tracking-[0.24em] text-white/45">
+                  <h2 className="text-xs font-semibold tracking-[0.24em] text-white/45 uppercase">
                     Related articles
                   </h2>
                   <div className="h-px flex-1 bg-white/10" />
@@ -498,14 +523,18 @@ export default async function BlogPostPage({ params }: PageProps) {
                   {related.map((article) => (
                     <Link
                       key={article.slug}
-                      href={article.kind === "blog" ? `/blog/${article.slug}` : `/${article.slug}`}
+                      href={
+                        article.kind === "blog"
+                          ? `/blog/${article.slug}`
+                          : `/${article.slug}`
+                      }
                       className="group"
                     >
                       <div className="h-full rounded-[1.5rem] border border-white/10 bg-white/[0.03] p-5 transition hover:border-blue-400/20 hover:bg-blue-500/5">
-                        <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-white/45">
+                        <p className="text-[11px] font-semibold tracking-[0.24em] text-white/45 uppercase">
                           {article.category}
                         </p>
-                        <p className="mt-3 font-heading text-lg font-medium tracking-tight text-white group-hover:text-blue-300">
+                        <p className="font-heading mt-3 text-lg font-medium tracking-tight text-white group-hover:text-blue-300">
                           {article.title}
                         </p>
                         <p className="mt-2 text-sm leading-6 text-white/64">
@@ -519,10 +548,10 @@ export default async function BlogPostPage({ params }: PageProps) {
             )}
           </article>
 
-          <aside className="hidden lg:block lg:sticky lg:top-28 self-start">
+          <aside className="hidden self-start lg:sticky lg:top-28 lg:block">
             <div className="space-y-5">
               <div className="rounded-[2rem] border border-white/10 bg-white/[0.04] p-5 shadow-[0_18px_50px_-30px_rgba(0,0,0,0.7)] backdrop-blur">
-                <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-white/45">
+                <p className="text-[11px] font-semibold tracking-[0.24em] text-white/45 uppercase">
                   On this page
                 </p>
                 <nav className="mt-4 space-y-2">
@@ -532,7 +561,7 @@ export default async function BlogPostPage({ params }: PageProps) {
                       href={`#${item.id}`}
                       className="group flex items-start gap-3 rounded-2xl px-3 py-2 text-sm text-white/64 transition hover:bg-white/[0.05] hover:text-white"
                     >
-                      <span className="mt-0.5 text-[11px] font-semibold uppercase tracking-[0.2em] text-white/35 group-hover:text-white/55">
+                      <span className="mt-0.5 text-[11px] font-semibold tracking-[0.2em] text-white/35 uppercase group-hover:text-white/55">
                         {item.number || "§"}
                       </span>
                       <span className="leading-6">{item.title}</span>
@@ -542,14 +571,14 @@ export default async function BlogPostPage({ params }: PageProps) {
               </div>
 
               <div className="rounded-[2rem] border border-blue-400/15 bg-blue-500/10 p-5 shadow-[0_20px_60px_-35px_rgba(0,0,0,0.75)]">
-                <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-blue-300">
+                <p className="text-[11px] font-semibold tracking-[0.24em] text-blue-300 uppercase">
                   Need live practice?
                 </p>
                 <p className="mt-3 text-sm leading-7 text-white/68">
                   Reading gives you structure. Speaking with feedback makes it
                   usable.
                 </p>
-                <Link href="/signup" className="mt-5 inline-flex">
+                <Link href="/join" className="mt-5 inline-flex">
                   <Button className="rounded-full bg-white px-5 py-5 text-sm font-semibold text-slate-950 transition hover:bg-blue-100">
                     Book a session
                   </Button>

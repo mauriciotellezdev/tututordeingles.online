@@ -1,6 +1,12 @@
 import type { ReactNode } from "react";
 import Link from "next/link";
-import { ArrowLeft, ArrowRight, CalendarDays, Clock3, Sparkles } from "lucide-react";
+import {
+  ArrowLeft,
+  ArrowRight,
+  CalendarDays,
+  Clock3,
+  Sparkles,
+} from "lucide-react";
 import { Button } from "@/shared/ui/button";
 import { Breadcrumbs } from "@/shared/seo/breadcrumbs";
 import { ShareBar } from "@/shared/social/share-bar";
@@ -58,11 +64,13 @@ interface Section {
 const EN_FAQS: LandingFAQ[] = [
   {
     question: "How much does a class cost?",
-    answer: "Pricing lives on the existing pricing page so visitors can compare options and book without friction.",
+    answer:
+      "Pricing lives on the existing pricing page so visitors can compare options and book without friction.",
   },
   {
     question: "Are the classes one-on-one?",
-    answer: "Yes. The tutoring funnel is centered on private one-on-one sessions tailored to the learner's goal.",
+    answer:
+      "Yes. The tutoring funnel is centered on private one-on-one sessions tailored to the learner's goal.",
   },
   {
     question: "Do I need prior knowledge?",
@@ -71,18 +79,21 @@ const EN_FAQS: LandingFAQ[] = [
   },
   {
     question: "Do you use Google Meet?",
-    answer: "The booking flow explains the delivery method and session details during checkout.",
+    answer:
+      "The booking flow explains the delivery method and session details during checkout.",
   },
 ];
 
 const ES_FAQS: LandingFAQ[] = [
   {
     question: "¿Cuánto cuesta una clase?",
-    answer: "El precio se muestra en la página de planes para que puedas comparar opciones y reservar sin fricción.",
+    answer:
+      "El precio se muestra en la página de planes para que puedas comparar opciones y reservar sin fricción.",
   },
   {
     question: "¿Las clases son individuales?",
-    answer: "Sí. El proceso está pensado para sesiones privadas uno a uno, adaptadas a tu objetivo.",
+    answer:
+      "Sí. El proceso está pensado para sesiones privadas uno a uno, adaptadas a tu objetivo.",
   },
   {
     question: "¿Necesito conocimientos previos?",
@@ -91,7 +102,8 @@ const ES_FAQS: LandingFAQ[] = [
   },
   {
     question: "¿Usan Google Meet?",
-    answer: "El flujo de reserva explica el medio de la clase y los detalles de la sesión durante el checkout.",
+    answer:
+      "El flujo de reserva explica el medio de la clase y los detalles de la sesión durante el checkout.",
   },
 ];
 
@@ -181,7 +193,12 @@ function renderInline(text: string): ReactNode[] {
   return nodes.length ? nodes : [text];
 }
 
-function parseSections(content: string[]): { summary: string; intro: string[]; sections: Section[]; outro: string[] } {
+function parseSections(content: string[]): {
+  summary: string;
+  intro: string[];
+  sections: Section[];
+  outro: string[];
+} {
   let summary = "";
   const intro: string[] = [];
   const sections: Section[] = [];
@@ -189,7 +206,8 @@ function parseSections(content: string[]): { summary: string; intro: string[]; s
   let seenHeading = false;
   const outroIndex = content.findLastIndex((line) => line.startsWith("---"));
   const contentSlice = outroIndex >= 0 ? content.slice(0, outroIndex) : content;
-  const outro = outroIndex >= 0 ? content.slice(outroIndex + 1).filter(Boolean) : [];
+  const outro =
+    outroIndex >= 0 ? content.slice(outroIndex + 1).filter(Boolean) : [];
 
   for (const line of contentSlice) {
     if (line.startsWith("📘") || line.startsWith("\u{1F4D8}")) {
@@ -202,7 +220,9 @@ function parseSections(content: string[]): { summary: string; intro: string[]; s
       const raw = line.replace("## ", "");
       const match = raw.match(/^(\d+)\.\s+(.+)/);
       current = {
-        id: match ? `q-${match[1]}` : raw.toLowerCase().replace(/[^a-z0-9]+/g, "-"),
+        id: match
+          ? `q-${match[1]}`
+          : raw.toLowerCase().replace(/[^a-z0-9]+/g, "-"),
         number: match ? match[1] : "",
         title: match ? match[2] : raw,
         lines: [],
@@ -231,21 +251,35 @@ function renderLine(line: string, key: string, copy: LandingPageCopy) {
 
   if (line.startsWith(whyPrefix)) {
     return (
-      <div key={key} className="rounded-2xl border border-emerald-400/15 bg-emerald-500/10 p-4">
-        <p className="text-xs font-semibold uppercase tracking-[0.22em] text-emerald-300">
+      <div
+        key={key}
+        className="rounded-2xl border border-emerald-400/15 bg-emerald-500/10 p-4"
+      >
+        <p className="text-xs font-semibold tracking-[0.22em] text-emerald-300 uppercase">
           {copy.whyThisWorksLabel}
         </p>
-        <p className="mt-2 text-sm leading-7 text-white/72">{renderInline(line.slice(whyPrefix.length).trim())}</p>
+        <p className="mt-2 text-sm leading-7 text-white/72">
+          {renderInline(line.slice(whyPrefix.length).trim())}
+        </p>
       </div>
     );
   }
 
-  if (line.startsWith(sampleAnswerPrefix) || line.startsWith(sampleQuestionsPrefix) || line.startsWith(sampleSentencePrefix)) {
+  if (
+    line.startsWith(sampleAnswerPrefix) ||
+    line.startsWith(sampleQuestionsPrefix) ||
+    line.startsWith(sampleSentencePrefix)
+  ) {
     return (
-      <blockquote key={key} className="rounded-2xl border border-white/10 bg-black/20 p-4">
+      <blockquote
+        key={key}
+        className="rounded-2xl border border-white/10 bg-black/20 p-4"
+      >
         <p className="text-sm leading-7 text-white/76">
           <span className="mr-1 text-2xl leading-none text-white/20">“</span>
-          {renderInline(line.replace(/^\*\*[^:]+:\*\*\s*"?/, "").replace(/"$/, ""))}
+          {renderInline(
+            line.replace(/^\*\*[^:]+:\*\*\s*"?/, "").replace(/"$/, "")
+          )}
           <span className="ml-1 text-2xl leading-none text-white/20">”</span>
         </p>
       </blockquote>
@@ -254,18 +288,26 @@ function renderLine(line: string, key: string, copy: LandingPageCopy) {
 
   if (line.startsWith(usefulPrefix)) {
     return (
-      <div key={key} className="rounded-2xl border border-white/10 bg-white/[0.04] p-4">
-        <p className="text-xs font-semibold uppercase tracking-[0.22em] text-white/45">
+      <div
+        key={key}
+        className="rounded-2xl border border-white/10 bg-white/[0.04] p-4"
+      >
+        <p className="text-xs font-semibold tracking-[0.22em] text-white/45 uppercase">
           {copy.usefulPhrasesLabel}
         </p>
-        <p className="mt-2 text-sm leading-7 text-white/72">{renderInline(line.slice(usefulPrefix.length).trim())}</p>
+        <p className="mt-2 text-sm leading-7 text-white/72">
+          {renderInline(line.slice(usefulPrefix.length).trim())}
+        </p>
       </div>
     );
   }
 
   if (line.startsWith("- ")) {
     return (
-      <p key={key} className="border-l border-white/10 pl-4 text-sm leading-7 text-white/72">
+      <p
+        key={key}
+        className="border-l border-white/10 pl-4 text-sm leading-7 text-white/72"
+      >
         {renderInline(line.replace("- ", ""))}
       </p>
     );
@@ -329,14 +371,23 @@ export function LandingPage({
   };
 
   return (
-    <main lang={lang} className="relative isolate overflow-hidden bg-[#070b14] text-white">
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(faqJsonLd) }} />
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(pageJsonLd) }} />
+    <main
+      lang={lang}
+      className="relative isolate overflow-hidden bg-[#070b14] text-white"
+    >
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(faqJsonLd) }}
+      />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(pageJsonLd) }}
+      />
       <div className="pointer-events-none absolute inset-x-0 top-0 -z-10 h-[28rem] bg-[radial-gradient(circle_at_top,_rgba(59,130,246,0.16),_rgba(7,11,20,0.16)_52%,_rgba(7,11,20,0)_100%)]" />
-      <div className="pointer-events-none absolute left-[-8rem] top-28 -z-10 h-[20rem] w-[20rem] rounded-full bg-blue-500/10 blur-3xl" />
-      <div className="pointer-events-none absolute right-[-7rem] top-[32rem] -z-10 h-[18rem] w-[18rem] rounded-full bg-emerald-400/8 blur-3xl" />
+      <div className="pointer-events-none absolute top-28 left-[-8rem] -z-10 h-[20rem] w-[20rem] rounded-full bg-blue-500/10 blur-3xl" />
+      <div className="pointer-events-none absolute top-[32rem] right-[-7rem] -z-10 h-[18rem] w-[18rem] rounded-full bg-emerald-400/8 blur-3xl" />
 
-      <div className="mx-auto max-w-5xl px-4 pb-24 pt-28 sm:px-6 lg:px-8">
+      <div className="mx-auto max-w-5xl px-4 pt-28 pb-24 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between gap-4">
           <Breadcrumbs items={breadcrumbs} />
           <div className="flex items-center gap-3">
@@ -344,7 +395,7 @@ export function LandingPage({
               <Link
                 href={alternateHref}
                 hrefLang={lang === "es-MX" ? "en-US" : "es-MX"}
-                className="hidden sm:inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.04] px-4 py-2 text-xs font-semibold uppercase tracking-[0.22em] text-white/65 shadow-sm backdrop-blur transition hover:border-white/20 hover:text-white"
+                className="hidden items-center gap-2 rounded-full border border-white/10 bg-white/[0.04] px-4 py-2 text-xs font-semibold tracking-[0.22em] text-white/65 uppercase shadow-sm backdrop-blur transition hover:border-white/20 hover:text-white sm:inline-flex"
               >
                 {alternateLabel}
                 <ArrowRight className="h-3.5 w-3.5" />
@@ -352,7 +403,7 @@ export function LandingPage({
             ) : null}
             <Link
               href={hubHref}
-              className="hidden sm:inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.04] px-4 py-2 text-xs font-semibold uppercase tracking-[0.22em] text-white/65 shadow-sm backdrop-blur transition hover:border-white/20 hover:text-white"
+              className="hidden items-center gap-2 rounded-full border border-white/10 bg-white/[0.04] px-4 py-2 text-xs font-semibold tracking-[0.22em] text-white/65 uppercase shadow-sm backdrop-blur transition hover:border-white/20 hover:text-white sm:inline-flex"
             >
               <ArrowLeft className="h-3.5 w-3.5" />
               {hubLabel}
@@ -377,22 +428,26 @@ export function LandingPage({
             </span>
           </div>
 
-          <h1 className="mt-5 max-w-4xl font-heading text-4xl font-medium tracking-tight text-white sm:text-5xl lg:text-6xl">
+          <h1 className="font-heading mt-5 max-w-4xl text-4xl font-medium tracking-tight text-white sm:text-5xl lg:text-6xl">
             {post.title}
           </h1>
 
-          <p className="mt-6 max-w-3xl text-lg leading-8 text-white/68 sm:text-xl">{post.description}</p>
+          <p className="mt-6 max-w-3xl text-lg leading-8 text-white/68 sm:text-xl">
+            {post.description}
+          </p>
 
           {summary && (
             <div className="mt-10 rounded-3xl border border-blue-400/15 bg-blue-500/10 px-5 py-5 text-sm leading-7 text-white/78">
-              <div className="mb-2 inline-flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.24em] text-blue-300">
+              <div className="mb-2 inline-flex items-center gap-2 text-[11px] font-semibold tracking-[0.24em] text-blue-300 uppercase">
                 <Sparkles className="h-3.5 w-3.5" />
                 {copy.summaryLabel}
               </div>
               <p>{renderInline(summary)}</p>
               {alternateHref && alternateLabel ? (
                 <p className="mt-3 text-xs font-medium text-white/55">
-                  {lang === "es-MX" ? "Read the English version: " : "Leer la versión en español: "}
+                  {lang === "es-MX"
+                    ? "Read the English version: "
+                    : "Leer la versión en español: "}
                   <Link
                     href={alternateHref}
                     hrefLang={lang === "es-MX" ? "en-US" : "es-MX"}
@@ -411,7 +466,7 @@ export function LandingPage({
                 {copy.exploreHubLabel}
               </Button>
             </Link>
-            <Link href="/signup">
+            <Link href="/join">
               <Button
                 variant="outline"
                 className="rounded-full border-white/15 bg-white/[0.04] px-6 py-5 text-sm font-semibold text-white transition hover:bg-white/[0.08]"
@@ -433,7 +488,10 @@ export function LandingPage({
 
           <div className="mt-12 space-y-8">
             {intro.map((line, index) => (
-              <p key={`${post.slug}-intro-${index}`} className="text-[1.03rem] leading-8 text-white/76">
+              <p
+                key={`${post.slug}-intro-${index}`}
+                className="text-[1.03rem] leading-8 text-white/76"
+              >
                 {renderInline(line)}
               </p>
             ))}
@@ -441,7 +499,11 @@ export function LandingPage({
 
           <div className="mt-14 space-y-6">
             {sections.map((section) => (
-              <section key={section.id} id={section.id} className="scroll-mt-28 rounded-[1.75rem] border border-white/10 bg-white/[0.04] p-5 sm:p-7">
+              <section
+                key={section.id}
+                id={section.id}
+                className="scroll-mt-28 rounded-[1.75rem] border border-white/10 bg-white/[0.04] p-5 sm:p-7"
+              >
                 <div className="flex items-start gap-4">
                   <span className="mt-1 inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-white/10 bg-white/[0.05] text-sm font-semibold text-white/55">
                     {section.number || "§"}
@@ -453,7 +515,9 @@ export function LandingPage({
                   </div>
                 </div>
                 <div className="mt-5 space-y-4">
-                  {section.lines.map((line, index) => renderLine(line, `${section.id}-${index}`, copy))}
+                  {section.lines.map((line, index) =>
+                    renderLine(line, `${section.id}-${index}`, copy)
+                  )}
                 </div>
               </section>
             ))}
@@ -461,15 +525,17 @@ export function LandingPage({
 
           <div className="mt-14 rounded-[2rem] border border-blue-400/15 bg-blue-500/10 p-6 sm:p-8">
             <div className="max-w-2xl">
-              <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-blue-300">
+              <p className="text-[11px] font-semibold tracking-[0.24em] text-blue-300 uppercase">
                 {copy.nextStepEyebrow}
               </p>
-              <h2 className="mt-3 font-heading text-2xl font-medium tracking-tight text-white sm:text-[2rem]">
+              <h2 className="font-heading mt-3 text-2xl font-medium tracking-tight text-white sm:text-[2rem]">
                 {copy.nextStepTitle}
               </h2>
-              <p className="mt-4 text-sm leading-7 text-white/68 sm:text-base">{copy.nextStepBody}</p>
+              <p className="mt-4 text-sm leading-7 text-white/68 sm:text-base">
+                {copy.nextStepBody}
+              </p>
               <div className="mt-6">
-                <Link href="/signup">
+                <Link href="/join">
                   <Button className="rounded-full bg-white px-6 py-5 text-sm font-semibold text-slate-950 transition hover:bg-blue-100">
                     {copy.bookSessionLabel}
                   </Button>
@@ -482,7 +548,9 @@ export function LandingPage({
             <div className="mt-14 rounded-[2rem] border border-white/10 bg-white/[0.04] p-5 sm:p-7">
               <div className="space-y-4 text-[0.98rem] leading-8 text-white/72">
                 {outro.map((line, index) => (
-                  <p key={`${post.slug}-outro-${index}`}>{renderInline(line)}</p>
+                  <p key={`${post.slug}-outro-${index}`}>
+                    {renderInline(line)}
+                  </p>
                 ))}
               </div>
             </div>
@@ -493,13 +561,25 @@ export function LandingPage({
           <div className="space-y-8">
             <section className="grid gap-4 sm:grid-cols-2">
               {related.map((item) => (
-                <Link key={item.slug} href={item.kind === "blog" ? `/blog/${item.slug}` : `/${item.slug}`} className="group">
+                <Link
+                  key={item.slug}
+                  href={
+                    item.kind === "blog"
+                      ? `/blog/${item.slug}`
+                      : `/${item.slug}`
+                  }
+                  className="group"
+                >
                   <div className="h-full rounded-[1.75rem] border border-white/10 bg-white/[0.04] p-5 transition hover:border-white/20 hover:bg-white/[0.06]">
-                    <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-white/45">{item.category}</p>
-                    <p className="mt-3 font-heading text-xl font-medium tracking-tight text-white group-hover:text-blue-300">
+                    <p className="text-[11px] font-semibold tracking-[0.24em] text-white/45 uppercase">
+                      {item.category}
+                    </p>
+                    <p className="font-heading mt-3 text-xl font-medium tracking-tight text-white group-hover:text-blue-300">
                       {item.title}
                     </p>
-                    <p className="mt-2 text-sm leading-6 text-white/64">{item.description}</p>
+                    <p className="mt-2 text-sm leading-6 text-white/64">
+                      {item.description}
+                    </p>
                     <p className="mt-4 inline-flex items-center gap-2 text-sm font-medium text-white/55">
                       {copy.readGuideLabel}
                       <ArrowRight className="h-4 w-4" />
@@ -511,14 +591,23 @@ export function LandingPage({
 
             <section className="rounded-[2rem] border border-white/10 bg-white/[0.04] p-6 sm:p-8">
               <div className="flex items-center gap-3">
-                <h2 className="text-xs font-semibold uppercase tracking-[0.24em] text-white/45">{copy.faqTitle}</h2>
+                <h2 className="text-xs font-semibold tracking-[0.24em] text-white/45 uppercase">
+                  {copy.faqTitle}
+                </h2>
                 <div className="h-px flex-1 bg-white/10" />
               </div>
               <div className="mt-6 grid gap-4">
                 {faqs.map((faq) => (
-                  <div key={faq.question} className="rounded-[1.5rem] border border-white/10 bg-black/20 p-5">
-                    <h3 className="font-heading text-lg font-medium tracking-tight text-white">{faq.question}</h3>
-                    <p className="mt-2 text-sm leading-7 text-white/68">{faq.answer}</p>
+                  <div
+                    key={faq.question}
+                    className="rounded-[1.5rem] border border-white/10 bg-black/20 p-5"
+                  >
+                    <h3 className="font-heading text-lg font-medium tracking-tight text-white">
+                      {faq.question}
+                    </h3>
+                    <p className="mt-2 text-sm leading-7 text-white/68">
+                      {faq.answer}
+                    </p>
                   </div>
                 ))}
               </div>
@@ -526,16 +615,18 @@ export function LandingPage({
           </div>
 
           <aside className="lg:sticky lg:top-28">
-            <div className="rounded-[2rem] border border-blue-400/15 bg-blue-500/10 p-6 sm:p-8 shadow-[0_20px_60px_-35px_rgba(0,0,0,0.75)]">
-              <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-blue-300">
+            <div className="rounded-[2rem] border border-blue-400/15 bg-blue-500/10 p-6 shadow-[0_20px_60px_-35px_rgba(0,0,0,0.75)] sm:p-8">
+              <p className="text-[11px] font-semibold tracking-[0.24em] text-blue-300 uppercase">
                 {copy.nextStepEyebrow}
               </p>
-              <h2 className="mt-3 font-heading text-2xl font-medium tracking-tight text-white sm:text-[2rem]">
+              <h2 className="font-heading mt-3 text-2xl font-medium tracking-tight text-white sm:text-[2rem]">
                 {copy.nextStepTitle}
               </h2>
-              <p className="mt-4 text-sm leading-7 text-white/68 sm:text-base">{copy.nextStepBody}</p>
+              <p className="mt-4 text-sm leading-7 text-white/68 sm:text-base">
+                {copy.nextStepBody}
+              </p>
               <div className="mt-6">
-                <Link href="/signup">
+                <Link href="/join">
                   <Button className="rounded-full bg-white px-6 py-5 text-sm font-semibold text-slate-950 transition hover:bg-blue-100">
                     {copy.bookSessionLabel}
                   </Button>

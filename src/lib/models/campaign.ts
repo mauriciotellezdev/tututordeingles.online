@@ -16,30 +16,29 @@ export interface Campaign {
   code: string; // normalized slug, unique. e.g. "combi-01"
   label: string; // human friendly name. e.g. "Combi ruta 3"
   medium: string; // channel bucket. e.g. "combi" | "flyer" | "bulletin" | "poster" | "other"
-  target: string; // destination path (or absolute URL). e.g. "/clases-de-ingles-en-tehuacan"
+  target: string; // destination path (or absolute URL). e.g. "/club-de-conversacion-en-ingles-tehuacan"
   active: boolean;
   permanent: boolean; // permanent codes are never auto-deactivated
-  fallbackCode?: string; // when inactive, redirect to this code's destination instead
   scanCount: number;
   signupCount: number;
   notes?: string;
   createdAt: Date;
   updatedAt: Date;
   deactivatedAt?: Date;
+  // Soft delete: archived campaigns are hidden from the main list but keep all
+  // their scan + registration history so stats are never lost.
+  deletedAt?: Date;
 }
 
 export interface CreateCampaignInput {
-  code: string;
+  /** Optional: when empty the code is derived from the name (label). */
+  code?: string;
   label: string;
   medium?: string;
   target?: string;
   permanent?: boolean;
-  fallbackCode?: string;
   notes?: string;
 }
-
-/** Where a scanned QR points by default (also the local-SEO landing page). */
-export const DEFAULT_CAMPAIGN_TARGET = "/clases-de-ingles-en-tehuacan";
 
 export const CAMPAIGN_MEDIA = [
   "combi",
@@ -63,7 +62,7 @@ export function normalizeCampaignCode(raw: string): string {
     .replace(/^-+|-+$/g, "")
     .slice(0, 48);
   if (!code) {
-    throw new Error("El código no es válido. Usa letras, números y guiones.");
+    throw new Error("Enter a name (letters and numbers).");
   }
   return code;
 }
@@ -71,7 +70,7 @@ export function normalizeCampaignCode(raw: string): string {
 /** Normalize a destination into a leading-slash path or an absolute URL. */
 export function normalizeCampaignTarget(raw?: string | null): string {
   const value = (raw || "").trim();
-  if (!value) return DEFAULT_CAMPAIGN_TARGET;
+  if (!value) return "/"; // no destination given → homepage
   if (/^https?:\/\//i.test(value)) return value;
   return value.startsWith("/") ? value : `/${value}`;
 }
@@ -80,7 +79,10 @@ export function createCampaign(
   input: CreateCampaignInput
 ): Omit<Campaign, "_id"> {
   const now = new Date();
-  const code = normalizeCampaignCode(input.code);
+  // Derive the code from the name when no explicit code is given, so the teacher
+  // only has to type a name. An explicit code still wins when provided.
+  const rawCode = input.code?.trim() ? input.code : input.label;
+  const code = normalizeCampaignCode(rawCode);
   // Omit optional fields entirely when empty — the strict $jsonSchema validator
   // rejects `null`/`undefined` for `fallbackCode`/`notes` (they must be absent
   // or a string), and the driver serializes `undefined` as `null`.
@@ -96,9 +98,6 @@ export function createCampaign(
     createdAt: now,
     updatedAt: now,
   };
-  if (input.fallbackCode) {
-    doc.fallbackCode = normalizeCampaignCode(input.fallbackCode);
-  }
   const notes = input.notes?.trim();
   if (notes) {
     doc.notes = notes;

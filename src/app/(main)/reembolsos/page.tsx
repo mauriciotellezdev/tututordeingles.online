@@ -27,47 +27,38 @@ export default function ReembolsosPage() {
         </p>
       </LegalSection>
 
-      <LegalSection heading="2. Créditos no utilizados">
+      <LegalSection heading="2. Pagos en persona">
         <p>
-          Si compraste créditos y no has tomado ninguna de las clases
-          correspondientes, puedes solicitar un reembolso dentro de los 14 días
-          naturales posteriores a la compra escribiendo a{" "}
+          El pago de las clases se realiza en persona (efectivo o
+          transferencia). Si pagaste por adelantado clases que aún no has tomado
+          y decides no continuar, puedes solicitar la devolución de las clases
+          no utilizadas escribiendo a{" "}
           <a
             href="mailto:mauricio@tututordeingles.online"
             className="text-blue-400 underline"
           >
             mauricio@tututordeingles.online
           </a>
-          . El reembolso se realiza al mismo método de pago original.
+          . La devolución se hace por el mismo medio en que pagaste.
         </p>
       </LegalSection>
 
-      <LegalSection heading="3. Créditos parcialmente utilizados">
+      <LegalSection heading="3. Clases parcialmente utilizadas">
         <p>
-          Si ya tomaste una o más clases de un paquete, podemos reembolsar los
-          créditos no utilizados, descontando las clases ya impartidas al precio
-          de clase individual vigente.
+          Si ya tomaste una o más clases de un paquete que pagaste por
+          adelantado, podemos devolverte la parte no utilizada, descontando las
+          clases ya impartidas al precio vigente.
         </p>
       </LegalSection>
 
       <LegalSection heading="4. Cancelación y reprogramación de clases">
         <p>
-          Puedes reprogramar o cancelar una clase sin costo con al menos 24
-          horas de anticipación; el crédito se conserva. Las cancelaciones con
-          menos de 24 horas o las inasistencias sin aviso pueden descontar el
-          crédito de la clase.
+          Si no puedes asistir a una sesión, contáctanos con al menos 24 horas
+          de anticipación para reprogramar sin costo.
         </p>
       </LegalSection>
 
-      <LegalSection heading="5. Pagos por OXXO y SPEI">
-        <p>
-          Para pagos en efectivo (OXXO) o transferencia (SPEI), el reembolso se
-          procesa una vez confirmado el pago original y puede tardar unos días
-          hábiles adicionales según el método.
-        </p>
-      </LegalSection>
-
-      <LegalSection heading="6. Cómo solicitar un reembolso">
+      <LegalSection heading="5. Cómo solicitar una devolución">
         <p>
           Escríbenos a{" "}
           <a
@@ -76,8 +67,8 @@ export default function ReembolsosPage() {
           >
             mauricio@tututordeingles.online
           </a>{" "}
-          con el correo de tu cuenta y el motivo. Respondemos normalmente en un
-          plazo de 2 a 3 días hábiles.
+          con tu nombre y el motivo. Respondemos normalmente en un plazo de 2 a
+          3 días hábiles.
         </p>
       </LegalSection>
     </LegalDoc>

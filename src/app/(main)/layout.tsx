@@ -29,28 +29,29 @@ export async function generateMetadata(): Promise<Metadata> {
 
   return {
     title: {
-      default: "Tu Tutor de Inglés — Clases privadas 1 a 1 con Mauricio Tellez",
+      default:
+        "Tu Tutor de Inglés — Club de conversación en inglés en Tehuacán",
       template: "%s | Tu Tutor de Inglés",
     },
     description:
-      "Clases privadas de inglés en Tehuacán, Puebla y en línea. Aprende inglés real con un tutor nativo estadounidense 1 a 1 — presencial en cafés locales o por WhatsApp. Inglés de negocios, conversación y entrevistas.",
+      "Club de conversación en inglés en Tehuacán, Puebla. Grupos pequeños (máximo 6) que se reúnen cada domingo con un instructor estadounidense para practicar inglés real. Menos teoría, más conversación. Reserva tu lugar.",
     keywords: [
       "clases de inglés en Tehuacán",
       "inglés Tehuacán",
-      "tutor de inglés Tehuacán",
-      "clases de inglés Puebla",
-      "clases de inglés en línea",
-      "inglés de negocios",
-      "profesor de inglés nativo",
+      "curso de inglés en Tehuacán",
+      "conversación en inglés Tehuacán",
+      "aprender inglés Tehuacán",
+      "grupo de conversación en inglés",
+      "practicar inglés hablando",
     ],
     metadataBase: new URL(BASE),
     alternates: {
       canonical: `${BASE}${pathname}`,
     },
     openGraph: {
-      title: "Tu Tutor de Inglés — Clases privadas 1 a 1",
+      title: "Tu Tutor de Inglés — Club de conversación en Tehuacán",
       description:
-        "Clases privadas de inglés para profesionales hispanohablantes. Aprende inglés real con un tutor nativo 1 a 1.",
+        "Practica conversación en inglés en grupos pequeños con un instructor estadounidense. Cada domingo en Tehuacán. Menos teoría, más conversación.",
       url: "/",
       siteName: "Tu Tutor de Inglés",
       locale: "es_MX",
@@ -60,15 +61,15 @@ export async function generateMetadata(): Promise<Metadata> {
           url: "/og-image",
           width: 1200,
           height: 630,
-          alt: "Tu Tutor de Inglés",
+          alt: "Inglés en la Vida Real · Tehuacán",
         },
       ],
     },
     twitter: {
       card: "summary_large_image",
-      title: "Tu Tutor de Inglés — Clases privadas 1 a 1",
+      title: "Tu Tutor de Inglés — Club de conversación en Tehuacán",
       description:
-        "Clases privadas de inglés para profesionales hispanohablantes. Aprende inglés real con un tutor nativo 1 a 1.",
+        "Practica conversación en inglés en grupos pequeños con un instructor estadounidense. Cada domingo en Tehuacán.",
       images: ["/og-image"],
     },
     icons: {

@@ -1,15 +1,14 @@
 "use client";
 import Link from "next/link";
-import { WHATSAPP_LINK } from "@/shared/seo/business";
 
 const currentYear = new Date().getFullYear();
 
 const links = {
   navegacion: [
     { label: "Cómo funciona", href: "#como-funciona" },
-    { label: "Clases en Tehuacán", href: "/clases-de-ingles-en-tehuacan" },
-    { label: "Clases de experiencias", href: "/clases-de-ingles-experiencias" },
-    { label: "Precios", href: "#precios" },
+    { label: "Próximas sesiones", href: "#calendario" },
+    { label: "Preguntas frecuentes", href: "#preguntas" },
+    { label: "Reserva tu lugar", href: "/join" },
     { label: "Blog", href: "/blog" },
   ],
   entrevistas: [
@@ -21,13 +20,15 @@ const links = {
     },
     { label: "STAR method", href: "/metodo-star-para-entrevistas-en-ingles" },
   ],
-  cuenta: [
-    { label: "Registrarse", href: "/signup" },
-    { label: "Entrar", href: "/login" },
-  ],
   contacto: [
-    { label: "WhatsApp", href: WHATSAPP_LINK },
-    { label: "Correo", href: "mailto:mauricio@tututordeingles.online" },
+    {
+      label: "Correo",
+      href: "mailto:mauricio@tututordeingles.online",
+    },
+    {
+      label: "Club de conversación",
+      href: "/club-de-conversacion-en-ingles-tehuacan",
+    },
   ],
   legal: [
     { label: "Aviso de Privacidad", href: "/aviso-de-privacidad" },
@@ -55,7 +56,8 @@ export default function Footer() {
               className="mt-4 max-w-[200px] text-xs leading-relaxed text-white/25"
               style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}
             >
-              Clases privadas de inglés para profesionales hispanohablantes.
+              Club de conversación en inglés. Grupos pequeños, en persona, en
+              Tehuacán.
             </p>
             <p
               className="mt-3 text-[11px] font-medium text-white/30"
@@ -103,7 +105,7 @@ export default function Footer() {
             className="text-[10px] text-white/15"
             style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}
           >
-            Pagos seguros con Stripe · WhatsApp
+            Reuniones presenciales · Pago en persona
           </p>
         </div>
       </div>

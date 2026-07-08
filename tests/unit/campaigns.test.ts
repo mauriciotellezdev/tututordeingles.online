@@ -3,9 +3,11 @@ import {
   normalizeCampaignCode,
   normalizeCampaignTarget,
   createCampaign,
-  DEFAULT_CAMPAIGN_TARGET,
 } from "../../src/lib/models/campaign";
-import { isBotUserAgent } from "../../src/lib/campaigns";
+import {
+  isBotUserAgent,
+  resolveValidDestination,
+} from "../../src/lib/campaigns";
 
 test("normalizeCampaignCode lowercases and slugifies", () => {
   expect(normalizeCampaignCode("Combi Ruta 3")).toBe("combi-ruta-3");
@@ -23,17 +25,17 @@ test("normalizeCampaignCode rejects codes with no usable characters", () => {
   expect(() => normalizeCampaignCode("!!!")).toThrow();
 });
 
-test("normalizeCampaignTarget defaults to the Tehuacán landing", () => {
-  expect(normalizeCampaignTarget("")).toBe(DEFAULT_CAMPAIGN_TARGET);
-  expect(normalizeCampaignTarget(null)).toBe(DEFAULT_CAMPAIGN_TARGET);
-  expect(normalizeCampaignTarget(undefined)).toBe(DEFAULT_CAMPAIGN_TARGET);
+test("normalizeCampaignTarget defaults to the homepage", () => {
+  expect(normalizeCampaignTarget("")).toBe("/");
+  expect(normalizeCampaignTarget(null)).toBe("/");
+  expect(normalizeCampaignTarget(undefined)).toBe("/");
 });
 
 test("normalizeCampaignTarget preserves absolute URLs and prefixes paths", () => {
   expect(normalizeCampaignTarget("https://example.com/x")).toBe(
     "https://example.com/x"
   );
-  expect(normalizeCampaignTarget("signup")).toBe("/signup");
+  expect(normalizeCampaignTarget("join")).toBe("/join");
   expect(normalizeCampaignTarget("/clases")).toBe("/clases");
 });
 
@@ -42,28 +44,32 @@ test("createCampaign produces sane defaults", () => {
   expect(c.code).toBe("combi-01");
   expect(c.label).toBe("Combi ruta 3");
   expect(c.medium).toBe("other");
-  expect(c.target).toBe(DEFAULT_CAMPAIGN_TARGET);
+  // No destination given → homepage.
+  expect(c.target).toBe("/");
   expect(c.active).toBe(true);
   expect(c.permanent).toBe(false);
   expect(c.scanCount).toBe(0);
   expect(c.signupCount).toBe(0);
-  expect(c.fallbackCode).toBeUndefined();
 });
 
-test("createCampaign normalizes medium, target, and fallback", () => {
+test("createCampaign derives the code from the name when none is given", () => {
+  const c = createCampaign({ label: "Flyer OXXO Centro" });
+  expect(c.code).toBe("flyer-oxxo-centro");
+  expect(c.label).toBe("Flyer OXXO Centro");
+});
+
+test("createCampaign normalizes medium and target", () => {
   const c = createCampaign({
     code: "flyer-centro",
     label: "",
     medium: "Flyer",
-    target: "clases-de-ingles-en-tehuacan",
+    target: "club-de-conversacion-en-ingles-tehuacan",
     permanent: true,
-    fallbackCode: "Combi 01",
     notes: "  pegado en el OXXO  ",
   });
   expect(c.medium).toBe("flyer");
-  expect(c.target).toBe("/clases-de-ingles-en-tehuacan");
+  expect(c.target).toBe("/club-de-conversacion-en-ingles-tehuacan");
   expect(c.permanent).toBe(true);
-  expect(c.fallbackCode).toBe("combi-01");
   expect(c.notes).toBe("pegado en el OXXO");
   // Empty label falls back to the code.
   expect(c.label).toBe("flyer-centro");
@@ -72,8 +78,22 @@ test("createCampaign normalizes medium, target, and fallback", () => {
 test("createCampaign omits empty optional fields (strict validator safety)", () => {
   const c = createCampaign({ code: "combi-01", label: "Combi" });
   // Must be ABSENT, not null/undefined — the $jsonSchema validator rejects null.
-  expect("fallbackCode" in c).toBe(false);
   expect("notes" in c).toBe(false);
+});
+
+test("resolveValidDestination sends dead pages to the homepage", () => {
+  // Known live pages pass through unchanged.
+  expect(resolveValidDestination("/join")).toBe("/join");
+  expect(
+    resolveValidDestination("/club-de-conversacion-en-ingles-tehuacan")
+  ).toBe("/club-de-conversacion-en-ingles-tehuacan");
+  // A page that no longer exists → homepage.
+  expect(resolveValidDestination("/clases-de-ingles-en-tehuacan")).toBe("/");
+  expect(resolveValidDestination("/some-deleted-page")).toBe("/");
+  // External URLs are trusted as-is.
+  expect(resolveValidDestination("https://example.com/x")).toBe(
+    "https://example.com/x"
+  );
 });
 
 test("isBotUserAgent flags link-preview crawlers and empty UAs", () => {
