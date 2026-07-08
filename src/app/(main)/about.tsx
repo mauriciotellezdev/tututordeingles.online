@@ -1,22 +1,23 @@
 "use client";
 
+import Link from "next/link";
 import { Button } from "@/shared/ui/button";
 import Image from "next/image";
+import { ChevronRight } from "lucide-react";
+
+const font = { fontFamily: "'Plus Jakarta Sans', sans-serif" };
 
 const credentials = [
-  { icon: "🇺🇸", text: "Hablante nativo de inglés americano" },
-  { icon: "💼", text: "30 años enseñando inglés de negocios" },
-  {
-    icon: "🧑‍💻",
-    text: "Especialista en inglés para tecnología y trabajo remoto",
-  },
+  { icon: "🇺🇸", text: "Instructor estadounidense, inglés nativo" },
+  { icon: "💬", text: "Conversación 100% en inglés, adaptada a tu nivel" },
+  { icon: "🤝", text: "Grupos pequeños y ambiente relajado" },
 ];
 
 export default function AboutTutor() {
   return (
     <section
       className="border-t border-white/[0.05] bg-[#0f1729] px-6 py-28"
-      id="tutor"
+      id="nosotros"
     >
       <div className="mx-auto grid max-w-6xl grid-cols-1 items-center gap-16 md:grid-cols-2">
         {/* Left — photo */}
@@ -24,10 +25,9 @@ export default function AboutTutor() {
           <div className="relative w-[300px] md:w-[360px]">
             <div className="absolute inset-0 scale-110 rounded-2xl bg-blue-500/10 blur-3xl" />
             <div className="relative flex aspect-square items-center justify-center overflow-hidden rounded-2xl border border-white/[0.08] bg-[#1a2a50]">
-              {/* Replace with <Image src="/tutor.jpg" alt="Tutor" fill className="object-cover" /> */}
               <Image
                 src="/tutor-avatar.png"
-                alt="Tu tutor"
+                alt="Instructor del club de conversación"
                 fill
                 className="object-cover"
               />
@@ -39,33 +39,33 @@ export default function AboutTutor() {
         <div>
           <p
             className="mb-5 text-[11px] font-medium tracking-[0.3em] text-blue-400 uppercase"
-            style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}
+            style={font}
           >
-            Tu tutor
+            No somos una escuela
           </p>
           <h2
             className="mb-5 text-3xl leading-tight font-bold text-white md:text-4xl"
-            style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}
+            style={font}
           >
-            No soy un profesor
+            Un grupo donde por fin
             <br />
-            de escuela.
+            <span className="text-blue-400">hablas inglés.</span>
           </h2>
           <p
             className="mb-5 text-sm leading-relaxed text-white/50"
-            style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}
+            style={font}
           >
-            Trabajo exclusivamente con hispanohablantes adultos — profesionales,
-            emprendedores y ejecutivos — que ya saben inglés básico pero
-            necesitan sonar naturales, seguros y claros en contextos de trabajo
-            real.
+            Somos un grupo de conversación en inglés que se reúne en persona
+            para practicar el idioma en situaciones reales. Nada de exámenes ni
+            libros de texto: llegas, conversas y te vas con más confianza.
           </p>
           <p
             className="mb-8 text-sm leading-relaxed text-white/50"
-            style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}
+            style={font}
           >
-            Cada clase es diseñada para ti. Sin libro de texto, sin ejercicios
-            genéricos. Trabajamos con situaciones reales de tu vida profesional.
+            Un instructor estadounidense guía cada reunión y adapta la
+            conversación a tu nivel, para que pierdas el miedo a hablar rodeado
+            de gente que quiere lo mismo que tú.
           </p>
 
           <ul className="mb-10 space-y-3">
@@ -73,7 +73,7 @@ export default function AboutTutor() {
               <li
                 key={i}
                 className="flex items-center gap-3 text-sm text-white/60"
-                style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}
+                style={font}
               >
                 <span className="text-base">{c.icon}</span>
                 {c.text}
@@ -81,15 +81,16 @@ export default function AboutTutor() {
             ))}
           </ul>
 
-          <a href="mailto:mauricio@tututordeingles.online">
+          <Link href="/join">
             <Button
               size="lg"
-              className="rounded-full bg-blue-500 px-7 py-6 text-sm font-semibold tracking-wide text-white shadow-lg shadow-blue-500/25 transition-all duration-300 hover:scale-[1.02] hover:bg-blue-400"
-              style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}
+              className="flex items-center gap-2 rounded-full bg-blue-500 px-7 py-6 text-sm font-semibold tracking-wide text-white shadow-lg shadow-blue-500/25 transition-all duration-300 hover:scale-[1.02] hover:bg-blue-400"
+              style={font}
             >
-              Agenda una llamada gratis
+              Reserva tu lugar
+              <ChevronRight className="size-4" />
             </Button>
-          </a>
+          </Link>
         </div>
       </div>
     </section>

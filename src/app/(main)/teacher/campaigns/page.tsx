@@ -24,13 +24,14 @@ import {
   listCampaignsAction,
   createCampaignAction,
   createCampaignsBulkAction,
-  setCampaignActiveAction,
   updateCampaignAction,
   generateCampaignQrAction,
   getCampaignSignupsAction,
+  deleteCampaignAction,
+  restoreCampaignAction,
   type CampaignRow,
 } from "./actions";
-import type { CampaignSignupRow } from "@/lib/campaigns";
+import type { CampaignLeadRow } from "@/lib/campaigns";
 import {
   QrCode,
   Plus,
@@ -40,12 +41,10 @@ import {
   ScanLine,
   UserPlus,
   ArrowLeft,
-  Power,
   Printer,
-  DollarSign,
-  BadgeCheck,
   Layers,
   Users,
+  Trash2,
 } from "lucide-react";
 
 const MEDIA = [
@@ -57,7 +56,15 @@ const MEDIA = [
   "store",
   "other",
 ];
-const DEFAULT_TARGET = "/clases-de-ingles-en-tehuacan";
+// Mirror of normalizeCampaignCode (server) for the live code preview.
+function slugify(raw: string): string {
+  return raw
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "")
+    .slice(0, 48);
+}
 
 const inputClass =
   "w-full rounded-lg bg-white/[0.03] border border-white/10 px-3 py-2 text-sm text-white placeholder:text-white/25 focus:outline-none focus:border-blue-500/50";
@@ -75,18 +82,16 @@ export default function CampaignsPage() {
   } | null>(null);
   const [editing, setEditing] = useState<string | null>(null);
   const [viewing, setViewing] = useState<string | null>(null);
-  const [signups, setSignups] = useState<Record<string, CampaignSignupRow[]>>(
-    {}
-  );
+  const [leads, setLeads] = useState<Record<string, CampaignLeadRow[]>>({});
+  const [pendingDelete, setPendingDelete] = useState<string | null>(null);
 
-  // Single create form
+  // Single create form. The code is derived from the name — no need to type it.
+  // No prefilled defaults: an empty destination sends scans to the homepage.
   const [form, setForm] = useState({
-    code: "",
     label: "",
-    medium: "combi",
-    target: DEFAULT_TARGET,
+    medium: "",
+    target: "",
     permanent: false,
-    fallbackCode: "",
     notes: "",
   });
   const [creating, setCreating] = useState(false);
@@ -111,7 +116,7 @@ export default function CampaignsPage() {
       setError(null);
     } else {
       setError(res.error);
-      if (res.error === "No autorizado.") router.push("/login");
+      if (res.error === "Unauthorized.") router.push("/teacher/login");
     }
   }, [router]);
 
@@ -128,12 +133,10 @@ export default function CampaignsPage() {
     setCreating(false);
     if (res.success) {
       setForm({
-        code: "",
         label: "",
-        medium: form.medium,
-        target: DEFAULT_TARGET,
+        medium: "",
+        target: "",
         permanent: false,
-        fallbackCode: "",
         notes: "",
       });
       await load();
@@ -159,9 +162,22 @@ export default function CampaignsPage() {
     }
   };
 
-  const toggleActive = async (row: CampaignRow) => {
-    await setCampaignActiveAction(row.code, !row.active);
-    await load();
+  const handleDelete = async (code: string) => {
+    // Two-click confirm: first click arms, second click archives (soft delete).
+    if (pendingDelete !== code) {
+      setPendingDelete(code);
+      return;
+    }
+    setPendingDelete(null);
+    const res = await deleteCampaignAction(code);
+    if (res.success) await load();
+    else setError(res.error);
+  };
+
+  const handleRestore = async (code: string) => {
+    const res = await restoreCampaignAction(code);
+    if (res.success) await load();
+    else setError(res.error);
   };
 
   const copyUrl = async (url: string, code: string) => {
@@ -186,21 +202,22 @@ export default function CampaignsPage() {
       return;
     }
     setViewing(code);
-    if (!signups[code]) {
+    if (!leads[code]) {
       const res = await getCampaignSignupsAction(code);
-      if (res.success) setSignups((prev) => ({ ...prev, [code]: res.signups }));
+      if (res.success) setLeads((prev) => ({ ...prev, [code]: res.leads }));
     }
   };
 
-  const totals = campaigns.reduce(
+  const activeCampaigns = campaigns.filter((c) => !c.deleted);
+  const archivedCampaigns = campaigns.filter((c) => c.deleted);
+
+  const totals = activeCampaigns.reduce(
     (acc, c) => {
       acc.scans += c.scanCount;
-      acc.signups += c.signupCount;
-      acc.paid += c.paidCount;
-      acc.revenue += c.revenuePesos;
+      acc.leads += c.leadCount;
       return acc;
     },
-    { scans: 0, signups: 0, paid: 0, revenue: 0 }
+    { scans: 0, leads: 0 }
   );
 
   return (
@@ -209,12 +226,12 @@ export default function CampaignsPage() {
         <div className="mb-8 flex flex-col items-start justify-between gap-4 border-b border-white/[0.08] pb-6 sm:flex-row sm:items-center">
           <div>
             <h1 className="flex items-center gap-2 text-2xl font-bold tracking-tight md:text-3xl">
-              <QrCode className="size-6 text-blue-400" /> Campañas{" "}
-              <span className="text-blue-400">QR</span>
+              <QrCode className="size-6 text-blue-400" /> QR{" "}
+              <span className="text-blue-400">Campaigns</span>
             </h1>
             <p className="mt-1 text-xs text-white/40">
-              Rastrea qué anuncios (combis, flyers, tiendas) traen clientes que
-              pagan.
+              Track which ads (combis, flyers, stores) bring in the most
+              registrations.
             </p>
           </div>
           <div className="flex items-center gap-2">
@@ -223,7 +240,7 @@ export default function CampaignsPage() {
                 variant="ghost"
                 className="flex items-center gap-1.5 rounded-full px-4 py-2.5 text-xs font-semibold text-blue-400 hover:bg-blue-500/5 hover:text-blue-300"
               >
-                <Printer className="size-4" /> Hoja para imprimir
+                <Printer className="size-4" /> Print sheet
               </Button>
             </Link>
             <Link href="/teacher">
@@ -231,7 +248,7 @@ export default function CampaignsPage() {
                 variant="ghost"
                 className="flex items-center gap-1.5 rounded-full px-4 py-2.5 text-xs font-semibold text-white/50 hover:bg-white/5 hover:text-white"
               >
-                <ArrowLeft className="size-4" /> Panel
+                <ArrowLeft className="size-4" /> Dashboard
               </Button>
             </Link>
           </div>
@@ -244,44 +261,35 @@ export default function CampaignsPage() {
         )}
 
         {/* Summary */}
-        <div className="mb-8 grid grid-cols-2 gap-4 md:grid-cols-5">
+        <div className="mb-8 grid grid-cols-3 gap-4">
           <SummaryCard
             icon={<QrCode className="size-4 text-blue-400" />}
-            label="Campañas"
-            value={campaigns.length}
+            label="Campaigns"
+            value={activeCampaigns.length}
           />
           <SummaryCard
             icon={<ScanLine className="size-4 text-blue-400" />}
-            label="Escaneos"
+            label="Scans"
             value={totals.scans}
           />
           <SummaryCard
-            icon={<UserPlus className="size-4 text-blue-400" />}
-            label="Registros"
-            value={totals.signups}
-          />
-          <SummaryCard
-            icon={<BadgeCheck className="size-4 text-emerald-400" />}
-            label="Pagan"
-            value={totals.paid}
-          />
-          <SummaryCard
-            icon={<DollarSign className="size-4 text-emerald-400" />}
-            label="Ingresos"
-            value={`$${totals.revenue.toLocaleString("es-MX")}`}
+            icon={<UserPlus className="size-4 text-emerald-400" />}
+            label="Registrations"
+            value={totals.leads}
           />
         </div>
 
         {/* Create */}
         <Card className="mb-8 rounded-2xl border-white/[0.08] bg-[#0f1729]/40 backdrop-blur-xl">
           <CardHeader className="pb-3">
-            <CardTitle className="flex items-center gap-2 text-lg font-bold">
-              <Plus className="size-5 text-blue-400" /> Nueva campaña
+            <CardTitle className="flex items-center gap-2 text-lg font-bold text-white">
+              <Plus className="size-5 text-blue-400" /> New campaign
             </CardTitle>
             <CardDescription className="text-xs text-white/40">
-              El QR apuntará a{" "}
-              <span className="font-mono text-white/60">/q/&lt;código&gt;</span>
-              . Códigos permanentes nunca se desactivan.
+              The QR always points to{" "}
+              <span className="font-mono text-white/60">/q/&lt;code&gt;</span> —
+              the printed code never changes, even if you edit the destination
+              later.
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -289,29 +297,37 @@ export default function CampaignsPage() {
               onSubmit={handleCreate}
               className="grid grid-cols-1 gap-4 md:grid-cols-2"
             >
-              <Field label="Código *">
-                <input
-                  className={inputClass}
-                  placeholder="combi-01"
-                  value={form.code}
-                  onChange={(e) => setForm({ ...form, code: e.target.value })}
-                  required
-                />
-              </Field>
-              <Field label="Nombre">
+              <Field label="Name *">
                 <input
                   className={inputClass}
                   placeholder="Combi ruta 3"
                   value={form.label}
                   onChange={(e) => setForm({ ...form, label: e.target.value })}
+                  required
+                  autoFocus
                 />
+                <p className="mt-1.5 text-[10px] text-white/35">
+                  {form.label.trim() ? (
+                    <>
+                      QR link:{" "}
+                      <span className="font-mono text-blue-400/80">
+                        /q/{slugify(form.label) || "…"}
+                      </span>
+                    </>
+                  ) : (
+                    "The QR code is generated automatically from the name."
+                  )}
+                </p>
               </Field>
-              <Field label="Medio">
+              <Field label="Medium">
                 <select
                   className={inputClass}
                   value={form.medium}
                   onChange={(e) => setForm({ ...form, medium: e.target.value })}
                 >
+                  <option value="" className="bg-[#0f1729]">
+                    —
+                  </option>
                   {MEDIA.map((m) => (
                     <option key={m} value={m} className="bg-[#0f1729]">
                       {m}
@@ -319,22 +335,12 @@ export default function CampaignsPage() {
                   ))}
                 </select>
               </Field>
-              <Field label="Destino">
+              <Field label="Destination">
                 <input
                   className={inputClass}
-                  placeholder={DEFAULT_TARGET}
+                  placeholder="/ — homepage if empty"
                   value={form.target}
                   onChange={(e) => setForm({ ...form, target: e.target.value })}
-                />
-              </Field>
-              <Field label="Fallback (al desactivar)">
-                <input
-                  className={inputClass}
-                  placeholder="otro-código (opcional)"
-                  value={form.fallbackCode}
-                  onChange={(e) =>
-                    setForm({ ...form, fallbackCode: e.target.value })
-                  }
                 />
               </Field>
               <div className="flex items-end gap-4">
@@ -347,7 +353,7 @@ export default function CampaignsPage() {
                     }
                     className="size-4 accent-blue-500"
                   />
-                  Permanente
+                  Permanent
                 </label>
               </div>
               <div className="flex items-center justify-between gap-4 md:col-span-2">
@@ -360,9 +366,7 @@ export default function CampaignsPage() {
                     className="inline-flex items-center gap-1.5 text-[11px] font-semibold text-white/40 hover:text-white"
                   >
                     <Layers className="size-3.5" />{" "}
-                    {bulkOpen
-                      ? "Ocultar creación en lote"
-                      : "Crear varias a la vez"}
+                    {bulkOpen ? "Hide bulk create" : "Create several at once"}
                   </button>
                 )}
                 <Button
@@ -370,7 +374,7 @@ export default function CampaignsPage() {
                   disabled={creating}
                   className="rounded-full bg-blue-500 px-6 py-2.5 text-sm font-semibold text-white hover:bg-blue-400"
                 >
-                  {creating ? "Creando…" : "Crear campaña"}
+                  {creating ? "Creating…" : "Create campaign"}
                 </Button>
               </div>
             </form>
@@ -381,23 +385,21 @@ export default function CampaignsPage() {
                 className="mt-5 border-t border-white/[0.06] pt-5"
               >
                 <p className="mb-2 text-[10px] tracking-wider text-white/40 uppercase">
-                  Una por línea:{" "}
-                  <span className="font-mono text-white/60">
-                    código | nombre | medio
-                  </span>{" "}
-                  (nombre y medio opcionales)
+                  One per line:{" "}
+                  <span className="font-mono text-white/60">name | medium</span>{" "}
+                  (medium optional) — the code is generated from the name
                 </p>
                 <textarea
                   className={`${inputClass} h-28 font-mono`}
                   placeholder={
-                    "combi-01 | Combi ruta 3 | combi\nflyer-oxxo-centro | Flyer OXXO centro | flyer\nbarda-norte"
+                    "Combi ruta 3 | combi\nFlyer OXXO centro | flyer\nBarda norte"
                   }
                   value={bulkText}
                   onChange={(e) => setBulkText(e.target.value)}
                 />
                 <div className="mt-3 flex items-center justify-between gap-4">
                   <label className="flex items-center gap-2 text-xs text-white/60">
-                    Medio por defecto:
+                    Default medium:
                     <select
                       className="rounded-lg border border-white/10 bg-white/[0.03] px-2 py-1 text-xs"
                       value={bulkMedium}
@@ -415,13 +417,13 @@ export default function CampaignsPage() {
                     disabled={bulkCreating || !bulkText.trim()}
                     className="rounded-full bg-white/10 px-5 py-2 text-xs font-semibold text-white hover:bg-white/20"
                   >
-                    {bulkCreating ? "Creando…" : "Crear en lote"}
+                    {bulkCreating ? "Creating…" : "Bulk create"}
                   </Button>
                 </div>
                 {bulkResult && (
                   <div className="mt-3 text-xs">
                     <p className="font-semibold text-emerald-400">
-                      {bulkResult.created} creadas
+                      {bulkResult.created} created
                     </p>
                     {bulkResult.skipped.length > 0 && (
                       <ul className="mt-1 space-y-0.5 text-white/40">
@@ -445,30 +447,26 @@ export default function CampaignsPage() {
         {/* Table */}
         <Card className="overflow-hidden rounded-2xl border-white/[0.08] bg-[#0f1729]/40 backdrop-blur-xl">
           <CardHeader className="pb-3">
-            <CardTitle className="text-lg font-bold">
-              Rendimiento por campaña
+            <CardTitle className="text-lg font-bold text-white">
+              Campaign performance
             </CardTitle>
             <CardDescription className="text-xs text-white/40">
-              La conversión es{" "}
-              <span className="text-white/60">
-                clientes que pagan ÷ escaneos
-              </span>
-              . Abre “registros” para ver quién llegó por cada código.
+              Conversion is{" "}
+              <span className="text-white/60">registrations ÷ scans</span>. Open
+              “registrations” to see who came in from each code.
             </CardDescription>
           </CardHeader>
           <CardContent>
             {loading ? (
-              <p className="py-8 text-center text-sm text-white/40">
-                Cargando…
-              </p>
-            ) : campaigns.length === 0 ? (
+              <p className="py-8 text-center text-sm text-white/40">Loading…</p>
+            ) : activeCampaigns.length === 0 ? (
               <div className="rounded-xl border border-dashed border-white/[0.06] py-10 text-center">
                 <QrCode className="mx-auto mb-3 size-8 text-white/15" />
                 <p className="text-sm font-semibold text-white/70">
-                  Aún no hay campañas
+                  No campaigns yet
                 </p>
                 <p className="mt-1 text-xs text-white/40">
-                  Crea tu primer código arriba.
+                  Create your first code above.
                 </p>
               </div>
             ) : (
@@ -476,19 +474,16 @@ export default function CampaignsPage() {
                 <Table className="min-w-full">
                   <TableHeader className="border-b border-white/[0.06] bg-white/[0.02]">
                     <TableRow>
-                      <Th>Campaña</Th>
-                      <Th>Medio</Th>
-                      <Th className="text-center">Escaneos</Th>
-                      <Th className="text-center">Registros</Th>
-                      <Th className="text-center">Pagan</Th>
-                      <Th className="text-center">Ingresos</Th>
+                      <Th>Campaign</Th>
+                      <Th>Medium</Th>
+                      <Th className="text-center">Scans</Th>
+                      <Th className="text-center">Registrations</Th>
                       <Th className="text-center">Conv.</Th>
-                      <Th>Estado</Th>
-                      <Th>Acciones</Th>
+                      <Th>Actions</Th>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {campaigns.map((c) => (
+                    {activeCampaigns.map((c) => (
                       <React.Fragment key={c.code}>
                         <TableRow className="border-b border-white/[0.04] hover:bg-white/[0.01]">
                           <TableCell className="py-4">
@@ -509,7 +504,7 @@ export default function CampaignsPage() {
                             </button>
                             {c.permanent && (
                               <span className="ml-2 text-[9px] tracking-wider text-amber-400/80 uppercase">
-                                permanente
+                                permanent
                               </span>
                             )}
                           </TableCell>
@@ -526,30 +521,13 @@ export default function CampaignsPage() {
                               7d {c.scan7d} · 30d {c.scan30d}
                             </span>
                           </TableCell>
-                          <TableCell className="py-4 text-center font-bold text-white">
-                            {c.signupCount}
-                          </TableCell>
                           <TableCell className="py-4 text-center font-bold text-emerald-400">
-                            {c.paidCount}
-                          </TableCell>
-                          <TableCell className="py-4 text-center font-bold text-emerald-400">
-                            ${c.revenuePesos.toLocaleString("es-MX")}
+                            {c.leadCount}
                           </TableCell>
                           <TableCell className="py-4 text-center">
                             <span className="font-bold text-blue-400">
                               {(c.conversion * 100).toFixed(1)}%
                             </span>
-                          </TableCell>
-                          <TableCell className="py-4">
-                            {c.active ? (
-                              <Badge className="rounded-full border border-emerald-500/20 bg-emerald-500/10 text-[9px] tracking-wider text-emerald-400 uppercase">
-                                activa
-                              </Badge>
-                            ) : (
-                              <Badge className="rounded-full border border-white/10 bg-white/5 text-[9px] tracking-wider text-white/40 uppercase">
-                                retirada
-                              </Badge>
-                            )}
                           </TableCell>
                           <TableCell className="py-4">
                             <div className="flex items-center gap-1.5">
@@ -560,21 +538,31 @@ export default function CampaignsPage() {
                                 <QrCode className="size-3.5" />
                               </IconBtn>
                               <IconBtn
-                                title="Registros"
+                                title="Registrations"
                                 onClick={() => toggleSignups(c.code)}
                               >
                                 <Users className="size-3.5" />
                               </IconBtn>
                               <IconBtn
-                                title={c.active ? "Desactivar" : "Reactivar"}
-                                onClick={() => toggleActive(c)}
+                                title={
+                                  pendingDelete === c.code
+                                    ? "Click again to archive (keeps stats)"
+                                    : "Archive"
+                                }
+                                onClick={() => handleDelete(c.code)}
                               >
-                                <Power
-                                  className={`size-3.5 ${c.active ? "text-red-400" : "text-emerald-400"}`}
+                                <Trash2
+                                  className={`size-3.5 ${pendingDelete === c.code ? "text-red-400" : "text-white/50"}`}
                                 />
                               </IconBtn>
+                              {pendingDelete === c.code && (
+                                <span className="text-[10px] font-semibold text-red-400">
+                                  sure?
+                                </span>
+                              )}
                               <button
                                 onClick={() => {
+                                  setPendingDelete(null);
                                   setViewing(null);
                                   setEditing(
                                     editing === c.code ? null : c.code
@@ -582,7 +570,7 @@ export default function CampaignsPage() {
                                 }}
                                 className="px-1 text-[11px] text-white/45 hover:text-white"
                               >
-                                editar
+                                edit
                               </button>
                             </div>
                           </TableCell>
@@ -590,7 +578,7 @@ export default function CampaignsPage() {
 
                         {editing === c.code && (
                           <TableRow className="bg-white/[0.02]">
-                            <TableCell colSpan={9} className="py-4">
+                            <TableCell colSpan={6} className="py-4">
                               <EditRow
                                 row={c}
                                 onSaved={async () => {
@@ -604,8 +592,8 @@ export default function CampaignsPage() {
 
                         {viewing === c.code && (
                           <TableRow className="bg-white/[0.02]">
-                            <TableCell colSpan={9} className="py-4">
-                              <SignupList rows={signups[c.code]} />
+                            <TableCell colSpan={6} className="py-4">
+                              <LeadList rows={leads[c.code]} />
                             </TableCell>
                           </TableRow>
                         )}
@@ -617,6 +605,53 @@ export default function CampaignsPage() {
             )}
           </CardContent>
         </Card>
+
+        {/* Archived (soft-deleted) — stats kept */}
+        {archivedCampaigns.length > 0 && (
+          <Card className="mt-6 rounded-2xl border-white/[0.06] bg-[#0f1729]/30 backdrop-blur-xl">
+            <CardHeader className="pb-3">
+              <CardTitle className="text-base font-bold text-white/70">
+                Archived ({archivedCampaigns.length})
+              </CardTitle>
+              <CardDescription className="text-xs text-white/40">
+                Hidden from the active list, but their scans and registrations
+                are kept. Restore anytime.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-2">
+                {archivedCampaigns.map((c) => (
+                  <div
+                    key={c.code}
+                    className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-white/[0.05] bg-white/[0.01] px-3 py-2 text-xs"
+                  >
+                    <div>
+                      <span className="font-semibold text-white/70">
+                        {c.label}
+                      </span>
+                      <span className="ml-2 font-mono text-white/30">
+                        /q/{c.code}
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-4 text-white/45">
+                      <span>{c.scanCount} scans</span>
+                      <span>{c.leadCount} regs</span>
+                      <span className="text-blue-400/70">
+                        {(c.conversion * 100).toFixed(1)}%
+                      </span>
+                      <button
+                        onClick={() => handleRestore(c.code)}
+                        className="rounded-full border border-white/10 bg-white/5 px-3 py-1 font-semibold text-white/70 hover:bg-white/10"
+                      >
+                        Restore
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        )}
       </div>
 
       {/* QR modal */}
@@ -645,14 +680,14 @@ export default function CampaignsPage() {
                 download={`qr-${qr.code}.png`}
                 className="inline-flex flex-1 items-center justify-center gap-1.5 rounded-full bg-blue-500 py-2.5 text-sm font-semibold text-white hover:bg-blue-400"
               >
-                <Download className="size-4" /> Descargar PNG
+                <Download className="size-4" /> Download PNG
               </a>
               <Button
                 variant="ghost"
                 onClick={() => setQr(null)}
                 className="rounded-full px-5 text-sm text-white/50 hover:bg-white/5 hover:text-white"
               >
-                Cerrar
+                Close
               </Button>
             </div>
           </div>
@@ -734,42 +769,44 @@ function IconBtn({
   );
 }
 
-function SignupList({ rows }: { rows: CampaignSignupRow[] | undefined }) {
+function LeadList({ rows }: { rows: CampaignLeadRow[] | undefined }) {
   if (rows === undefined)
-    return <p className="text-xs text-white/40">Cargando registros…</p>;
+    return <p className="text-xs text-white/40">Loading registrations…</p>;
   if (rows.length === 0)
     return (
       <p className="text-xs text-white/40">
-        Aún no hay registros desde este código.
+        No registrations from this code yet.
       </p>
     );
   return (
     <div className="space-y-1.5">
-      {rows.map((r) => (
+      {rows.map((r, i) => (
         <div
-          key={r.studentId + r.email}
+          key={r.phone + i}
           className="flex items-center justify-between rounded-lg bg-white/[0.02] px-3 py-2 text-xs"
         >
           <div>
             <span className="font-semibold text-white">{r.name}</span>
-            <span className="ml-2 text-white/40">{r.email}</span>
+            <a
+              href={`tel:${r.phone}`}
+              className="ml-2 text-blue-400 hover:underline"
+            >
+              {r.phone}
+            </a>
+            <span className="ml-2 text-white/40">
+              {r.level} · {r.slot}
+            </span>
           </div>
           <div className="flex items-center gap-3">
             <span className="text-white/30">
-              {new Date(r.createdAt).toLocaleDateString("es-MX", {
+              {new Date(r.createdAt).toLocaleDateString("en-US", {
                 day: "numeric",
                 month: "short",
               })}
             </span>
-            {r.paid ? (
-              <span className="rounded-full border border-emerald-500/20 bg-emerald-500/10 px-2 py-0.5 font-semibold text-emerald-400">
-                pagó ${Math.round(r.revenueCents / 100).toLocaleString("es-MX")}
-              </span>
-            ) : (
-              <span className="rounded-full border border-white/10 bg-white/5 px-2 py-0.5 text-white/40">
-                sin pago
-              </span>
-            )}
+            <span className="rounded-full border border-white/10 bg-white/5 px-2 py-0.5 text-white/50 capitalize">
+              {r.status}
+            </span>
           </div>
         </div>
       ))}
@@ -779,7 +816,6 @@ function SignupList({ rows }: { rows: CampaignSignupRow[] | undefined }) {
 
 function EditRow({ row, onSaved }: { row: CampaignRow; onSaved: () => void }) {
   const [target, setTarget] = useState(row.target);
-  const [fallbackCode, setFallbackCode] = useState(row.fallbackCode ?? "");
   const [label, setLabel] = useState(row.label);
   const [permanent, setPermanent] = useState(row.permanent);
   const [saving, setSaving] = useState(false);
@@ -790,7 +826,6 @@ function EditRow({ row, onSaved }: { row: CampaignRow; onSaved: () => void }) {
     setErr(null);
     const res = await updateCampaignAction(row.code, {
       target,
-      fallbackCode: fallbackCode || null,
       label,
       permanent,
     });
@@ -800,10 +835,10 @@ function EditRow({ row, onSaved }: { row: CampaignRow; onSaved: () => void }) {
   };
 
   return (
-    <div className="grid grid-cols-1 items-end gap-3 md:grid-cols-4">
+    <div className="grid grid-cols-1 items-end gap-3 md:grid-cols-3">
       <div>
         <label className="mb-1 block text-[10px] tracking-wider text-white/40 uppercase">
-          Nombre
+          Name
         </label>
         <input
           className={inputClass}
@@ -813,23 +848,13 @@ function EditRow({ row, onSaved }: { row: CampaignRow; onSaved: () => void }) {
       </div>
       <div>
         <label className="mb-1 block text-[10px] tracking-wider text-white/40 uppercase">
-          Destino
+          Destination
         </label>
         <input
           className={inputClass}
           value={target}
           onChange={(e) => setTarget(e.target.value)}
-        />
-      </div>
-      <div>
-        <label className="mb-1 block text-[10px] tracking-wider text-white/40 uppercase">
-          Fallback
-        </label>
-        <input
-          className={inputClass}
-          value={fallbackCode}
-          onChange={(e) => setFallbackCode(e.target.value)}
-          placeholder="otro-código"
+          placeholder="/ — homepage if empty"
         />
       </div>
       <div className="flex items-center gap-3">
@@ -840,17 +865,17 @@ function EditRow({ row, onSaved }: { row: CampaignRow; onSaved: () => void }) {
             onChange={(e) => setPermanent(e.target.checked)}
             className="size-4 accent-blue-500"
           />
-          Permanente
+          Permanent
         </label>
         <Button
           onClick={save}
           disabled={saving}
           className="rounded-full bg-blue-500 px-5 py-2 text-xs font-semibold text-white hover:bg-blue-400"
         >
-          {saving ? "…" : "Guardar"}
+          {saving ? "…" : "Save"}
         </Button>
       </div>
-      {err && <p className="text-xs text-red-400 md:col-span-4">{err}</p>}
+      {err && <p className="text-xs text-red-400 md:col-span-3">{err}</p>}
     </div>
   );
 }

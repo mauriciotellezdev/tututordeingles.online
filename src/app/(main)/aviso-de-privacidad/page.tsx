@@ -39,28 +39,22 @@ export default function AvisoDePrivacidadPage() {
         <p>Para prestarte nuestros servicios podemos recabar:</p>
         <ul className="list-disc space-y-1 pl-5">
           <li>
-            Datos de identificación y contacto: nombre, correo electrónico y
-            número de teléfono/WhatsApp.
-          </li>
-          <li>
-            Datos de tu progreso académico: resultados de tu examen de ubicación
-            y clases agendadas.
+            Datos de identificación y contacto: nombre y número de teléfono, que
+            nos proporcionas al registrarte para que podamos llamarte y darte
+            los detalles del club de conversación.
           </li>
           <li>
             Datos técnicos y de seguridad: dirección IP, identificador de
             navegador y agente de usuario, tratados de forma cifrada (hash)
             únicamente para prevenir el abuso y fraude en los registros.
           </li>
-          <li>
-            Datos de facturación y pago: procesados directamente por nuestro
-            proveedor de pagos (Stripe). No almacenamos los datos completos de
-            tu tarjeta.
-          </li>
         </ul>
         <p>
-          No recabamos datos personales sensibles. No solicitamos ni tratamos
-          datos de menores de edad sin el consentimiento de quien ejerza la
-          patria potestad.
+          No recabamos datos de facturación ni de tarjetas: el pago de las
+          clases se realiza en persona (efectivo o transferencia). No recabamos
+          datos personales sensibles. No solicitamos ni tratamos datos de
+          menores de edad sin el consentimiento de quien ejerza la patria
+          potestad.
         </p>
       </LegalSection>
 
@@ -71,16 +65,11 @@ export default function AvisoDePrivacidadPage() {
         </p>
         <ul className="list-disc space-y-1 pl-5">
           <li>
-            Crear y administrar tu cuenta e iniciar sesión mediante códigos de
-            verificación por correo.
+            Contactarte por teléfono para darte información sobre el club de
+            conversación y coordinar tu asistencia.
           </li>
-          <li>Agendar, confirmar y dar seguimiento a tus clases de inglés.</li>
-          <li>Procesar tus pagos y administrar tus créditos.</li>
-          <li>
-            Enviarte comunicaciones transaccionales (códigos de acceso,
-            confirmaciones de clase).
-          </li>
-          <li>Prevenir fraude y uso abusivo de la plataforma.</li>
+          <li>Confirmar y dar seguimiento a tu participación en las clases.</li>
+          <li>Prevenir fraude y uso abusivo de los registros.</li>
         </ul>
         <p>
           <strong className="text-white">Finalidades secundarias</strong> (no
@@ -97,14 +86,6 @@ export default function AvisoDePrivacidadPage() {
           mantener la confidencialidad:
         </p>
         <ul className="list-disc space-y-1 pl-5">
-          <li>
-            <strong className="text-white">Stripe</strong> — procesamiento de
-            pagos.
-          </li>
-          <li>
-            <strong className="text-white">Brevo</strong> — envío de correos
-            transaccionales.
-          </li>
           <li>
             <strong className="text-white">Vercel y Cloudflare</strong> —
             alojamiento e infraestructura del sitio.

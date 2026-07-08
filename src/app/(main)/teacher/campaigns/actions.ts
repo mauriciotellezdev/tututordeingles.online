@@ -2,14 +2,14 @@
 
 import { cookies } from "next/headers";
 import QRCode from "qrcode";
-import { MongoServerError, type UpdateFilter } from "mongodb";
+import { MongoServerError } from "mongodb";
 import { getCollection } from "@/lib/db";
 import {
   ensureCampaignIndexes,
   getCampaignStats,
-  getCampaignSignups,
+  getCampaignLeads,
   type CampaignStat,
-  type CampaignSignupRow,
+  type CampaignLeadRow,
 } from "@/lib/campaigns";
 import {
   CAMPAIGN_COLLECTION,
@@ -20,9 +20,7 @@ import {
 } from "@/lib/models/campaign";
 
 const ZERO_STAT: CampaignStat = {
-  signups: 0,
-  paidStudents: 0,
-  revenueCents: 0,
+  leads: 0,
   scan7d: 0,
   scan30d: 0,
 };
@@ -47,24 +45,18 @@ export interface CampaignRow {
   target: string;
   active: boolean;
   permanent: boolean;
-  fallbackCode: string | null;
   scanCount: number;
-  signupCount: number;
-  paidCount: number;
-  revenuePesos: number;
+  leadCount: number;
   scan7d: number;
   scan30d: number;
-  conversion: number; // paying students / scans, 0..1
+  conversion: number; // registrations / scans, 0..1
   notes: string | null;
   scanUrl: string;
   createdAt: string;
-  deactivatedAt: string | null;
+  deleted: boolean;
 }
 
 function toRow(c: Campaign, stat: CampaignStat): CampaignRow {
-  // Prefer recomputed signup count from campaign_signups; fall back to the
-  // denormalized counter if stats are unavailable.
-  const signups = stat.signups || c.signupCount;
   return {
     code: c.code,
     label: c.label,
@@ -72,25 +64,22 @@ function toRow(c: Campaign, stat: CampaignStat): CampaignRow {
     target: c.target,
     active: c.active,
     permanent: c.permanent,
-    fallbackCode: c.fallbackCode ?? null,
     scanCount: c.scanCount,
-    signupCount: signups,
-    paidCount: stat.paidStudents,
-    revenuePesos: Math.round(stat.revenueCents / 100),
+    leadCount: stat.leads,
     scan7d: stat.scan7d,
     scan30d: stat.scan30d,
-    // Conversion that matters: paying students per scan.
-    conversion: c.scanCount > 0 ? stat.paidStudents / c.scanCount : 0,
+    // Conversion that matters: registrations (leads) per scan.
+    conversion: c.scanCount > 0 ? stat.leads / c.scanCount : 0,
     notes: c.notes ?? null,
     scanUrl: buildCampaignScanUrl(c.code),
     createdAt: c.createdAt.toISOString(),
-    deactivatedAt: c.deactivatedAt ? c.deactivatedAt.toISOString() : null,
+    deleted: Boolean(c.deletedAt),
   };
 }
 
 export async function listCampaignsAction() {
   if (!(await requireTeacher())) {
-    return { success: false as const, error: "No autorizado." };
+    return { success: false as const, error: "Unauthorized." };
   }
   try {
     await ensureCampaignIndexes();
@@ -108,44 +97,48 @@ export async function listCampaignsAction() {
     return {
       success: false as const,
       error:
-        error instanceof Error ? error.message : "Error al cargar campañas.",
+        error instanceof Error ? error.message : "Failed to load campaigns.",
     };
   }
 }
 
-export interface CampaignSignupsResult {
+export interface CampaignLeadsResult {
   success: true;
-  signups: CampaignSignupRow[];
+  leads: CampaignLeadRow[];
 }
 
 export async function getCampaignSignupsAction(code: string) {
   if (!(await requireTeacher())) {
-    return { success: false as const, error: "No autorizado." };
+    return { success: false as const, error: "Unauthorized." };
   }
   try {
-    const signups = await getCampaignSignups(code);
-    return { success: true as const, signups };
+    const leads = await getCampaignLeads(code);
+    return { success: true as const, leads };
   } catch (error) {
     console.error("getCampaignSignupsAction:", error);
     return {
       success: false as const,
       error:
-        error instanceof Error ? error.message : "Error al cargar registros.",
+        error instanceof Error
+          ? error.message
+          : "Failed to load registrations.",
     };
   }
 }
 
 export async function createCampaignAction(input: {
-  code: string;
+  code?: string;
   label: string;
   medium?: string;
   target?: string;
   permanent?: boolean;
-  fallbackCode?: string;
   notes?: string;
 }) {
   if (!(await requireTeacher())) {
-    return { success: false as const, error: "No autorizado." };
+    return { success: false as const, error: "Unauthorized." };
+  }
+  if (!input.label?.trim() && !input.code?.trim()) {
+    return { success: false as const, error: "Enter a name." };
   }
   try {
     await ensureCampaignIndexes();
@@ -157,44 +150,65 @@ export async function createCampaignAction(input: {
     if (error instanceof MongoServerError && error.code === 11000) {
       return {
         success: false as const,
-        error: "Ya existe una campaña con ese código.",
+        error: "A campaign with that code already exists.",
       };
     }
     console.error("createCampaignAction:", error);
     return {
       success: false as const,
       error:
-        error instanceof Error ? error.message : "Error al crear la campaña.",
+        error instanceof Error ? error.message : "Failed to create campaign.",
     };
   }
 }
 
-export async function setCampaignActiveAction(code: string, active: boolean) {
+/**
+ * Soft delete (archive) a campaign: hide it from the main list but keep the
+ * campaign row, its scan history, and attributed registrations so no stats are
+ * ever lost. A retired code's scans still resolve to the homepage.
+ */
+export async function deleteCampaignAction(code: string) {
   if (!(await requireTeacher())) {
-    return { success: false as const, error: "No autorizado." };
+    return { success: false as const, error: "Unauthorized." };
   }
   try {
     const normalized = normalizeCampaignCode(code);
-    const col = await getCollection<Campaign>(CAMPAIGN_COLLECTION);
-    const update: UpdateFilter<Campaign> = active
-      ? {
-          $set: { active: true, updatedAt: new Date() },
-          $unset: { deactivatedAt: "" },
-        }
-      : {
-          $set: {
-            active: false,
-            deactivatedAt: new Date(),
-            updatedAt: new Date(),
-          },
-        };
-    await col.updateOne({ code: normalized }, update);
+    const campaigns = await getCollection<Campaign>(CAMPAIGN_COLLECTION);
+    await campaigns.updateOne(
+      { code: normalized },
+      { $set: { deletedAt: new Date(), active: false, updatedAt: new Date() } }
+    );
     return { success: true as const };
   } catch (error) {
-    console.error("setCampaignActiveAction:", error);
+    console.error("deleteCampaignAction:", error);
     return {
       success: false as const,
-      error: error instanceof Error ? error.message : "Error al actualizar.",
+      error: error instanceof Error ? error.message : "Failed to archive.",
+    };
+  }
+}
+
+/** Restore an archived campaign back to the active list. */
+export async function restoreCampaignAction(code: string) {
+  if (!(await requireTeacher())) {
+    return { success: false as const, error: "Unauthorized." };
+  }
+  try {
+    const normalized = normalizeCampaignCode(code);
+    const campaigns = await getCollection<Campaign>(CAMPAIGN_COLLECTION);
+    await campaigns.updateOne(
+      { code: normalized },
+      {
+        $set: { active: true, updatedAt: new Date() },
+        $unset: { deletedAt: "" },
+      }
+    );
+    return { success: true as const };
+  } catch (error) {
+    console.error("restoreCampaignAction:", error);
+    return {
+      success: false as const,
+      error: error instanceof Error ? error.message : "Failed to restore.",
     };
   }
 }
@@ -205,13 +219,12 @@ export async function updateCampaignAction(
     label?: string;
     medium?: string;
     target?: string;
-    fallbackCode?: string | null;
     permanent?: boolean;
     notes?: string;
   }
 ) {
   if (!(await requireTeacher())) {
-    return { success: false as const, error: "No autorizado." };
+    return { success: false as const, error: "Unauthorized." };
   }
   try {
     const normalized = normalizeCampaignCode(code);
@@ -231,11 +244,6 @@ export async function updateCampaignAction(
       if (trimmed) set.notes = trimmed;
       else unset.notes = "";
     }
-    if (patch.fallbackCode !== undefined) {
-      if (patch.fallbackCode)
-        set.fallbackCode = normalizeCampaignCode(patch.fallbackCode);
-      else unset.fallbackCode = "";
-    }
 
     const update: Record<string, unknown> = { $set: set };
     if (Object.keys(unset).length > 0) update.$unset = unset;
@@ -246,14 +254,14 @@ export async function updateCampaignAction(
     console.error("updateCampaignAction:", error);
     return {
       success: false as const,
-      error: error instanceof Error ? error.message : "Error al actualizar.",
+      error: error instanceof Error ? error.message : "Failed to update.",
     };
   }
 }
 
 export async function generateCampaignQrAction(code: string) {
   if (!(await requireTeacher())) {
-    return { success: false as const, error: "No autorizado." };
+    return { success: false as const, error: "Unauthorized." };
   }
   try {
     const normalized = normalizeCampaignCode(code);
@@ -269,7 +277,7 @@ export async function generateCampaignQrAction(code: string) {
     console.error("generateCampaignQrAction:", error);
     return {
       success: false as const,
-      error: error instanceof Error ? error.message : "Error al generar el QR.",
+      error: error instanceof Error ? error.message : "Failed to generate QR.",
     };
   }
 }
@@ -281,16 +289,16 @@ export interface BulkCreateResult {
 }
 
 /**
- * Create many codes at once. Each non-empty line is `code | label | medium`
- * (label and medium optional). Duplicates and invalid codes are skipped and
- * reported rather than aborting the whole batch.
+ * Create many campaigns at once. Each non-empty line is `name | medium`
+ * (medium optional); the code is derived from the name. Duplicates and invalid
+ * names are skipped and reported rather than aborting the whole batch.
  */
 export async function createCampaignsBulkAction(
   text: string,
   defaults?: { medium?: string; target?: string; permanent?: boolean }
 ) {
   if (!(await requireTeacher())) {
-    return { success: false as const, error: "No autorizado." };
+    return { success: false as const, error: "Unauthorized." };
   }
   try {
     await ensureCampaignIndexes();
@@ -304,15 +312,14 @@ export async function createCampaignsBulkAction(
       .filter(Boolean);
 
     for (const line of lines) {
-      const [rawCode, label, medium] = line.split("|").map((p) => p.trim());
-      if (!rawCode) {
-        skipped.push({ line, reason: "sin código" });
+      const [name, medium] = line.split("|").map((p) => p.trim());
+      if (!name) {
+        skipped.push({ line, reason: "no name" });
         continue;
       }
       try {
         const doc = createCampaign({
-          code: rawCode,
-          label: label || rawCode,
+          label: name,
           medium: medium || defaults?.medium,
           target: defaults?.target,
           permanent: defaults?.permanent,
@@ -321,7 +328,7 @@ export async function createCampaignsBulkAction(
         created.push(doc.code);
       } catch (err) {
         if (err instanceof MongoServerError && err.code === 11000) {
-          skipped.push({ line, reason: "código duplicado" });
+          skipped.push({ line, reason: "duplicate code" });
         } else {
           skipped.push({
             line,
@@ -336,7 +343,7 @@ export async function createCampaignsBulkAction(
     console.error("createCampaignsBulkAction:", error);
     return {
       success: false as const,
-      error: error instanceof Error ? error.message : "Error al crear en lote.",
+      error: error instanceof Error ? error.message : "Failed to bulk create.",
     };
   }
 }
@@ -354,7 +361,7 @@ export interface SheetItem {
  */
 export async function generateCampaignSheetAction() {
   if (!(await requireTeacher())) {
-    return { success: false as const, error: "No autorizado." };
+    return { success: false as const, error: "Unauthorized." };
   }
   try {
     const col = await getCollection<Campaign>(CAMPAIGN_COLLECTION);
@@ -382,7 +389,7 @@ export async function generateCampaignSheetAction() {
     return {
       success: false as const,
       error:
-        error instanceof Error ? error.message : "Error al generar la hoja.",
+        error instanceof Error ? error.message : "Failed to generate sheet.",
     };
   }
 }

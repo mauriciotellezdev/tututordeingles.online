@@ -29,6 +29,7 @@ export const campaignSchemaValidation = {
       createdAt: { bsonType: "date" },
       updatedAt: { bsonType: "date" },
       deactivatedAt: { bsonType: "date" },
+      deletedAt: { bsonType: "date" },
     },
   },
 };

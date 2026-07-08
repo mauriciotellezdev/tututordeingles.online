@@ -13,7 +13,19 @@ export default function sitemap(): MetadataRoute.Sitemap {
       priority: 1,
     },
     {
-      url: `${BASE}/clases-de-ingles-en-tehuacan`,
+      url: `${BASE}/join`,
+      lastModified: new Date(),
+      changeFrequency: "monthly" as const,
+      priority: 0.9,
+    },
+    {
+      url: `${BASE}/club-de-conversacion-en-ingles-tehuacan`,
+      lastModified: new Date(),
+      changeFrequency: "weekly" as const,
+      priority: 0.9,
+    },
+    {
+      url: `${BASE}/perder-el-miedo-a-hablar-ingles`,
       lastModified: new Date(),
       changeFrequency: "weekly" as const,
       priority: 0.9,

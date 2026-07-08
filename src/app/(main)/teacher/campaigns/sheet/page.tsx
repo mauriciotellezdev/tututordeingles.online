@@ -20,7 +20,7 @@ export default function CampaignSheetPage() {
       if (res.success) setItems(res.items);
       else {
         setError(res.error);
-        if (res.error === "No autorizado.") router.push("/login");
+        if (res.error === "Unauthorized.") router.push("/teacher/login");
       }
     })();
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -43,35 +43,35 @@ export default function CampaignSheetPage() {
             variant="ghost"
             className="flex items-center gap-1.5 rounded-full px-4 text-sm text-black/60 hover:bg-black/5"
           >
-            <ArrowLeft className="size-4" /> Volver
+            <ArrowLeft className="size-4" /> Back
           </Button>
         </Link>
         <p className="text-sm font-semibold text-black/70">
-          Hoja de códigos QR — {items.length} activas
+          QR code sheet — {items.length} active
         </p>
         <Button
           onClick={() => window.print()}
           className="flex items-center gap-1.5 rounded-full bg-blue-600 px-5 text-sm font-semibold text-white hover:bg-blue-500"
         >
-          <Printer className="size-4" /> Imprimir
+          <Printer className="size-4" /> Print
         </Button>
       </div>
 
       <div className="mx-auto max-w-5xl px-6 py-8">
         <p className="no-print mb-6 text-sm text-black/50">
-          Imprime esta hoja, recorta cada código y pégalo en combis, tiendas y
-          bardas. Cada QR lleva a{" "}
-          <span className="font-mono">/q/&lt;código&gt;</span> y registra los
-          escaneos por separado.
+          Print this sheet, cut out each code and stick it on combis, stores and
+          walls. Each QR leads to{" "}
+          <span className="font-mono">/q/&lt;code&gt;</span> and tracks the
+          scans separately.
         </p>
 
         {loading ? (
-          <p className="py-16 text-center text-black/40">Generando códigos…</p>
+          <p className="py-16 text-center text-black/40">Generating codes…</p>
         ) : error ? (
           <p className="py-16 text-center text-red-600">{error}</p>
         ) : items.length === 0 ? (
           <p className="py-16 text-center text-black/40">
-            No hay campañas activas. Crea algunas primero.
+            No active campaigns. Create some first.
           </p>
         ) : (
           <div className="grid grid-cols-2 gap-6 sm:grid-cols-3">

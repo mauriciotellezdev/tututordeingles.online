@@ -22,6 +22,17 @@ const nextConfig: NextConfig = {
   async headers() {
     return [{ source: "/:path*", headers: securityHeaders }];
   },
+  async redirects() {
+    return [
+      // Retired local-SEO page → new conversation-club landing page. 301 so the
+      // old URL's ranking/backlinks carry over instead of being lost to a 404.
+      {
+        source: "/clases-de-ingles-en-tehuacan",
+        destination: "/club-de-conversacion-en-ingles-tehuacan",
+        permanent: true,
+      },
+    ];
+  },
 };
 
 export default nextConfig;

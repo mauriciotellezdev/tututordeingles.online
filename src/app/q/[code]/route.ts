@@ -32,7 +32,7 @@ export async function GET(
   // count as scans or receive an attribution cookie.
   const isBot = isBotUserAgent(request.headers.get("user-agent"));
 
-  let target = "/clases-de-ingles-en-tehuacan";
+  let target = "/";
   try {
     await ensureCampaignIndexes();
     const resolution = await resolveCampaignRedirect(rawCode);

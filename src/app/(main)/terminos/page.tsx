@@ -20,47 +20,43 @@ export default function TerminosPage() {
 
       <LegalSection heading="1. El servicio">
         <p>
-          Ofrecemos clases privadas de inglés 1 a 1, presenciales en Tehuacán o
-          en línea por WhatsApp/videollamada. La primera clase de prueba es
-          gratuita. Las clases posteriores se pagan mediante créditos: 1 crédito
-          equivale a 1 clase privada de 60 minutos.
+          Ofrecemos un club de conversación en inglés presencial en Tehuacán.
+          Para participar te registras con tu nombre y teléfono y nosotros te
+          llamamos para darte los detalles. El pago de las clases se realiza en
+          persona.
         </p>
       </LegalSection>
 
-      <LegalSection heading="2. Cuenta y acceso">
+      <LegalSection heading="2. Registro">
         <p>
-          El acceso es mediante un código de verificación enviado a tu correo.
-          Eres responsable de mantener la confidencialidad de tu cuenta y de la
-          veracidad de los datos que proporcionas. Está prohibido crear cuentas
-          múltiples para abusar de promociones o del programa de referidos.
+          El registro se realiza a través del formulario del sitio, donde
+          proporcionas tu nombre y teléfono. Eres responsable de la veracidad de
+          los datos que proporcionas. Está prohibido enviar registros falsos o
+          duplicados para abusar de promociones.
         </p>
       </LegalSection>
 
-      <LegalSection heading="3. Pagos y créditos">
+      <LegalSection heading="3. Pagos">
         <p>
-          Los precios se muestran en pesos mexicanos (MXN) e incluyen los
-          métodos de pago disponibles (tarjeta, transferencia SPEI y OXXO) a
-          través de Stripe. Los créditos se acreditan una vez confirmado el
-          pago. Los pagos por OXXO o SPEI pueden tardar en confirmarse; tus
-          créditos se activan automáticamente al confirmarse el pago.
+          Los precios se muestran en pesos mexicanos (MXN). El pago de las
+          clases se realiza en persona, en efectivo o por transferencia
+          bancaria. No procesamos pagos en línea a través del sitio.
         </p>
       </LegalSection>
 
       <LegalSection heading="4. Agendado, cambios y cancelaciones">
         <p>
-          Las clases deben agendarse con al menos 24 horas de anticipación,
-          sujeto a disponibilidad. Para reprogramar o cancelar una clase,
-          contáctanos con al menos 24 horas de anticipación. Las inasistencias
-          sin aviso pueden descontar el crédito de la clase.
+          Si no puedes asistir a una sesión, contáctanos con al menos 24 horas
+          de anticipación para reprogramar. Las inasistencias sin aviso pueden
+          afectar tu lugar en el club.
         </p>
       </LegalSection>
 
-      <LegalSection heading="5. Programa de referidos">
+      <LegalSection heading="5. Referidos">
         <p>
-          Puedes ganar créditos cuando un estudiante nuevo se registre con tu
-          enlace y realice su primer pago. Nos reservamos el derecho de anular
-          bonificaciones obtenidas de forma fraudulenta o mediante cuentas
-          relacionadas.
+          Puedes recibir beneficios cuando invites a una persona nueva que se
+          registre y se una al club. Nos reservamos el derecho de anular
+          bonificaciones obtenidas de forma fraudulenta.
         </p>
       </LegalSection>
 

@@ -1,542 +1,463 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/shared/ui/button";
-import { Badge } from "@/shared/ui/badge";
 import {
-  Card,
-  CardHeader,
-  CardTitle,
-  CardDescription,
-  CardContent,
-} from "@/shared/ui/card";
+  getTeacherDashboardDataAction,
+  updateLeadStatusAction,
+  deleteLeadAction,
+  listScheduleAction,
+  createScheduleEntryAction,
+  updateScheduleEntryAction,
+  deleteScheduleEntryAction,
+  teacherLogoutAction,
+  type LeadRow,
+  type ScheduleRow,
+} from "./actions";
 import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/shared/ui/table";
-import { getTeacherDashboardDataAction, teacherLogoutAction } from "./actions";
-import {
-  Calendar as CalendarIcon,
   Users,
-  MessageSquare,
-  Mail,
   LogOut,
-  Video,
-  Award,
-  Phone,
-  Gift,
-  BadgeCheck,
   QrCode,
-  CreditCard,
+  CalendarDays,
+  Trash2,
+  Plus,
+  Phone,
 } from "lucide-react";
 
-interface StudentData {
-  _id: string;
-  name: string;
-  email: string;
-  phone: string;
-  credits: number;
-  quizResult?: {
-    score: number;
-    totalQuestions: number;
-    completedAt: Date;
-  };
-}
+type LeadStatus = "nuevo" | "contactado" | "inscrito";
 
-interface SessionData {
-  _id: string;
-  type: "intro" | "tutoring";
-  dateTime: string;
-  duration: number;
-  meetingLink?: string;
-  status: string;
-  paid?: boolean;
-  student: {
-    _id: string;
-    name: string;
-    email: string;
-    phone: string;
-  };
-}
+const STATUS_STYLES: Record<LeadStatus, string> = {
+  nuevo: "border-blue-500/20 bg-blue-500/10 text-blue-400",
+  contactado: "border-amber-500/20 bg-amber-500/10 text-amber-400",
+  inscrito: "border-emerald-500/20 bg-emerald-500/10 text-emerald-400",
+};
 
-interface ReferralData {
-  _id: string;
-  referralCodeUsed: string;
-  createdAt: string;
-  convertedAt: string | null;
-  rewardGrantedAt: string | null;
-  rewardCredits: number;
-  rewardDescription: string;
-  firstPaymentAmount: number;
-  referrer: {
-    _id: string;
-    name: string;
-    email: string;
-  } | null;
-  referred: {
-    _id: string;
-    name: string;
-    email: string;
-  } | null;
+const cardClass =
+  "overflow-hidden rounded-2xl border border-white/[0.08] bg-[#0f1729]/40 p-6 backdrop-blur-xl";
+const inputClass =
+  "rounded-lg border border-white/[0.08] bg-[#111827]/60 px-3 py-2 text-xs text-white placeholder:text-white/25 outline-none focus:border-blue-500/50";
+
+function nextSundayKey(): string {
+  const now = new Date();
+  const day = now.getUTCDay();
+  const add = day === 0 ? 7 : 7 - day;
+  const d = new Date(now);
+  d.setUTCDate(now.getUTCDate() + add);
+  return d.toISOString().slice(0, 10);
 }
 
 export default function TeacherDashboard() {
   const router = useRouter();
-
-  const [upcomingSessions, setUpcomingSessions] = useState<SessionData[]>([]);
-  const [activeStudents, setActiveStudents] = useState<StudentData[]>([]);
-  const [referrals, setReferrals] = useState<ReferralData[]>([]);
+  const [leads, setLeads] = useState<LeadRow[]>([]);
+  const [counts, setCounts] = useState({
+    total: 0,
+    nuevo: 0,
+    contactado: 0,
+    inscrito: 0,
+  });
+  const [schedule, setSchedule] = useState<ScheduleRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const loadData = async () => {
+  // new-session form
+  const [form, setForm] = useState({
+    date: nextSundayKey(),
+    startTime: "11:00",
+    endTime: "12:30",
+    location: "Starbucks Tehuacán",
+    activity: "Conversación en inglés en grupo",
+  });
+
+  const loadAll = useCallback(async () => {
     setLoading(true);
     setError(null);
-    const res = await getTeacherDashboardDataAction();
+    const [leadRes, schedRes] = await Promise.all([
+      getTeacherDashboardDataAction(),
+      listScheduleAction(),
+    ]);
     setLoading(false);
-
-    if (res.success) {
-      setUpcomingSessions(res.upcomingSessions || []);
-      setActiveStudents(res.activeStudents || []);
-      setReferrals(res.referrals || []);
-    } else {
-      setError(res.error || "No autorizado.");
-      router.push("/login");
+    if (!leadRes.success) {
+      setError(leadRes.error || "Unauthorized.");
+      router.push("/teacher/login");
+      return;
     }
-  };
+    setLeads(leadRes.leads);
+    setCounts(leadRes.counts);
+    if (schedRes.success) setSchedule(schedRes.entries);
+  }, [router]);
 
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect
-    void loadData();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+    void loadAll();
+  }, [loadAll]);
 
   const handleLogout = async () => {
     await teacherLogoutAction();
-    router.push("/login");
+    router.push("/teacher/login");
   };
 
-  const getProficiencyLevelName = (correct?: number) => {
-    if (correct === undefined) return "No realizado";
-    if (correct <= 5) return "Principiante (A1-A2)";
-    if (correct <= 12) return "Intermedio (B1)";
-    if (correct <= 17) return "Intermedio Alto (B2)";
-    return "Avanzado (C1-C2)";
+  const changeStatus = async (id: string, status: LeadStatus) => {
+    setLeads((prev) => prev.map((l) => (l._id === id ? { ...l, status } : l)));
+    await updateLeadStatusAction(id, status);
+    void loadAll();
+  };
+
+  const removeLead = async (id: string) => {
+    setLeads((prev) => prev.filter((l) => l._id !== id));
+    await deleteLeadAction(id);
+    void loadAll();
+  };
+
+  const addEntry = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const res = await createScheduleEntryAction(form);
+    if (res.success) void loadAll();
+    else setError(res.error);
+  };
+
+  const patchEntry = async (id: string, patch: Partial<ScheduleRow>) => {
+    await updateScheduleEntryAction(id, patch);
+    void loadAll();
+  };
+
+  const removeEntry = async (id: string) => {
+    setSchedule((prev) => prev.filter((s) => s._id !== id));
+    await deleteScheduleEntryAction(id);
+    void loadAll();
   };
 
   if (loading) {
     return (
       <main className="flex min-h-screen items-center justify-center bg-[#0a0a0a] text-sm text-white/50">
-        Cargando panel del profesor...
+        Loading teacher dashboard...
       </main>
     );
   }
 
   return (
-    <>
-      <main className="relative min-h-screen overflow-hidden bg-[#0a0a0a] px-4 pt-24 pb-16 text-white md:px-8">
-        <div className="pointer-events-none absolute top-[-10%] left-[-10%] h-[500px] w-[500px] rounded-full bg-blue-600/5 blur-[100px]" />
-        <div className="pointer-events-none absolute right-[-10%] bottom-[-10%] h-[500px] w-[500px] rounded-full bg-blue-500/5 blur-[100px]" />
+    <main className="relative min-h-screen overflow-hidden bg-[#0a0a0a] px-4 pt-24 pb-16 text-white md:px-8">
+      <div className="pointer-events-none absolute top-[-10%] left-[-10%] h-[500px] w-[500px] rounded-full bg-blue-600/5 blur-[100px]" />
+      <div className="pointer-events-none absolute right-[-10%] bottom-[-10%] h-[500px] w-[500px] rounded-full bg-blue-500/5 blur-[100px]" />
 
-        <div className="relative z-10 mx-auto max-w-6xl">
-          <div className="mb-8 flex flex-col items-start justify-between gap-4 border-b border-white/[0.08] pb-6 sm:flex-row sm:items-center">
-            <div>
-              <h1 className="text-2xl font-bold tracking-tight md:text-3xl">
-                Dashboard del <span className="text-blue-400">Profesor</span>
-              </h1>
-              <p className="mt-1 text-xs text-white/40">
-                Mauricio Tellez · Gestión académica y de alumnos activos
-              </p>
-            </div>
-            <div className="flex items-center gap-2 self-end sm:self-auto">
-              <a href="/teacher/campaigns">
-                <Button
-                  variant="ghost"
-                  className="flex items-center gap-1.5 rounded-full px-5 py-2.5 text-xs font-semibold text-blue-400 hover:bg-blue-500/5 hover:text-blue-300"
-                >
-                  <QrCode className="size-4" />
-                  Campañas QR
-                </Button>
-              </a>
-              <a href="/teacher/test-pagos">
-                <Button
-                  variant="ghost"
-                  className="flex items-center gap-1.5 rounded-full px-5 py-2.5 text-xs font-semibold text-white/50 hover:bg-white/5 hover:text-white"
-                >
-                  <CreditCard className="size-4" />
-                  Pagos de prueba
-                </Button>
-              </a>
+      <div className="relative z-10 mx-auto max-w-6xl">
+        <div className="mb-8 flex flex-col items-start justify-between gap-4 border-b border-white/[0.08] pb-6 sm:flex-row sm:items-center">
+          <div>
+            <h1 className="text-2xl font-bold tracking-tight md:text-3xl">
+              Club <span className="text-blue-400">Dashboard</span>
+            </h1>
+            <p className="mt-1 text-xs text-white/40">
+              Form registrations and session schedule
+            </p>
+          </div>
+          <div className="flex items-center gap-2 self-end sm:self-auto">
+            <a href="/teacher/campaigns">
               <Button
                 variant="ghost"
-                onClick={handleLogout}
-                className="flex items-center gap-1.5 rounded-full px-5 py-2.5 text-xs font-semibold text-white/50 hover:bg-white/5 hover:text-white"
+                className="flex items-center gap-1.5 rounded-full px-5 py-2.5 text-xs font-semibold text-blue-400 hover:bg-blue-500/5 hover:text-blue-300"
               >
-                <LogOut className="size-4" />
-                Cerrar Sesión
+                <QrCode className="size-4" />
+                QR Campaigns
               </Button>
-            </div>
-          </div>
-
-          {error && (
-            <Card className="bg-destructive/10 border-destructive/20 text-destructive mb-6 rounded-xl p-4">
-              <p className="text-sm font-semibold">{error}</p>
-            </Card>
-          )}
-
-          <div className="space-y-8">
-            <Card className="overflow-hidden rounded-2xl border-white/[0.08] bg-[#0f1729]/40 backdrop-blur-xl">
-              <CardHeader className="pb-3">
-                <CardTitle className="flex items-center gap-2 text-lg font-bold">
-                  <CalendarIcon className="size-5 text-blue-400" /> Clases
-                  Próximas Agendadas
-                </CardTitle>
-                <CardDescription className="text-xs text-white/40">
-                  Listado cronológico de sesiones agendadas por estudiantes.
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                {upcomingSessions.length === 0 ? (
-                  <div className="rounded-xl border border-dashed border-white/[0.06] bg-white/[0.01] py-10 text-center">
-                    <CalendarIcon className="mx-auto mb-3 size-8 text-white/15" />
-                    <h5 className="text-sm font-semibold text-white/70">
-                      No hay clases próximas
-                    </h5>
-                    <p className="mx-auto mt-1 max-w-xs text-xs leading-relaxed text-white/40">
-                      Las clases que programen los estudiantes aparecerán
-                      listadas aquí con su enlace de WhatsApp.
-                    </p>
-                  </div>
-                ) : (
-                  <div className="overflow-x-auto">
-                    <Table className="min-w-full">
-                      <TableHeader className="border-b border-white/[0.06] bg-white/[0.02]">
-                        <TableRow>
-                          <TableHead className="text-[10px] font-semibold tracking-wider text-white/40 uppercase">
-                            Fecha y Hora
-                          </TableHead>
-                          <TableHead className="text-[10px] font-semibold tracking-wider text-white/40 uppercase">
-                            Estudiante
-                          </TableHead>
-                          <TableHead className="text-[10px] font-semibold tracking-wider text-white/40 uppercase">
-                            Contacto
-                          </TableHead>
-                          <TableHead className="text-[10px] font-semibold tracking-wider text-white/40 uppercase">
-                            Tipo de Clase
-                          </TableHead>
-                          <TableHead className="text-[10px] font-semibold tracking-wider text-white/40 uppercase">
-                            Acciones
-                          </TableHead>
-                        </TableRow>
-                      </TableHeader>
-                      <TableBody>
-                        {upcomingSessions.map((session) => {
-                          const dateObj = new Date(session.dateTime);
-                          const formattedDate = dateObj.toLocaleDateString(
-                            "es-ES",
-                            {
-                              weekday: "short",
-                              day: "numeric",
-                              month: "short",
-                            }
-                          );
-                          const formattedTime = dateObj.toLocaleTimeString(
-                            "es-MX",
-                            {
-                              hour: "2-digit",
-                              minute: "2-digit",
-                              hour12: false,
-                            }
-                          );
-
-                          return (
-                            <TableRow
-                              key={session._id}
-                              className="border-b border-white/[0.04] hover:bg-white/[0.01]"
-                            >
-                              <TableCell className="py-4">
-                                <span className="block text-sm font-bold text-white capitalize">
-                                  {formattedDate}
-                                </span>
-                                <span className="mt-0.5 block text-xs text-white/50">
-                                  {formattedTime} hrs (CDMX)
-                                </span>
-                              </TableCell>
-                              <TableCell className="py-4">
-                                <span className="block text-sm font-semibold text-white">
-                                  {session.student.name}
-                                </span>
-                                <span className="mt-0.5 block text-xs text-white/45">
-                                  {session.student.email}
-                                </span>
-                              </TableCell>
-                              <TableCell className="space-y-1 py-4">
-                                <div className="flex items-center gap-1.5 text-xs text-white/60">
-                                  <Phone className="size-3 text-white/40" />
-                                  {session.student.phone}
-                                </div>
-                                <a
-                                  href={`https://wa.me/${session.student.phone.replace(/\+/g, "")}`}
-                                  target="_blank"
-                                  rel="noopener noreferrer"
-                                  className="inline-flex items-center gap-1 text-[10px] font-bold text-[#25d366] hover:underline"
-                                >
-                                  <MessageSquare className="size-3" />
-                                  Chat WhatsApp
-                                </a>
-                              </TableCell>
-                              <TableCell className="py-4">
-                                <Badge
-                                  className={
-                                    session.type === "intro"
-                                      ? "rounded-full border border-green-500/20 bg-green-500/10 text-[9px] font-semibold tracking-wider text-green-400 uppercase"
-                                      : "rounded-full border border-blue-500/20 bg-blue-500/10 text-[9px] font-semibold tracking-wider text-blue-400 uppercase"
-                                  }
-                                >
-                                  {session.type === "intro"
-                                    ? "Demo Gratis"
-                                    : "Clase Privada"}
-                                </Badge>
-                                <span className="mt-1 block text-[10px] text-white/30">
-                                  {session.duration} min
-                                </span>
-                              </TableCell>
-                              <TableCell className="py-4">
-                                {session.meetingLink && (
-                                  <a
-                                    href={session.meetingLink}
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    className="inline-flex items-center gap-1 rounded-full bg-blue-500 px-4 py-2 text-xs font-semibold text-white shadow-md shadow-blue-500/10 transition-all hover:bg-blue-400"
-                                  >
-                                    <Video className="size-3.5" />
-                                    WhatsApp
-                                  </a>
-                                )}
-                              </TableCell>
-                            </TableRow>
-                          );
-                        })}
-                      </TableBody>
-                    </Table>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-            <Card className="overflow-hidden rounded-2xl border-white/[0.08] bg-[#0f1729]/40 backdrop-blur-xl">
-              <CardHeader className="pb-3">
-                <CardTitle className="flex items-center gap-2 text-lg font-bold">
-                  <Users className="size-5 text-blue-400" /> Estudiantes Activos
-                  (Últimos 30 días)
-                </CardTitle>
-                <CardDescription className="text-xs text-white/40">
-                  Estudiantes con reservas de clases o compras en los últimos 30
-                  días.
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                {activeStudents.length === 0 ? (
-                  <div className="rounded-xl border border-dashed border-white/[0.06] bg-white/[0.01] py-10 text-center">
-                    <Users className="mx-auto mb-3 size-8 text-white/15" />
-                    <h5 className="text-sm font-semibold text-white/70">
-                      No hay estudiantes activos
-                    </h5>
-                    <p className="mx-auto mt-1 max-w-xs text-xs leading-relaxed text-white/40">
-                      Los alumnos con actividad académica o pagos en los últimos
-                      30 días figurarán en este listado.
-                    </p>
-                  </div>
-                ) : (
-                  <div className="overflow-x-auto">
-                    <Table className="min-w-full">
-                      <TableHeader className="border-b border-white/[0.06] bg-white/[0.02]">
-                        <TableRow>
-                          <TableHead className="text-[10px] font-semibold tracking-wider text-white/40 uppercase">
-                            Nombre
-                          </TableHead>
-                          <TableHead className="text-[10px] font-semibold tracking-wider text-white/40 uppercase">
-                            Correo
-                          </TableHead>
-                          <TableHead className="text-[10px] font-semibold tracking-wider text-white/40 uppercase">
-                            Teléfono / WhatsApp
-                          </TableHead>
-                          <TableHead className="text-center text-[10px] font-semibold tracking-wider text-white/40 uppercase">
-                            Créditos
-                          </TableHead>
-                          <TableHead className="text-[10px] font-semibold tracking-wider text-white/40 uppercase">
-                            Examen de Ubicación
-                          </TableHead>
-                        </TableRow>
-                      </TableHeader>
-                      <TableBody>
-                        {activeStudents.map((student) => (
-                          <TableRow
-                            key={student._id}
-                            className="border-b border-white/[0.04] hover:bg-white/[0.01]"
-                          >
-                            <TableCell className="py-4">
-                              <span className="text-sm font-semibold text-white">
-                                {student.name}
-                              </span>
-                            </TableCell>
-                            <TableCell className="py-4">
-                              <a
-                                href={`mailto:${student.email}`}
-                                className="flex items-center gap-1.5 text-xs text-white/60 hover:text-white hover:underline"
-                              >
-                                <Mail className="size-3.5 text-white/30" />
-                                {student.email}
-                              </a>
-                            </TableCell>
-                            <TableCell className="py-4">
-                              <a
-                                href={`https://wa.me/${student.phone.replace(/\+/g, "")}`}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="flex items-center gap-1.5 text-xs text-[#25d366] hover:underline"
-                              >
-                                <MessageSquare className="size-3.5 text-[#25d366]/40" />
-                                {student.phone}
-                              </a>
-                            </TableCell>
-                            <TableCell className="py-4 text-center">
-                              <span className="text-base font-extrabold text-white">
-                                {student.credits}
-                              </span>
-                            </TableCell>
-                            <TableCell className="py-4">
-                              {student.quizResult ? (
-                                <div>
-                                  <span className="inline-flex items-center gap-1 rounded-full border border-blue-500/20 bg-blue-500/10 px-2.5 py-0.5 text-[10px] font-semibold text-blue-400">
-                                    <Award className="size-3" />
-                                    {getProficiencyLevelName(
-                                      student.quizResult.score
-                                    )}
-                                  </span>
-                                  <span className="mt-1 block text-[10px] text-white/30">
-                                    Score: {student.quizResult.score}/
-                                    {student.quizResult.totalQuestions}
-                                  </span>
-                                </div>
-                              ) : (
-                                <span className="text-xs text-white/30 italic">
-                                  No realizado
-                                </span>
-                              )}
-                            </TableCell>
-                          </TableRow>
-                        ))}
-                      </TableBody>
-                    </Table>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-
-            <Card className="overflow-hidden rounded-2xl border-white/[0.08] bg-[#0f1729]/40 backdrop-blur-xl">
-              <CardHeader className="pb-3">
-                <CardTitle className="flex items-center gap-2 text-lg font-bold">
-                  <Gift className="size-5 text-blue-400" /> Referidos y
-                  recompensas
-                </CardTitle>
-                <CardDescription className="text-xs text-white/40">
-                  Registro reciente de quién refirió a quién y qué bono se
-                  acreditó.
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                {referrals.length === 0 ? (
-                  <div className="rounded-xl border border-dashed border-white/[0.06] bg-white/[0.01] py-10 text-center">
-                    <Gift className="mx-auto mb-3 size-8 text-white/15" />
-                    <h5 className="text-sm font-semibold text-white/70">
-                      Todavía no hay referidos
-                    </h5>
-                    <p className="mx-auto mt-1 max-w-xs text-xs leading-relaxed text-white/40">
-                      Los nuevos registros y pagos aparecerán aquí cuando los
-                      estudiantes compartan sus enlaces.
-                    </p>
-                  </div>
-                ) : (
-                  <div className="overflow-x-auto">
-                    <Table className="min-w-full">
-                      <TableHeader className="border-b border-white/[0.06] bg-white/[0.02]">
-                        <TableRow>
-                          <TableHead className="text-[10px] font-semibold tracking-wider text-white/40 uppercase">
-                            Referente
-                          </TableHead>
-                          <TableHead className="text-[10px] font-semibold tracking-wider text-white/40 uppercase">
-                            Nuevo estudiante
-                          </TableHead>
-                          <TableHead className="text-[10px] font-semibold tracking-wider text-white/40 uppercase">
-                            Estado
-                          </TableHead>
-                          <TableHead className="text-[10px] font-semibold tracking-wider text-white/40 uppercase">
-                            Bono
-                          </TableHead>
-                        </TableRow>
-                      </TableHeader>
-                      <TableBody>
-                        {referrals.map((referral) => (
-                          <TableRow
-                            key={referral._id}
-                            className="border-b border-white/[0.04] hover:bg-white/[0.01]"
-                          >
-                            <TableCell className="py-4">
-                              <span className="block text-sm font-semibold text-white">
-                                {referral.referrer?.name || "Desconocido"}
-                              </span>
-                              <span className="mt-0.5 block text-xs text-white/45">
-                                {referral.referrer?.email || "Sin correo"}
-                              </span>
-                            </TableCell>
-                            <TableCell className="py-4">
-                              <span className="block text-sm font-semibold text-white">
-                                {referral.referred?.name || "Pendiente"}
-                              </span>
-                              <span className="mt-0.5 block text-xs text-white/45">
-                                {referral.referred?.email || "Sin correo"}
-                              </span>
-                              <span className="mt-1 block text-[10px] tracking-wider text-white/25 uppercase">
-                                Código usado: {referral.referralCodeUsed}
-                              </span>
-                            </TableCell>
-                            <TableCell className="py-4">
-                              {referral.rewardGrantedAt ? (
-                                <span className="inline-flex items-center gap-1 rounded-full border border-emerald-500/20 bg-emerald-500/10 px-2.5 py-0.5 text-[10px] font-semibold text-emerald-400">
-                                  <BadgeCheck className="size-3" />
-                                  Recompensado
-                                </span>
-                              ) : (
-                                <span className="inline-flex items-center gap-1 rounded-full border border-amber-500/20 bg-amber-500/10 px-2.5 py-0.5 text-[10px] font-semibold text-amber-400">
-                                  Pendiente
-                                </span>
-                              )}
-                            </TableCell>
-                            <TableCell className="py-4">
-                              <span className="text-base font-extrabold text-white">
-                                {referral.rewardCredits}
-                              </span>
-                              <span className="mt-1 block text-[10px] text-white/30">
-                                {referral.rewardDescription ||
-                                  "Bono de referido"}
-                              </span>
-                            </TableCell>
-                          </TableRow>
-                        ))}
-                      </TableBody>
-                    </Table>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
+            </a>
+            <Button
+              variant="ghost"
+              onClick={handleLogout}
+              className="flex items-center gap-1.5 rounded-full px-5 py-2.5 text-xs font-semibold text-white/50 hover:bg-white/5 hover:text-white"
+            >
+              <LogOut className="size-4" />
+              Log out
+            </Button>
           </div>
         </div>
-      </main>
-    </>
+
+        {error && (
+          <div className="mb-6 rounded-xl border border-red-500/20 bg-red-500/10 p-4 text-sm font-semibold text-red-400">
+            {error}
+          </div>
+        )}
+
+        {/* Stat cards */}
+        <div className="mb-8 grid grid-cols-2 gap-4 sm:grid-cols-4">
+          {[
+            {
+              label: "Registrations",
+              value: counts.total,
+              color: "text-white",
+            },
+            { label: "New", value: counts.nuevo, color: "text-blue-400" },
+            {
+              label: "Contacted",
+              value: counts.contactado,
+              color: "text-amber-400",
+            },
+            {
+              label: "Enrolled",
+              value: counts.inscrito,
+              color: "text-emerald-400",
+            },
+          ].map((s) => (
+            <div key={s.label} className={cardClass + " py-5"}>
+              <p className={`text-3xl font-extrabold ${s.color}`}>{s.value}</p>
+              <p className="mt-1 text-[11px] tracking-wider text-white/40 uppercase">
+                {s.label}
+              </p>
+            </div>
+          ))}
+        </div>
+
+        <div className="space-y-8">
+          {/* Schedule manager */}
+          <section className={cardClass}>
+            <div className="mb-4 flex items-center gap-2">
+              <CalendarDays className="size-5 text-blue-400" />
+              <h2 className="text-lg font-bold">Session schedule</h2>
+            </div>
+            <p className="mb-5 text-xs text-white/40">
+              These sessions are shown on the homepage. If none are active, the
+              site shows the upcoming Sundays by default.
+            </p>
+
+            {/* Add form */}
+            <form
+              onSubmit={addEntry}
+              className="mb-6 grid grid-cols-2 gap-2 rounded-xl border border-white/[0.06] bg-white/[0.02] p-4 md:grid-cols-6"
+            >
+              <input
+                type="date"
+                value={form.date}
+                onChange={(e) => setForm({ ...form, date: e.target.value })}
+                className={inputClass + " col-span-2 md:col-span-1"}
+              />
+              <input
+                type="time"
+                value={form.startTime}
+                onChange={(e) =>
+                  setForm({ ...form, startTime: e.target.value })
+                }
+                className={inputClass}
+              />
+              <input
+                type="time"
+                value={form.endTime}
+                onChange={(e) => setForm({ ...form, endTime: e.target.value })}
+                className={inputClass}
+              />
+              <input
+                type="text"
+                value={form.location}
+                onChange={(e) => setForm({ ...form, location: e.target.value })}
+                placeholder="Location"
+                className={inputClass + " col-span-2 md:col-span-1"}
+              />
+              <Button
+                type="submit"
+                className="flex items-center justify-center gap-1 rounded-lg bg-blue-500 px-3 py-2 text-xs font-semibold text-white hover:bg-blue-400"
+              >
+                <Plus className="size-3.5" />
+                Add
+              </Button>
+            </form>
+
+            {schedule.length === 0 ? (
+              <div className="rounded-xl border border-dashed border-white/[0.06] py-8 text-center text-xs text-white/40">
+                No sessions scheduled. The site shows the upcoming Sundays by
+                default.
+              </div>
+            ) : (
+              <div className="space-y-2">
+                {schedule.map((s) => (
+                  <div
+                    key={s._id}
+                    className={`grid grid-cols-2 items-center gap-2 rounded-xl border p-3 md:grid-cols-7 ${
+                      s.active
+                        ? "border-white/[0.08] bg-white/[0.02]"
+                        : "border-white/[0.04] bg-white/[0.01] opacity-50"
+                    }`}
+                  >
+                    <input
+                      type="date"
+                      defaultValue={s.date}
+                      onBlur={(e) =>
+                        patchEntry(s._id, { date: e.target.value })
+                      }
+                      className={inputClass + " col-span-2 md:col-span-1"}
+                    />
+                    <input
+                      type="time"
+                      defaultValue={s.startTime}
+                      onBlur={(e) =>
+                        patchEntry(s._id, { startTime: e.target.value })
+                      }
+                      className={inputClass}
+                    />
+                    <input
+                      type="time"
+                      defaultValue={s.endTime}
+                      onBlur={(e) =>
+                        patchEntry(s._id, { endTime: e.target.value })
+                      }
+                      className={inputClass}
+                    />
+                    <input
+                      type="text"
+                      defaultValue={s.location}
+                      onBlur={(e) =>
+                        patchEntry(s._id, { location: e.target.value })
+                      }
+                      className={inputClass + " col-span-2 md:col-span-2"}
+                    />
+                    <div className="flex items-center justify-end gap-1">
+                      <button
+                        onClick={() => patchEntry(s._id, { active: !s.active })}
+                        title={s.active ? "Hide" : "Show"}
+                        className={`rounded-lg border px-2 py-1.5 text-[10px] font-semibold ${
+                          s.active
+                            ? "border-emerald-500/20 bg-emerald-500/10 text-emerald-400"
+                            : "border-white/10 bg-white/5 text-white/40"
+                        }`}
+                      >
+                        {s.active ? "Active" : "Hidden"}
+                      </button>
+                      <button
+                        onClick={() => removeEntry(s._id)}
+                        title="Delete"
+                        className="rounded-lg border border-red-500/20 bg-red-500/10 p-1.5 text-red-400 hover:bg-red-500/20"
+                      >
+                        <Trash2 className="size-3.5" />
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </section>
+
+          {/* Leads */}
+          <section className={cardClass}>
+            <div className="mb-4 flex items-center gap-2">
+              <Users className="size-5 text-blue-400" />
+              <h2 className="text-lg font-bold">Form registrations</h2>
+            </div>
+
+            {leads.length === 0 ? (
+              <div className="rounded-xl border border-dashed border-white/[0.06] py-10 text-center">
+                <Users className="mx-auto mb-3 size-8 text-white/15" />
+                <p className="text-sm font-semibold text-white/70">
+                  No registrations yet
+                </p>
+                <p className="mx-auto mt-1 max-w-xs text-xs text-white/40">
+                  When someone registers at /join they will appear here with
+                  their phone number so you can call them.
+                </p>
+              </div>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="min-w-full text-left">
+                  <thead className="border-b border-white/[0.06] text-[10px] tracking-wider text-white/40 uppercase">
+                    <tr>
+                      <th className="py-2 pr-4">Name</th>
+                      <th className="py-2 pr-4">Phone</th>
+                      <th className="py-2 pr-4">Level</th>
+                      <th className="py-2 pr-4">Time</th>
+                      <th className="py-2 pr-4">Source</th>
+                      <th className="py-2 pr-4">Date</th>
+                      <th className="py-2 pr-4">Status</th>
+                      <th className="py-2"></th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {leads.map((l) => (
+                      <tr
+                        key={l._id}
+                        className="border-b border-white/[0.04] hover:bg-white/[0.01]"
+                      >
+                        <td className="py-3 pr-4">
+                          <span className="text-sm font-semibold text-white">
+                            {l.name}
+                          </span>
+                          {l.age != null && (
+                            <span className="ml-1.5 text-[11px] text-white/35">
+                              · {l.age} yrs
+                            </span>
+                          )}
+                        </td>
+                        <td className="py-3 pr-4">
+                          <a
+                            href={`tel:${l.phone}`}
+                            className="inline-flex items-center gap-1 text-xs font-semibold text-blue-400 hover:underline"
+                          >
+                            <Phone className="size-3" />
+                            {l.phone}
+                          </a>
+                        </td>
+                        <td className="py-3 pr-4 text-xs text-white/60">
+                          {l.level}
+                        </td>
+                        <td className="py-3 pr-4 text-xs text-white/60">
+                          {l.slot}
+                        </td>
+                        <td className="py-3 pr-4 text-[11px] text-white/40">
+                          {l.campaignCode ? (
+                            <span className="rounded-full bg-white/5 px-2 py-0.5">
+                              {l.campaignCode}
+                            </span>
+                          ) : (
+                            "—"
+                          )}
+                        </td>
+                        <td className="py-3 pr-4 text-[11px] text-white/40">
+                          {new Date(l.createdAt).toLocaleDateString("en-US", {
+                            day: "numeric",
+                            month: "short",
+                          })}
+                        </td>
+                        <td className="py-3 pr-4">
+                          <select
+                            value={l.status}
+                            onChange={(e) =>
+                              changeStatus(l._id, e.target.value as LeadStatus)
+                            }
+                            className={`rounded-full border px-2.5 py-1 text-[10px] font-semibold ${STATUS_STYLES[l.status]}`}
+                          >
+                            <option
+                              value="nuevo"
+                              className="bg-[#111827] text-white"
+                            >
+                              New
+                            </option>
+                            <option
+                              value="contactado"
+                              className="bg-[#111827] text-white"
+                            >
+                              Contacted
+                            </option>
+                            <option
+                              value="inscrito"
+                              className="bg-[#111827] text-white"
+                            >
+                              Enrolled
+                            </option>
+                          </select>
+                        </td>
+                        <td className="py-3 text-right">
+                          <button
+                            onClick={() => removeLead(l._id)}
+                            title="Delete"
+                            className="rounded-lg border border-red-500/20 bg-red-500/10 p-1.5 text-red-400 hover:bg-red-500/20"
+                          >
+                            <Trash2 className="size-3.5" />
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </section>
+        </div>
+      </div>
+    </main>
   );
 }

@@ -104,7 +104,7 @@ export default function ExperiencesPage() {
             hay aquí y ver películas en inglés con subtítulos en español.
           </p>
           <div className="flex flex-wrap gap-3">
-            <Link href="/signup">
+            <Link href="/join">
               <Button
                 size="lg"
                 className="rounded-full bg-blue-500 px-7 py-6 text-sm font-semibold text-white shadow-lg shadow-blue-500/25 hover:bg-blue-400"
@@ -112,13 +112,13 @@ export default function ExperiencesPage() {
                 Quiero unirme
               </Button>
             </Link>
-            <Link href="/clases-de-ingles-en-tehuacan">
+            <Link href="/club-de-conversacion-en-ingles-tehuacan">
               <Button
                 variant="ghost"
                 size="lg"
                 className="rounded-full border border-white/10 px-7 py-6 text-sm font-medium text-white/60 hover:bg-white/5 hover:text-white"
               >
-                Ver clases en Tehuacán →
+                Ver el club de conversación →
               </Button>
             </Link>
           </div>
@@ -173,9 +173,9 @@ export default function ExperiencesPage() {
             Reservas, comida, cine y conversación — la clase de inglés más
             divertida que vas a tomar.
           </p>
-          <Link href="/signup">
+          <Link href="/join">
             <Button className="rounded-full bg-blue-500 px-7 py-5 text-sm font-semibold text-white hover:bg-blue-400">
-              Agenda tu primera clase gratis
+              Reserva tu lugar
             </Button>
           </Link>
         </div>
